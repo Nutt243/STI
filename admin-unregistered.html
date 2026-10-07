@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> StockMaster - จัดการบาร์โค้ดใหม่</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#3b82f6', 600: '#2563eb' },
+            darkbg: '#0f172a', darkcard: '#1e293b', darkinput: '#334155'
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen">
+<!-- 🟢 ปุ่มไอคอน Logout แบบมินิมอล (มุมขวาบน) -->
+   <!-- 🟢 Navbar พร้อมปุ่ม Logout เล็กมุมขวาบน -->
+  <nav class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between shadow-md">
+    
+    <!-- ฝั่งซ้าย: โลโก้ + เมนูทั่วไป และ เมนู Admin -->
+    <div class="flex items-center gap-4">
+      <h1 class="font-bold text-lg text-blue-400">POS System</h1>
+      <a href="index.html" class="text-sm hover:text-blue-300 font-medium">เบิกสินค้า / คัดแยก</a>
+      
+      <!-- เมนูพิเศษเฉพาะ Admin (ซ่อนไว้ก่อน) -->
+      <a href="dashboard.html" class="admin-only hidden text-sm text-amber-400 hover:underline">📊 Dashboard</a>
+      <a href="approvals.html" class="admin-only hidden text-sm text-green-400 hover:underline">✅ อนุมัติคำขอ</a>
+    </div>
+
+    <!-- 🚪 ฝั่งขวา: ปุ่ม Logout ขนาดเล็กมุมขวาบน -->
+    <div class="flex items-center">
+      <button onclick="handleLogout()" 
+              title="ออกจากระบบ" 
+              class="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded transition flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span>ออกระบบ</span>
+      </button>
+    </div>
+
+  </nav>
+  <header class="bg-darkcard border-b border-slate-700/60 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="admin-dashboard.html" class="p-2 text-slate-400 hover:text-white rounded-lg">
+          <i class="fa-solid fa-arrow-left text-lg"></i>
+        </a>
+        <h1 class="font-bold text-white text-lg">บาร์โค้ดรอจัดหมวดหมู่ (Inbound Buffer)</h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- Mobile View Cards (Hidden on Desktop) -->
+    <div class="block md:hidden space-y-4" id="mobileBarcodeCards">
+      <!-- Dynamic Mobile Cards -->
+    </div>
+
+    <!-- Desktop View Table (Hidden on Mobile) -->
+    <div class="hidden md:block bg-darkcard border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-900 text-xs uppercase text-slate-400 border-b border-slate-700">
+          <tr>
+            <th class="p-4">Barcode</th>
+            <th class="p-4">จำนวนที่สแกน</th>
+            <th class="p-4">ผู้สแกน</th>
+            <th class="p-4">เวลาที่สแกน</th>
+            <th class="p-4 text-right">การกระทำ</th>
+          </tr>
+        </thead>
+        <tbody id="desktopBarcodeTbody" class="divide-y divide-slate-700/50">
+          <!-- Dynamic Desktop Rows -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal จับคู่ SKU -->
+  <div id="matchModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-darkcard border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-5">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-700">
+        <h3 class="font-bold text-white text-lg">จับคู่บาร์โค้ดเข้าหมวดหมู่ SKU</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">รหัสบาร์โค้ด</label>
+        <input type="text" id="modalBarcode" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm font-mono text-brand-400 font-bold">
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">เลือกหมวดหมู่ SKU หลักที่มีอยู่</label>
+        <select id="skuSelect" class="w-full bg-darkinput border border-slate-600 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
+          <option value="sku_101">Harddisk Internal 2TB (IT Hardware)</option>
+          <option value="sku_102">หมึกพิมพ์ Epson 003 Black (Supplies)</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">ยี่ห้อ (Brand)</label>
+          <input type="text" placeholder="เช่น WD, Kingston" class="w-full bg-darkinput border border-slate-600 rounded-xl p-2 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">ตำแหน่งจัดเก็บ (Location)</label>
+          <input type="text" placeholder="เช่น Shelf A1" class="w-full bg-darkinput border border-slate-600 rounded-xl p-2 text-sm text-white">
+        </div>
+      </div>
+
+      <button onclick="saveProductMapping()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition">
+        บันทึกการจัดหมวดสินค้า
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    const mockUnregistered = [
+      { barcode: '8850123456789', scanned_count: 5, scannedBy: 'Somsak', createdAt: '10 นาทีที่แล้ว' },
+      { barcode: '8859876543210', scanned_count: 12, scannedBy: 'Somchai', createdAt: '1 ชั่วโมงที่แล้ว' }
+    ];
+
+    function renderUnregistered() {
+      // Mobile View
+      document.getElementById('mobileBarcodeCards').innerHTML = mockUnregistered.map(item => `
+        <div class="bg-darkcard border border-slate-700/60 p-4 rounded-2xl space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-brand-400 font-bold text-sm">${item.barcode}</span>
+            <span class="bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs px-2.5 py-0.5 rounded-full font-bold">+${item.scanned_count} ชิ้น</span>
+          </div>
+          <div class="text-xs text-slate-400 flex justify-between">
+            <span>ผู้สแกน: ${item.scannedBy}</span>
+            <span>${item.createdAt}</span>
+          </div>
+          <button onclick="openModal('${item.barcode}')" class="w-full py-2 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 rounded-xl text-xs font-bold transition">
+            จับคู่เข้า SKU
+          </button>
+        </div>
+      `).join('');
+
+      // Desktop View
+      document.getElementById('desktopBarcodeTbody').innerHTML = mockUnregistered.map(item => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="p-4 font-mono font-bold text-brand-400">${item.barcode}</td>
+          <td class="p-4 font-bold text-white">${item.scanned_count}</td>
+          <td class="p-4 text-slate-300">${item.scannedBy}</td>
+          <td class="p-4 text-slate-400 text-xs">${item.createdAt}</td>
+          <td class="p-4 text-right">
+            <button onclick="openModal('${item.barcode}')" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+              จับคู่เข้า SKU
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.openModal = (barcode) => {
+      document.getElementById('modalBarcode').value = barcode;
+      document.getElementById('matchModal').classList.remove('hidden');
+    };
+
+    window.closeModal = () => {
+      document.getElementById('matchModal').classList.add('hidden');
+    };
+
+    window.saveProductMapping = () => {
+      alert('บันทึกการจับคู่สินค้าและย้ายเข้า Collection Products เรียบร้อยแล้ว!');
+      closeModal();
+    };
+
+    renderUnregistered();
+  </script>
+  <script type="module">
+  // 1. Import ฟังก์ชันจาก auth.js (เช็ก Path โฟลเดอร์ให้ถูกต้อง เช่น ./js/auth.js)
+  import { handleLogout, checkUserRole } from './js/auth.js';
+
+  // 2. ผูกปุ่ม Logout
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', handleLogout);
+  }
+
+  // 3. ตรวจสอบสิทธิ์ผู้ใช้ (ทำงานอัตโนมัติเมื่อโหลดหน้าเว็บ)
+  // หากต้องการทำอะไรเพิ่มเติมหลังจากรู้สิทธิ์ผู้ใช้ สามารถใส่ Callback function เพิ่มได้ เช่น:
+  checkUserRole((user, role) => {
+    console.log(`User ID: ${user.uid}, Role: ${role}`);
+    // สามารถเขียนโค้ดโหลดข้อมูลตาม role ต่อตรงนี้ได้
+  });
+</script>
+</body>
+</html>

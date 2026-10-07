@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>อนุมัติคำขอเบิกพัสดุ - StockMaster</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#3b82f6', 600: '#2563eb' },
+            darkbg: '#0b0f19', darkcard: '#151c2c', darkinput: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Navbar แถบบนสุด -->
+  <nav class="bg-slate-900/90 border-b border-slate-800 text-white px-6 py-3 flex items-center justify-between shadow-md w-full z-10 shrink-0">
+    <div class="flex items-center gap-6">
+      <h1 class="font-bold text-lg text-blue-400">POS System</h1>
+      <a href="index.html" class="text-sm hover:text-blue-300 font-medium text-slate-300">เบิกสินค้า / คัดแยก</a>
+      <a href="admin-dashboard.html" class="text-sm text-slate-300 hover:text-blue-300 font-medium">📊 Dashboard</a>
+      <a href="approvals.html" class="text-sm text-emerald-400 font-semibold border-b-2 border-emerald-400 pb-0.5 flex items-center gap-1.5">
+        ✅ อนุมัติคำขอ
+        <span id="navPendingBadge" class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30">0</span>
+      </a>
+    </div>
+
+    <div class="flex items-center">
+      <button id="btnLogout" title="ออกจากระบบ" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span>ออกระบบ</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="flex flex-1 min-h-0">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-darkcard border-r border-slate-800 flex flex-col justify-between hidden md:flex shrink-0">
+      <div class="p-5">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <span class="font-bold text-white tracking-wide">StockMaster</span>
+        </div>
+
+        <nav class="space-y-1">
+          <a href="admin-dashboard.html" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:bg-slate-800 rounded-xl text-sm font-semibold transition">
+            <i class="fa-solid fa-table-cells w-5"></i> ตารางสต็อก (Sheet)
+          </a>
+          <a href="approvals.html" class="flex items-center justify-between px-3 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-sm font-semibold">
+            <span class="flex items-center gap-3">
+              <i class="fa-solid fa-circle-check w-5 text-emerald-400"></i> อนุมัติคำขอ
+            </span>
+            <span id="sidebarBadge" class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30">
+              0
+            </span>
+          </a>
+          <a href="admin-unregistered.html" class="flex items-center justify-between px-3 py-2.5 text-slate-400 hover:bg-slate-800 rounded-xl text-sm font-semibold transition">
+            <span class="flex items-center gap-3"><i class="fa-solid fa-barcode w-5"></i> บาร์โค้ดรอจัดหมวด</span>
+            <span class="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full border border-amber-500/30">3</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:bg-slate-800 rounded-xl text-sm font-semibold transition">
+            <i class="fa-solid fa-chart-line w-5"></i> สถิติภาพรวม
+          </a>
+        </nav>
+      </div>
+
+      <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
+        Logged in as Admin
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <header class="bg-darkcard border-b border-slate-800 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h1 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-check text-emerald-400"></i> รายการคำขอเบิกพัสดุรอการอนุมัติ
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">อนุมัติคำขอเพื่อหักจำนวนสต็อกออกจากคอลเลกชัน skus แบบ Atomic Transaction</p>
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="filterStatus('all')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">ทั้งหมด</button>
+          <button onclick="filterStatus('pending')" class="bg-amber-500/20 text-amber-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-500/30 transition">รออนุมัติ</button>
+          <button onclick="filterStatus('approved')" class="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/30 transition">อนุมัติแล้ว</button>
+          <button onclick="filterStatus('rejected')" class="bg-rose-500/20 text-rose-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-rose-500/30 transition">ปฏิเสธแล้ว</button>
+        </div>
+      </header>
+
+      <!-- Table Area -->
+      <main class="p-6">
+        <div class="bg-darkcard border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-3.5 px-4">รหัสเอกสาร</th>
+                <th class="py-3.5 px-4">ผู้ขอเบิก</th>
+                <th class="py-3.5 px-4">รายการพัสดุในคำขอ</th>
+                <th class="py-3.5 px-4">วันที่สร้างคำขอ</th>
+                <th class="py-3.5 px-4 text-center">สถานะ</th>
+                <th class="py-3.5 px-4 text-right">ดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody id="approvalTbody" class="divide-y divide-slate-800/60 text-xs">
+              <tr>
+                <td colspan="6" class="text-center py-8 text-slate-500">กำลังโหลดข้อมูล...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { db, handleLogout } from './js/auth.js';
+    import { 
+      collection, onSnapshot, query, orderBy, 
+      runTransaction, doc, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+
+    let requestsData = [];
+    let activeFilter = 'pending';
+
+    window.filterStatus = (status) => {
+      activeFilter = status;
+      renderTable();
+    };
+
+    // 🟢 ดึงข้อมูล Realtime จาก Firestore Collection: requisition_requests
+    const reqRef = collection(db, 'requisition_requests');
+    const q = query(reqRef, orderBy('createdAt', 'desc'));
+
+    onSnapshot(q, (snapshot) => {
+      requestsData = [];
+      snapshot.forEach(docSnap => {
+        requestsData.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+
+      // อัปเดตตัวเลขแจ้งเตือน (Pending Count)
+      const pendingCount = requestsData.filter(r => r.status === 'pending').length;
+      document.getElementById('sidebarBadge').innerText = pendingCount;
+      document.getElementById('navPendingBadge').innerText = pendingCount;
+
+      renderTable();
+    }, (error) => {
+      console.warn("Firestore error or Demo mode:", error);
+      // Fallback สำหรับ Demo Mode กรณีสแกนไม่ได้เชื่อม Firestore จริง
+      requestsData = [
+        {
+          id: '7am5xAYGZYuToFkPcuLA',
+          user_name: 'แก๊ส แปดนิ้ว',
+          user_id: 'JdWpwprzLiQ1glSb3DHchl3PRS63',
+          status: 'pending',
+          createdAt: { toDate: () => new Date('2026-10-07T15:42:27') },
+          items: [
+            { sku_id: 'sku_01', sku_name: 'Harddisk Internal 2TB', amount: 1 },
+            { sku_id: 'sku_02', sku_name: 'สาย LAN Cat6 5m', amount: 2 },
+            { sku_id: 'sku_03', sku_name: 'ปากกาลูกลื่น', amount: 5 }
+          ]
+        }
+      ];
+      renderTable();
+    });
+
+    function renderTable() {
+      const tbody = document.getElementById('approvalTbody');
+      const filtered = requestsData.filter(r => activeFilter === 'all' || r.status === activeFilter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-8 text-slate-500 font-sans">
+              <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+              ไม่มีรายการคำขอเบิกพัสดุในสถานะนี้
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(req => {
+        let statusBadge = '';
+        if (req.status === 'pending') {
+          statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full text-[11px]">⏳ รออนุมัติ</span>`;
+        } else if (req.status === 'approved') {
+          statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[11px]">✅ อนุมัติแล้ว</span>`;
+        } else {
+          statusBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-full text-[11px]">❌ ปฏิเสธ</span>`;
+        }
+
+        // แปลงวันที่ createdAt
+        let dateStr = '-';
+        if (req.createdAt && req.createdAt.toDate) {
+          dateStr = req.createdAt.toDate().toLocaleString('th-TH');
+        }
+
+        // สร้างรายการสินค้าจาก array items
+        const itemsHtml = (req.items || []).map(item => `
+          <div class="flex items-center justify-between bg-slate-900/60 px-3 py-1.5 rounded border border-slate-800/80 my-1">
+            <span class="text-slate-200 font-semibold">${item.sku_name || item.sku_id}</span>
+            <span class="text-amber-400 font-mono font-bold">x${item.amount}</span>
+          </div>
+        `).join('');
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-4 font-mono font-bold text-brand-400 text-[11px]">${req.id}</td>
+            <td class="py-3.5 px-4 font-sans font-medium text-slate-200">
+              <div>${req.user_name || 'ไม่ระบุชื่อ'}</div>
+              <div class="text-[10px] text-slate-500 font-mono">${req.user_id || ''}</div>
+            </td>
+            <td class="py-3.5 px-4 font-sans max-w-sm">
+              ${itemsHtml}
+            </td>
+            <td class="py-3.5 px-4 text-slate-400 font-mono text-[11px]">${dateStr}</td>
+            <td class="py-3.5 px-4 text-center">${statusBadge}</td>
+            <td class="py-3.5 px-4 text-right">
+              ${req.status === 'pending' ? `
+                <div class="flex justify-end gap-1.5 font-sans">
+                  <button onclick="approveRequest('${req.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
+                    <i class="fa-solid fa-check"></i> อนุมัติ
+                  </button>
+                  <button onclick="rejectRequest('${req.id}')" class="bg-slate-800 hover:bg-rose-600/20 text-slate-400 hover:text-rose-300 border border-slate-700 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition">
+                    ปฏิเสธ
+                  </button>
+                </div>
+              ` : `<span class="text-slate-600 font-sans text-[11px]">ดำเนินการแล้ว</span>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 🟢 ฟังก์ชันอนุมัติคำขอ + หักสต็อกแบบ Atomic Transaction รองรับหลาย Items
+    window.approveRequest = async (docId) => {
+      const targetReq = requestsData.find(r => r.id === docId);
+      if (!targetReq) return;
+
+      if (!confirm(`ยืนยันการอนุมัติคำขอ ${docId} และหักสต็อกสินค้าจำนวน ${targetReq.items?.length || 0} รายการ?`)) return;
+
+      try {
+        await runTransaction(db, async (transaction) => {
+          const reqDocRef = doc(db, 'requisition_requests', docId);
+          const reqSnap = await transaction.get(reqDocRef);
+
+          if (!reqSnap.exists()) throw "ไม่พบเอกสารคำขอนี้ในระบบ";
+          if (reqSnap.data().status !== 'pending') throw "คำขอนี้ได้รับการประมวลผลไปแล้ว";
+
+          // วนลูปอ่านข้อมูลของทุก SKU ใน items เพื่อตรวจสอบจำนวนคงเหลือก่อน
+          const items = reqSnap.data().items || [];
+          const skuReads = [];
+
+          for (const item of items) {
+            const skuRef = doc(db, 'skus', item.sku_id);
+            const skuSnap = await transaction.get(skuRef);
+            skuReads.push({ skuRef, skuSnap, amount: item.amount, sku_id: item.sku_id });
+          }
+
+          // ตรวจสอบสต็อกว่าเพียงพอหรือไม่
+          for (const read of skuReads) {
+            if (!read.skuSnap.exists()) {
+              throw `ไม่พบ SKU ID: ${read.sku_id} ในระบบคลังสินค้า`;
+            }
+            const currentQty = read.skuSnap.data().total_quantity || 0;
+            if (currentQty < read.amount) {
+              throw `จำนวนสินค้า ${read.skuSnap.data().sku_name || read.sku_id} เหลือไม่พอหัก (เหลือ ${currentQty}, ต้องการ ${read.amount})`;
+            }
+          }
+
+          // เมื่อตรวจสอบผ่านทุกรายการแล้ว ทำการเขียนหักสต็อกทีละรายการ
+          for (const read of skuReads) {
+            const currentQty = read.skuSnap.data().total_quantity;
+            transaction.update(read.skuRef, {
+              total_quantity: currentQty - read.amount,
+              updatedAt: serverTimestamp()
+            });
+          }
+
+          // อัปเดตสถานะคำขอเป็น approved
+          transaction.update(reqDocRef, {
+            status: 'approved',
+            updatedAt: serverTimestamp()
+          });
+        });
+
+        alert("✅ อนุมัติคำขอและหักสต็อกเรียบร้อยแล้ว");
+      } catch (err) {
+        console.error("Approve error:", err);
+        alert(`เกิดข้อผิดพลาด: ${err}`);
+      }
+    };
+
+    // 🟢 ฟังก์ชันปฏิเสธคำขอ
+    window.rejectRequest = async (docId) => {
+      if (!confirm(`คุณต้องการปฏิเสธคำขอ ${docId} ใช่หรือไม่?`)) return;
+
+      try {
+        await runTransaction(db, async (transaction) => {
+          const reqDocRef = doc(db, 'requisition_requests', docId);
+          transaction.update(reqDocRef, {
+            status: 'rejected',
+            updatedAt: serverTimestamp()
+          });
+        });
+        alert("❌ ปฏิเสธคำขอเรียบร้อยแล้ว");
+      } catch (err) {
+        console.error("Reject error:", err);
+        alert(`เกิดข้อผิดพลาด: ${err}`);
+      }
+    };
+  </script>
+</body>
+</html>

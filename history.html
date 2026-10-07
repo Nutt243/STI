@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockMaster - ประวัติการเบิก</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#3b82f6', 600: '#2563eb' },
+            darkbg: '#0f172a', darkcard: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen">
+<!-- 🟢 ปุ่มไอคอน Logout แบบมินิมอล (มุมขวาบน) -->
+  <!-- 🟢 Navbar พร้อมปุ่ม Logout เล็กมุมขวาบน -->
+  <nav class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between shadow-md">
+    
+    <!-- ฝั่งซ้าย: โลโก้ + เมนูทั่วไป และ เมนู Admin -->
+    <div class="flex items-center gap-4">
+      <h1 class="font-bold text-lg text-blue-400">POS System</h1>
+      <a href="index.html" class="text-sm hover:text-blue-300 font-medium">เบิกสินค้า / คัดแยก</a>
+      
+      <!-- เมนูพิเศษเฉพาะ Admin (ซ่อนไว้ก่อน) -->
+      <a href="dashboard.html" class="admin-only hidden text-sm text-amber-400 hover:underline">📊 Dashboard</a>
+      <a href="approvals.html" class="admin-only hidden text-sm text-green-400 hover:underline">✅ อนุมัติคำขอ</a>
+    </div>
+
+    <!-- 🚪 ฝั่งขวา: ปุ่ม Logout ขนาดเล็กมุมขวาบน -->
+    <div class="flex items-center">
+      <button onclick="handleLogout()" 
+              title="ออกจากระบบ" 
+              class="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded transition flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span>ออกระบบ</span>
+      </button>
+    </div>
+
+  </nav>
+  <header class="bg-darkcard border-b border-slate-700/60 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="requisition.html" class="p-2 text-slate-400 hover:text-white rounded-lg">
+          <i class="fa-solid fa-arrow-left text-lg"></i>
+        </a>
+        <h1 class="font-bold text-white text-lg">ประวัติคำขอเบิกสินค้า</h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <div id="historyList" class="space-y-4">
+      <!-- Dynamic Content -->
+    </div>
+  </main>
+
+  <script type="module">
+    import { db, collection, getDocs, query, orderBy } from './firebase-config.js';
+
+    // Mock Data แสดงตัวอย่างการใช้งาน
+    const mockRequests = [
+      {
+        id: 'REQ-1002',
+        createdAt: '2026-03-30 14:20',
+        status: 'pending',
+        items: [{ sku_name: 'Harddisk Internal 2TB', amount: 2 }]
+      },
+      {
+        id: 'REQ-1001',
+        createdAt: '2026-03-28 09:15',
+        status: 'approved',
+        approver: 'Admin Somchai',
+        items: [
+          { sku_name: 'หมึกพิมพ์ Epson 003 Black', amount: 1 },
+          { sku_name: 'ปากกาลูกลื่น 0.5mm สีดำ', amount: 5 }
+        ]
+      },
+      {
+        id: 'REQ-0998',
+        createdAt: '2026-03-25 11:00',
+        status: 'rejected',
+        reason: 'ของหมดสต็อกชั่วคราว',
+        items: [{ sku_name: 'Harddisk Internal 2TB', amount: 10 }]
+      }
+    ];
+
+    function renderStatusPill(status) {
+      if (status === 'pending') {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> 🟡 Pending (รออนุมัติ)
+                </span>`;
+      } else if (status === 'approved') {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  🟢 Approved (อนุมัติแล้ว)
+                </span>`;
+      } else {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  🔴 Rejected (ปฏิเสธ)
+                </span>`;
+      }
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyList');
+      container.innerHTML = mockRequests.map(req => `
+        <div class="bg-darkcard border border-slate-700/60 rounded-2xl p-5 shadow-lg space-y-4">
+          <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-700/60 pb-3">
+            <div>
+              <span class="text-xs font-mono text-slate-400">ID: ${req.id}</span>
+              <div class="text-xs text-slate-400 mt-0.5"><i class="fa-regular fa-calendar mr-1"></i> ${req.createdAt}</div>
+            </div>
+            <div>${renderStatusPill(req.status)}</div>
+          </div>
+
+          <div class="space-y-2">
+            ${req.items.map(i => `
+              <div class="flex justify-between items-center text-sm py-1 border-b border-slate-800/50 last:border-0">
+                <span class="text-slate-200">${i.sku_name}</span>
+                <span class="font-bold text-brand-400">x${i.amount}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          ${req.approver ? `<div class="text-xs text-slate-400 pt-2 border-t border-slate-800">ผู้อนุมัติ: <strong class="text-slate-300">${req.approver}</strong></div>` : ''}
+          ${req.reason ? `<div class="text-xs text-rose-400 pt-2 border-t border-slate-800">หมายเหตุ: ${req.reason}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    renderHistory();
+  </script>
+  <script type="module">
+  // 1. Import ฟังก์ชันจาก auth.js (เช็ก Path โฟลเดอร์ให้ถูกต้อง เช่น ./js/auth.js)
+  import { handleLogout, checkUserRole } from './js/auth.js';
+
+  // 2. ผูกปุ่ม Logout
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', handleLogout);
+  }
+
+  // 3. ตรวจสอบสิทธิ์ผู้ใช้ (ทำงานอัตโนมัติเมื่อโหลดหน้าเว็บ)
+  // หากต้องการทำอะไรเพิ่มเติมหลังจากรู้สิทธิ์ผู้ใช้ สามารถใส่ Callback function เพิ่มได้ เช่น:
+  checkUserRole((user, role) => {
+    console.log(`User ID: ${user.uid}, Role: ${role}`);
+    // สามารถเขียนโค้ดโหลดข้อมูลตาม role ต่อตรงนี้ได้
+  });
+</script>
+</body>
+</html>
