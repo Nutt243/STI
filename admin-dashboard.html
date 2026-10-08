@@ -1,351 +1,130 @@
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - StockMaster Sheet</title>
+  <title>StockMaster - จัดการสต็อกสินค้า</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 500: '#3b82f6', 600: '#2563eb' },
-            darkbg: '#0b0f19', darkcard: '#151c2c', darkinput: '#1e293b'
-          }
-        }
-      }
-    }
-  </script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- 🟢 Navbar แถบบนสุดเต็มความกว้าง -->
-  <nav class="bg-slate-900/90 border-b border-slate-800 text-white px-6 py-3 flex items-center justify-between shadow-md w-full z-10 shrink-0">
-    
-    <!-- ฝั่งซ้าย: โลโก้ + เมนูหลัก -->
-    <div class="flex items-center gap-6">
-      <h1 class="font-bold text-lg text-blue-400">POS System</h1>
-      <a href="index.html" class="text-sm hover:text-blue-300 font-medium text-slate-300">เบิกสินค้า / คัดแยก</a>
-      
-      <!-- เมนูเฉพาะ Admin -->
-      <a href="dashboard.html" class="admin-only hidden text-sm text-amber-400 hover:underline">📊 Dashboard</a>
-      <a href="approvals.html" class="admin-only hidden text-sm text-green-400 hover:underline">✅ อนุมัติคำขอ</a>
+  <!-- Navbar -->
+  <nav class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-6">
+        <span class="text-2xl font-bold text-blue-400">📦 StockMaster</span>
+        <div class="hidden md:flex space-x-4 text-sm">
+          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
+          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
+          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only">รายการรออนุมัติ</a>
+          <a href="admin-dashboard.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1 admin-only">จัดการสต็อก</a>
+          <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only">จัดการผู้ใช้</a>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span id="userDisplayName" class="text-sm text-slate-300"></span>
+        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
+          ออกจากระบบ
+        </button>
+      </div>
     </div>
+  </nav>
 
-    <!-- 🚪 ฝั่งขวา: ปุ่ม Logout สีแดง (ใส่ id="btnLogout" เพื่อผูก Event Listener) -->
-    <div class="flex items-center">
-      <button id="btnLogout"
-              title="ออกจากระบบ" 
-              class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-        <span>ออกระบบ</span>
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">จัดการสต็อกและรายการสินค้า (SKU)</h1>
+        <p class="text-slate-500 text-sm">เพิ่ม ปรับยอด หรือตั้งค่าการแจ้งเตือนสต็อกขั้นต่ำ</p>
+      </div>
+      <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow">
+        + เพิ่ม SKU สินค้าใหม่
       </button>
     </div>
 
-  </nav>
-
-  <!-- 🔵 ส่วนเนื้อหาด้านล่าง (Sidebar + Main Content) -->
-  <div class="flex flex-1 min-h-0">
-
-    <!-- Sidebar -->
-<!-- Sidebar -->
-<aside class="w-64 bg-darkcard border-r border-slate-800 flex flex-col justify-between hidden md:flex shrink-0">
-  <div class="p-5">
-    <div class="flex items-center gap-3 mb-8">
-      <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold">
-        <i class="fa-solid fa-boxes-stacked"></i>
-      </div>
-      <span class="font-bold text-white tracking-wide">StockMaster</span>
+    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-800 text-slate-200 text-sm">
+            <th class="p-4">SKU ID</th>
+            <th class="p-4">ชื่อสินค้า</th>
+            <th class="p-4">หมวดหมู่</th>
+            <th class="p-4">สต็อกคงเหลือ</th>
+            <th class="p-4">แจ้งเตือนขั้นต่ำ</th>
+            <th class="p-4 text-center">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="skuTableBody" class="divide-y divide-slate-100 text-sm">
+          <tr><td colspan="6" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูลสต็อก...</td></tr>
+        </tbody>
+      </table>
     </div>
+  </main>
 
-    <nav class="space-y-1">
-      <a href="admin-dashboard.html" class="flex items-center gap-3 px-3 py-2.5 bg-brand-600/10 text-brand-400 border border-brand-500/20 rounded-xl text-sm font-semibold">
-        <i class="fa-solid fa-table-cells w-5"></i> ตารางสต็อก (Sheet)
-      </a>
+  <script type="module">
+    import { db } from "./js/firebase-config.js";
+    import { checkUserAuth } from "./js/auth.js";
+    import { collection, getDocs, setDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-      <!-- 🟢 เพิ่มเมนู "อนุมัติคำขอ" พร้อม Badge ตัวเลข -->
-      <a href="approvals.html" class="flex items-center justify-between px-3 py-2.5 text-slate-400 hover:bg-slate-800 rounded-xl text-sm font-semibold transition">
-        <span class="flex items-center gap-3">
-          <i class="fa-solid fa-circle-check w-5 text-emerald-400"></i> อนุมัติคำขอ
-        </span>
-        <span id="pendingApprovalsBadge" class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30">
-          0
-        </span>
-      </a>
+    checkUserAuth(['admin']);
 
-      <a href="admin-unregistered.html" class="flex items-center justify-between px-3 py-2.5 text-slate-400 hover:bg-slate-800 rounded-xl text-sm font-semibold transition">
-        <span class="flex items-center gap-3"><i class="fa-solid fa-barcode w-5"></i> บาร์โค้ดรอจัดหมวด</span>
-        <span class="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full border border-amber-500/30">3</span>
-      </a>
+    async function loadStockData() {
+      const tableBody = document.getElementById("skuTableBody");
+      try {
+        const querySnapshot = await getDocs(collection(db, "skus"));
+        if (querySnapshot.empty) {
+          tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">ไม่มีข้อมูล SKU สินค้า</td></tr>`;
+          return;
+        }
 
-      <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:bg-slate-800 rounded-xl text-sm font-semibold transition">
-        <i class="fa-solid fa-chart-line w-5"></i> สถิติภาพรวม
-      </a>
-    </nav>
-  </div>
+        let html = "";
+        querySnapshot.forEach(docSnap => {
+          const sku = docSnap.data();
+          const isLow = (sku.total_quantity || 0) <= (sku.min_stock_alert || 0);
 
-  <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
-    Logged in as Admin
-  </div>
-</aside>
-
-    <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
-      <!-- Header Controls -->
-      <header class="bg-darkcard border-b border-slate-800 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
-        <h1 class="text-xl font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-table-list text-brand-500"></i> คลังพัสดุแบบจัดกลุ่ม (Expandable Sheet View)
-        </h1>
-
-        <div class="flex flex-wrap gap-2">
-          <button class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
-            <i class="fa-solid fa-plus"></i> เพิ่มหมวดหมู่ (SKU)
-          </button>
-          <button class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5">
-            <i class="fa-solid fa-folder-plus"></i> เพิ่มยี่ห้อ/สินค้าย่อย
-          </button>
-          <a href="admin-unregistered.html" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5">
-            <i class="fa-solid fa-qrcode"></i> สแกนรับสินค้า
-          </a>
-        </div>
-      </header>
-
-      <!-- Spreadsheet Table Area -->
-      <main class="p-6 overflow-x-auto">
-        <div class="bg-darkcard border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
-              <tr>
-                <th class="py-3.5 px-4 w-10"></th>
-                <th class="py-3.5 px-4">ชื่อ SKU / รายการหลัก</th>
-                <th class="py-3.5 px-4">หมวดหมู่</th>
-                <th class="py-3.5 px-4 text-center">คงเหลือรวม</th>
-                <th class="py-3.5 px-4">หน่วย</th>
-                <th class="py-3.5 px-4">การแจ้งเตือน</th>
-                <th class="py-3.5 px-4 text-right">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="sheetTbody" class="divide-y divide-slate-800/60 font-mono text-xs">
-              <!-- Dynamic Sheet Rows -->
-            </tbody>
-          </table>
-        </div>
-      </main>
-    </div>
-
-  </div>
-
-<script type="module">
-  // 1. Import ฟังก์ชัน Firestore ที่จำเป็น (เพิ่ม query และ where เข้ามาด้วย)
-  import { db, handleLogout } from './js/auth.js';
-  import { 
-    collection, 
-    query, 
-    where, 
-    getDocs, 
-    onSnapshot,
-    runTransaction, 
-    doc 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  // 2. ดึงนับจำนวน pending มาใส่ Badge แบบ Realtime
-  const pendingQuery = query(collection(db, 'requisition_requests'), where('status', '==', 'pending'));
-  onSnapshot(pendingQuery, (snapshot) => {
-    const badge = document.getElementById('pendingApprovalsBadge');
-    if (badge) {
-      badge.innerText = snapshot.size; // อัปเดตตัวเลขเป็นจำนวนคำขอที่รออนุมัติจริง
-    }
-  }, (error) => {
-    console.error("Error fetching pending requests:", error);
-  });
-
-  // ผูก Event Click ของปุ่ม Logout
-  const btnLogout = document.getElementById('btnLogout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', handleLogout);
-  }
-
-  // ตัวแปรเก็บข้อมูลสต็อกจริงจาก Firebase
-  let inventoryData = [];
-  let expandedRows = new Set();
-
-  // 2. ดึงข้อมูล Realtime จาก Firestore (จับคู่ skus กับ products)
-  function loadRealtimeData() {
-    // ฟังการเปลี่ยนแปลงของ collection 'skus' แบบ Realtime
-    onSnapshot(collection(db, 'skus'), async (skusSnapshot) => {
-      // ดึงข้อมูลสินค้าทั้งหมดจาก collection 'products'
-      const productsSnapshot = await getDocs(collection(db, 'products'));
-      const allProducts = productsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      // นำ skus มาแมปกับ products ที่มี sku_id ตรงกัน
-      inventoryData = skusSnapshot.docs.map(docSnap => {
-        const skuData = docSnap.data();
-        const skuId = skuData.sku_id || docSnap.id;
-
-        // ดึงสินค้าย่อยที่อยู่ใน SKU นี้
-        const relatedProducts = allProducts.filter(p => p.sku_id === skuId);
-
-        return {
-          id: docSnap.id,
-          sku_id: skuId,
-          sku_name: skuData.sku_name || 'ไม่ระบุชื่อ',
-          category: skuData.category || 'ทั่วไป',
-          total_quantity: skuData.total_quantity ?? 0,
-          unit: skuData.unit || 'ชิ้น',
-          min_stock_alert: skuData.min_stock_alert ?? 0,
-          products: relatedProducts.map(p => ({
-            product_id: p.product_id || p.id,
-            brand: p.specific_attributes?.brand || 'ไม่ระบุยี่ห้อ',
-            series: p.specific_attributes?.series || '-',
-            code: p.code || '-',
-            quantity: p.quantity ?? 0,
-            storage_location: p.specific_attributes?.storage_location || 'ไม่ระบุตำแหน่ง'
-          }))
-        };
-      });
-
-      renderSheet();
-    }, (error) => {
-      console.error("Error fetching Firestore data:", error);
-    });
-  }
-
-  // Toggle การพับ/ขยายแถว
-  window.toggleExpand = (skuId) => {
-    if (expandedRows.has(skuId)) {
-      expandedRows.delete(skuId);
-    } else {
-      expandedRows.add(skuId);
-    }
-    renderSheet();
-  };
-
-  // 3. ฟังก์ชัน Render ตาราง
-  function renderSheet() {
-    const tbody = document.getElementById('sheetTbody');
-    if (!tbody) return;
-
-    if (inventoryData.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" class="py-8 text-center text-slate-500">
-            ไม่พบข้อมูลพัสดุในระบบ
-          </td>
-        </tr>`;
-      return;
-    }
-
-    let html = '';
-
-    inventoryData.forEach(item => {
-      const isExpanded = expandedRows.has(item.sku_id);
-      const isLowStock = item.total_quantity <= item.min_stock_alert;
-
-      html += `
-        <tr class="hover:bg-slate-800/40 transition bg-slate-900/30 font-sans">
-          <td class="py-3 px-4 text-center">
-            <button onclick="toggleExpand('${item.sku_id}')" class="text-slate-400 hover:text-white p-1">
-              <i class="fa-solid fa-chevron-${isExpanded ? 'down' : 'right'}"></i>
-            </button>
-          </td>
-          <td class="py-3 px-4 font-bold text-white text-sm">${item.sku_name}</td>
-          <td class="py-3 px-4"><span class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded border border-slate-700">${item.category}</span></td>
-          <td class="py-3 px-4 text-center font-bold text-sm ${isLowStock ? 'text-rose-400' : 'text-emerald-400'}">${item.total_quantity}</td>
-          <td class="py-3 px-4 text-slate-400">${item.unit}</td>
-          <td class="py-3 px-4">
-            ${isLowStock ? '<span class="text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 text-[10px]">⚠️ พัสดุเหลือน้อย</span>' : '<span class="text-slate-500">ปกติ</span>'}
-          </td>
-          <td class="py-3 px-4 text-right">
-            <button class="text-brand-400 hover:text-brand-300 font-semibold text-xs">แก้ไข</button>
-          </td>
-        </tr>
-      `;
-
-      if (isExpanded) {
-        if (item.products.length === 0) {
           html += `
-            <tr class="bg-slate-950/60 text-slate-500 border-l-4 border-slate-700">
-              <td></td>
-              <td class="py-2.5 px-4 pl-8 text-xs" colspan="6">ยังไม่มีสินค้าย่อยในหมวดหมู่นี้</td>
-            </tr>`;
-        } else {
-          item.products.forEach(p => {
-            html += `
-              <tr class="bg-slate-950/60 text-slate-400 border-l-4 border-brand-500">
-                <td></td>
-                <td class="py-2.5 px-4 pl-8" colspan="2">
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-turn-up rotate-90 text-slate-600 text-xs"></i>
-                    <strong class="text-slate-200">${p.brand}</strong> - ${p.series} 
-                    <span class="text-slate-500">(${p.code})</span>
-                  </div>
-                </td>
-                <td class="py-2.5 px-4 text-center font-bold text-slate-200">${p.quantity}</td>
-                <td class="py-2.5 px-4 text-xs">${p.storage_location}</td>
-                <td class="py-2.5 px-4" colspan="2">
-                  <button onclick="approveDeductTransaction('${item.sku_id}', '${p.product_id}', 1)" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-2 py-1 rounded text-[11px] font-sans transition">
-                    ตัดสต็อก -1
-                  </button>
-                </td>
-              </tr>
-            `;
-          });
-        }
+            <tr class="hover:bg-slate-50 border-b border-slate-100">
+              <td class="p-4 font-mono font-medium text-slate-700">${docSnap.id}</td>
+              <td class="p-4 font-bold text-slate-800">${sku.sku_name || '-'}</td>
+              <td class="p-4 text-slate-500">${sku.category || '-'}</td>
+              <td class="p-4 font-semibold ${isLow ? 'text-red-600' : 'text-emerald-600'}">
+                ${sku.total_quantity || 0} ${sku.unit || 'ชิ้น'}
+              </td>
+              <td class="p-4 text-slate-500">${sku.min_stock_alert || 0} ${sku.unit || 'ชิ้น'}</td>
+              <td class="p-4 text-center">
+                <button onclick="editSku('${docSnap.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-2">แก้ไข</button>
+              </td>
+            </tr>
+          `;
+        });
+        tableBody.innerHTML = html;
+
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
       }
-    });
-
-    tbody.innerHTML = html;
-  }
-
-  // 4. ฟังก์ชัน Atomic Transaction ตัดสต็อกลง Firestore จริง
-  window.approveDeductTransaction = async (skuId, productId, amount) => {
-    try {
-      await runTransaction(db, async (transaction) => {
-        const skuRef = doc(db, 'skus', skuId);
-        const productRef = doc(db, 'products', productId);
-
-        const skuDoc = await transaction.get(skuRef);
-        const productDoc = await transaction.get(productRef);
-
-        if (!skuDoc.exists() || !productDoc.exists()) {
-          throw new Error("ไม่พบข้อมูลพัสดุในระบบ");
-        }
-
-        const newProductQty = productDoc.data().quantity - amount;
-        const newTotalQty = skuDoc.data().total_quantity - amount;
-
-        if (newProductQty < 0 || newTotalQty < 0) {
-          throw new Error("จำนวนสินค้าในสต็อกไม่เพียงพอ");
-        }
-
-        transaction.update(productRef, { 
-          quantity: newProductQty,
-          updatedAt: new Date().toISOString()
-        });
-        
-        transaction.update(skuRef, { 
-          total_quantity: newTotalQty,
-          updatedAt: new Date().toISOString()
-        });
-      });
-
-      alert('ตัดสต็อกเรียบร้อยแล้ว');
-    } catch (e) {
-      console.error("Deduct error:", e);
-      alert(`เกิดข้อผิดพลาด: ${e.message}`);
     }
-  };
 
-  // เริ่มโหลดข้อมูล realtime เมื่อหน้าเว็บโหลดเสร็จ
-  loadRealtimeData();
-</script>
+    window.openAddModal = async () => {
+      const skuId = prompt("กรอก รหัส SKU (เช่น SKU-001):");
+      if (!skuId) return;
+      const skuName = prompt("กรอก ชื่อสินค้า:");
+      const qty = parseInt(prompt("กรอก จำนวนสต็อกตั้งต้น:", "0"));
+
+      if (skuId && skuName) {
+        await setDoc(doc(db, "skus", skuId), {
+          sku_name: skuName,
+          total_quantity: qty || 0,
+          unit: "ชิ้น",
+          category: "ทั่วไป",
+          min_stock_alert: 5,
+          updatedAt: Timestamp.now()
+        });
+        alert("เพิ่ม SKU สำเร็จ");
+        loadStockData();
+      }
+    };
+
+    loadStockData();
+  </script>
 </body>
 </html>

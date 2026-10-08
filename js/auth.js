@@ -1,74 +1,85 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// js/auth.js
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ⚙️ Firebase Config
-const firebaseConfig = {
-    apiKey: "process.env.FIREBASE_API_KEY",
-  authDomain: "stockcom02-86eaf.firebaseapp.com",
-  projectId: "stockcom02-86eaf",
-  storageBucket: "stockcom02-86eaf.firebasestorage.app",
-  messagingSenderId: "918587005644",
-  appId: "1:918587005644:web:9eb2ae0df1dfe940970069",
-};
-
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-
-// 🚪 ฟังก์ชัน Logout
-export function handleLogout() {
-  if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-    signOut(auth)
-      .then(() => {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = "login.html";
-      })
-      .catch((error) => {
-        alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
-      });
-  }
-}
-
-// ผูกเข้ากับ window เพื่อความปลอดภัยกรณีเรียกจาก inline HTML
-window.handleLogout = handleLogout;
-
-// 🛡️ ตรวจสอบสิทธิ์ผู้ใช้และเปิด/ปิด เมนู Admin
-export function checkUserRole(onRoleFetched) {
+/**
+ * ฟังก์ชันตรวจเช็กการเข้าถึงหน้าเว็บตาม Role และ Status
+ * @param {Array<string>} allowedRoles - เช่น ['admin', 'user']
+ */
+export function checkUserAuth(allowedRoles = ['admin', 'user']) {
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userDocRef);
+    if (!user) {
+      // ถ้ายังไม่ได้เข้าสู่ระบบ ให้ส่งกลับไปหน้า Login (หรือ index.html)
+      if (!window.location.pathname.endsWith("index.html") && window.location.pathname !== "/") {
+        window.location.href = "index.html";
+      }
+      return;
+    }
 
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          const role = userData.role || "user";
-          updateNavigationUI(role);
-          if (onRoleFetched) onRoleFetched(user, role);
-        } else {
-          updateNavigationUI("user");
-        }
-      } catch (err) {
-        console.error("Error checking role:", err);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        alert("ไม่พบข้อมูลผู้ใช้งานในระบบ");
+        await signOut(auth);
+        window.location.href = "index.html";
+        return;
       }
-    } else {
-      if (!window.location.pathname.includes("login.html")) {
-        window.location.href = "login.html";
+
+      const userData = userSnap.data();
+
+      // 1. ตรวจสอบสถานะการอนุมัติ
+      if (userData.status !== "approved") {
+        alert("บัญชีของคุณยังไมได้รับการอนุมัติ หรือถูกระงับการใช้งาน");
+        await signOut(auth);
+        window.location.href = "index.html";
+        return;
       }
+
+      // 2. ตรวจสอบ Role ว่าตรงกับหน้าที่เข้าใช้งานหรือไม่
+      const userRole = userData.role || "user";
+      if (!allowedRoles.includes(userRole)) {
+        alert("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
+        window.location.href = userRole === "admin" ? "admin-dashboard.html" : "requisition.html";
+        return;
+      }
+
+      // 3. ปรับ UI ของ Navbar ตามสิทธิ์ผู้ใช้
+      updateNavbarUI(user, userData);
+
+    } catch (error) {
+      console.error("Error verifying user auth:", error);
     }
   });
 }
 
-function updateNavigationUI(role) {
+/**
+ * แสดง/ซ่อน เมนู Navbar และชื่อผู้ใช้
+ */
+function updateNavbarUI(user, userData) {
+  const userDisplayName = document.getElementById("userDisplayName");
+  if (userDisplayName) {
+    userDisplayName.textContent = userData.name || user.email;
+  }
+
+  // ซ่อน/แสดง เมนูตาม Role
   const adminElements = document.querySelectorAll(".admin-only");
-  if (role === "admin") {
-    adminElements.forEach((el) => el.classList.remove("hidden"));
-  } else {
-    adminElements.forEach((el) => el.classList.add("hidden"));
+  adminElements.forEach(el => {
+    el.style.display = (userData.role === "admin") ? "block" : "none";
+  });
+
+  // ผูก Event ปุ่ม Logout
+  const btnLogout = document.getElementById("btnLogout");
+  if (btnLogout) {
+    btnLogout.onclick = async () => {
+      try {
+        await signOut(auth);
+        window.location.href = "index.html";
+      } catch (err) {
+        console.error("Logout failed:", err);
+      }
+    };
   }
 }
-
-// รันตรวจสิทธิ์อัตโนมัติ
-checkUserRole();

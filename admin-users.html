@@ -1,161 +1,124 @@
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - อนุมัติผู้ใช้งานใหม่</title>
+  <title>StockMaster - จัดการผู้ใช้งาน</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 500: '#3b82f6', 600: '#2563eb' },
-            darkbg: '#0b0f19', darkcard: '#151c2c'
-          }
-        }
-      }
-    }
-  </script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-darkbg text-slate-100 min-h-screen">
-<!-- 🟢 ปุ่มไอคอน Logout แบบมินิมอล (มุมขวาบน) -->
-   <!-- 🟢 Navbar พร้อมปุ่ม Logout เล็กมุมขวาบน -->
-  <nav class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between shadow-md">
-    
-    <!-- ฝั่งซ้าย: โลโก้ + เมนูทั่วไป และ เมนู Admin -->
-    <div class="flex items-center gap-4">
-      <h1 class="font-bold text-lg text-blue-400">POS System</h1>
-      <a href="index.html" class="text-sm hover:text-blue-300 font-medium">เบิกสินค้า / คัดแยก</a>
-      
-      <!-- เมนูพิเศษเฉพาะ Admin (ซ่อนไว้ก่อน) -->
-      <a href="dashboard.html" class="admin-only hidden text-sm text-amber-400 hover:underline">📊 Dashboard</a>
-      <a href="approvals.html" class="admin-only hidden text-sm text-green-400 hover:underline">✅ อนุมัติคำขอ</a>
-    </div>
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- 🚪 ฝั่งขวา: ปุ่ม Logout ขนาดเล็กมุมขวาบน -->
-    <div class="flex items-center">
-      <button onclick="handleLogout()" 
-              title="ออกจากระบบ" 
-              class="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded transition flex items-center gap-1">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-        <span>ออกระบบ</span>
-      </button>
-    </div>
-
-  </nav>
-  <header class="bg-darkcard border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <a href="admin-dashboard.html" class="p-2 text-slate-400 hover:text-white rounded-lg">
-        <i class="fa-solid fa-arrow-left text-lg"></i>
-      </a>
-      <h1 class="font-bold text-white text-lg">อนุมัติสมาชิกและจัดการสิทธิ์ผู้ใช้งาน</h1>
-    </div>
-  </header>
-
-  <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
-    
-    <!-- รายการรออนุมัติ -->
-    <div>
-      <h2 class="text-md font-bold text-amber-400 mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-user-clock"></i> รายการสมาชิกใหม่รออนุมัติ (Pending Approval)
-      </h2>
-      <div class="bg-darkcard border border-slate-800 rounded-2xl overflow-hidden">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-900 text-xs text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="p-4">ชื่อ-นามสกุล</th>
-              <th class="p-4">อีเมล</th>
-              <th class="p-4">กำหนด Role</th>
-              <th class="p-4 text-right">การกระทำ</th>
-            </tr>
-          </thead>
-          <tbody id="pendingTbody" class="divide-y divide-slate-800/60">
-            <!-- Dynamic pending users -->
-          </tbody>
-        </table>
+  <!-- Navbar -->
+  <nav class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-6">
+        <span class="text-2xl font-bold text-blue-400">📦 StockMaster</span>
+        <div class="hidden md:flex space-x-4 text-sm">
+          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
+          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
+          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only">รายการรออนุมัติ</a>
+          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only">จัดการสต็อก</a>
+          <a href="admin-users.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1 admin-only">จัดการผู้ใช้</a>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span id="userDisplayName" class="text-sm text-slate-300"></span>
+        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
+          ออกจากระบบ
+        </button>
       </div>
     </div>
+  </nav>
 
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-slate-800">จัดการผู้ใช้งานและสิทธิ์เข้าถึง</h1>
+      <p class="text-slate-500 text-sm">อนุมัติสมาชิกใหม่ ปรับเปลี่ยนสิทธิ์ (Role) หรือระงับบัญชีผู้ใช้</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-800 text-slate-200 text-sm">
+            <th class="p-4">อีเมล / UID</th>
+            <th class="p-4">ชื่อ-นามสกุล</th>
+            <th class="p-4">สิทธิ์ (Role)</th>
+            <th class="p-4">สถานะ</th>
+            <th class="p-4 text-center">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody" class="divide-y divide-slate-100 text-sm">
+          <tr><td colspan="5" class="p-8 text-center text-slate-400">กำลังโหลดรายการผู้ใช้งาน...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </main>
 
   <script type="module">
-    import { db, collection, getDocs, query, where, updateDoc, doc } from './firebase-config.js';
+    import { db } from "./js/firebase-config.js";
+    import { checkUserAuth } from "./js/auth.js";
+    import { collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Mock Data สำหรับทดสอบ UI
-    const mockPendingUsers = [
-      { uid: 'u01', name: 'สมชาย ใจดี', email: 'somchai@company.com', status: 'pending_approval' },
-      { uid: 'u02', name: 'วิภาดา รักเรียน', email: 'wipada@company.com', status: 'pending_approval' }
-    ];
+    checkUserAuth(['admin']);
 
-    function renderPendingUsers() {
-      const tbody = document.getElementById('pendingTbody');
-      tbody.innerHTML = mockPendingUsers.map(user => `
-        <tr class="hover:bg-slate-800/40">
-          <td class="p-4 font-bold text-white">${user.name}</td>
-          <td class="p-4 text-slate-300">${user.email}</td>
-          <td class="p-4">
-            <select id="role-${user.uid}" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white">
-              <option value="user">User (ผู้เบิก)</option>
-              <option value="admin">Admin (ผู้ดูแล)</option>
-            </select>
-          </td>
-          <td class="p-4 text-right space-x-2">
-            <button onclick="approveUser('${user.uid}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition">
-              <i class="fa-solid fa-check mr-1"></i> อนุมัติ
-            </button>
-            <button onclick="rejectUser('${user.uid}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs px-3 py-1.5 rounded-lg transition">
-              ปฏิเสธ
-            </button>
-          </td>
-        </tr>
-      `).join('');
+    async function loadUsers() {
+      const tableBody = document.getElementById("usersTableBody");
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        let html = "";
+
+        querySnapshot.forEach(docSnap => {
+          const user = docSnap.data();
+          const uid = docSnap.id;
+          const isPending = user.status === "pending_approval";
+
+          html += `
+            <tr class="hover:bg-slate-50 border-b border-slate-100">
+              <td class="p-4 font-mono text-slate-700">${user.email || uid}</td>
+              <td class="p-4 font-medium text-slate-800">${user.name || '-'}</td>
+              <td class="p-4"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-xs">${user.role || 'user'}</span></td>
+              <td class="p-4">
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  user.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }">
+                  ${user.status || 'pending'}
+                </span>
+              </td>
+              <td class="p-4 text-center space-x-2">
+                ${isPending ? `
+                  <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs">อนุมัติ</button>
+                  <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-xs">ปฏิเสธ</button>
+                ` : `
+                  <button onclick="toggleRole('${uid}', '${user.role}')" class="text-blue-600 hover:underline text-xs font-semibold">เปลี่ยน Role</button>
+                `}
+              </td>
+            </tr>
+          `;
+        });
+
+        tableBody.innerHTML = html;
+
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+      }
     }
 
-    window.approveUser = async (uid) => {
-      const role = document.getElementById(`role-${uid}`).value;
-      try {
-        await updateDoc(doc(db, 'users', uid), {
-          status: 'approved',
-          role: role
-        });
-        alert(`อนุมัติผู้ใช้เรียบร้อย กำหนดสิทธิ์เป็น: ${role}`);
-      } catch (e) {
-        alert(`[Demo Mode] อนุมัติผู้ใช้ ${uid} สิทธิ์ ${role} เรียบร้อยแล้ว`);
+    window.updateUserStatus = async (uid, status) => {
+      await updateDoc(doc(db, "users", uid), { status });
+      alert(`อัปเดตสถานะเป็น ${status} เรียบร้อยแล้ว`);
+      loadUsers();
+    };
+
+    window.toggleRole = async (uid, currentRole) => {
+      const newRole = currentRole === "admin" ? "user" : "admin";
+      if (confirm(`สลับสิทธิ์ผู้ใช้งานเป็น ${newRole}?`)) {
+        await updateDoc(doc(db, "users", uid), { role: newRole });
+        loadUsers();
       }
     };
 
-    window.rejectUser = async (uid) => {
-      try {
-        await updateDoc(doc(db, 'users', uid), { status: 'rejected' });
-        alert('ปฏิเสธบัญชีผู้ใช้เรียบร้อย');
-      } catch (e) {
-        alert(`[Demo Mode] ปฏิเสธบัญชีผู้ใช้ ${uid} เรียบร้อยแล้ว`);
-      }
-    };
-
-    renderPendingUsers();
+    loadUsers();
   </script>
-  <script type="module">
-  // 1. Import ฟังก์ชันจาก auth.js (เช็ก Path โฟลเดอร์ให้ถูกต้อง เช่น ./js/auth.js)
-  import { handleLogout, checkUserRole } from './js/auth.js';
-
-  // 2. ผูกปุ่ม Logout
-  const btnLogout = document.getElementById('btnLogout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', handleLogout);
-  }
-
-  // 3. ตรวจสอบสิทธิ์ผู้ใช้ (ทำงานอัตโนมัติเมื่อโหลดหน้าเว็บ)
-  // หากต้องการทำอะไรเพิ่มเติมหลังจากรู้สิทธิ์ผู้ใช้ สามารถใส่ Callback function เพิ่มได้ เช่น:
-  checkUserRole((user, role) => {
-    console.log(`User ID: ${user.uid}, Role: ${role}`);
-    // สามารถเขียนโค้ดโหลดข้อมูลตาม role ต่อตรงนี้ได้
-  });
-</script>
 </body>
 </html>
