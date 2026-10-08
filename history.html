@@ -6,279 +6,151 @@
   <title>StockMaster - ประวัติการเบิก</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
 
   <!-- Navbar -->
-  <nav class="bg-slate-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-6">
-        <a href="index.html" class="text-2xl font-bold text-blue-400">📦 StockMaster</a>
-        <div class="hidden md:flex space-x-4 text-sm">
-          <a href="index.html" class="hover:text-blue-300 py-1">หน้าหลัก</a>
-          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
-          <a href="history.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1">ประวัติการเบิก</a>
-          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only hidden">รายการรออนุมัติ</a>
-          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only hidden">จัดการสต็อก</a>
-          <a href="admin-unregistered-skus.html" class="hover:text-blue-300 py-1 admin-only hidden">รอจัดหมวดหมู่</a>
-          <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only hidden">จัดการผู้ใช้</a>
+  <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+          <span class="font-bold text-lg tracking-tight">StockMaster</span>
         </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <span id="userDisplayName" class="text-sm text-slate-300"></span>
-        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
-          ออกจากระบบ
-        </button>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
+          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white">ประวัติการเบิก</a>
+          <a href="approvals.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">อนุมัติคำขอ</a>
+          <a href="admin-unregistered-skus.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">รับสินค้าเข้า & คัดแยก</a>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">Loading...</span>
+          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1">ออกจากระบบ</button>
+        </div>
       </div>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-        <div>
-          <h1 class="text-xl font-bold text-slate-800">ประวัติการขอเบิกพัสดุทั้งหมด</h1>
-          <p class="text-xs text-slate-500 mt-0.5">รายการที่อยู่ระหว่าง 'รออนุมัติ' สามารถแก้ไขหรือยกเลิกได้</p>
-        </div>
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">📜 ประวัติการขอเบิกสินค้า</h1>
+        <p class="text-xs text-slate-500 mt-1">ติดตามสถานะรายการเบิก รายละเอียดจำนวนที่ขอ vs จำนวนที่ได้รับจริง</p>
       </div>
+    </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-slate-50 text-slate-600 text-xs font-semibold uppercase tracking-wider">
-              <th class="p-4">วันที่ทำรายการ</th>
-              <th class="p-4">รายการพัสดุ</th>
-              <th class="p-4">วัตถุประสงค์</th>
-              <th class="p-4">สถานะ</th>
-              <th class="p-4 text-center">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="historyTableBody" class="divide-y divide-slate-100 text-sm">
-            <tr><td colspan="5" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div id="historyList" class="space-y-4">
+      <div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดรายการ...</div>
     </div>
   </main>
 
-  <!-- Modal แก้ไขรายการเบิก -->
-  <div id="editModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-100">
-      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-        <h3 class="text-lg font-bold">✏️ แก้ไขคำขอเบิกพัสดุ</h3>
-        <button id="btnCloseEditModal" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
-      </div>
-
-      <div class="p-6 space-y-4">
-        <input type="hidden" id="editRequestId">
-        
-        <div>
-          <label class="text-xs font-bold text-slate-500 uppercase block mb-2">รายการพัสดุ และจำนวน</label>
-          <div id="editItemsContainer" class="space-y-2 max-h-48 overflow-y-auto p-1">
-            <!-- โหลดรายการสินค้ามาให้แก้จำนวน -->
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-500 uppercase block mb-1">วัตถุประสงค์ในการเบิก</label>
-          <textarea id="editPurpose" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="3"></textarea>
-        </div>
-      </div>
-
-      <div class="bg-slate-50 px-6 py-4 flex space-x-3 justify-end border-t border-slate-100">
-        <button id="btnCancelEdit" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 text-sm">ยกเลิก</button>
-        <button id="btnSaveEdit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow text-sm">บันทึกการแก้ไข</button>
-      </div>
-    </div>
-  </div>
-
   <script type="module">
-    import { db, auth } from "./js/firebase-config.js";
+    import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    checkUserAuth(['admin', 'user']);
+    checkUserAuth();
 
-    let historyDataMap = new Map(); // เก็บข้อมูลไว้เปิดแก้ไข
-
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // ตรวจสอบว่าเป็น Admin หรือไม่
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
-        
-        loadHistory(user.uid, isAdmin);
-      }
-    });
-
-    async function loadHistory(uid, isAdmin) {
-      const tbody = document.getElementById("historyTableBody");
+    async function loadHistory() {
+      const container = document.getElementById("historyList");
       try {
-        let q;
-        if (isAdmin) {
-          // Admin เห็นประวัติทั้งหมด
-          q = query(collection(db, "requisition_requests"));
-        } else {
-          // User เห็นเฉพาะของตัวเอง
-          q = query(collection(db, "requisition_requests"), where("user_id", "==", uid));
-        }
+        const q = query(collection(db, "requisitions"), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        container.innerHTML = "";
 
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-          tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">ไม่พบประวัติการขอเบิกพัสดุ</td></tr>`;
+        if (snap.empty) {
+          container.innerHTML = `<div class="bg-white p-12 rounded-2xl text-center text-slate-400 font-bold">ยังไม่มีประวัติการเบิกสินค้า</div>`;
           return;
         }
 
-        let list = [];
-        historyDataMap.clear();
-
-        snapshot.forEach(docSnap => {
-          const data = { id: docSnap.id, ...docSnap.data() };
-          list.push(data);
-          historyDataMap.set(docSnap.id, data);
-        });
-
-        // เรียงตามเวลาล่าสุด
-        list.sort((a, b) => {
-          const tA = a.createdAt ? a.createdAt.toMillis() : 0;
-          const tB = b.createdAt ? b.createdAt.toMillis() : 0;
-          return tB - tA;
-        });
-
-        let html = "";
-        list.forEach(item => {
-          const dateStr = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString('th-TH') : '-';
+        snap.forEach(d => {
+          const req = d.data();
+          const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
           
-          let statusBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">รออนุมัติ</span>`;
-          if (item.status === 'approved') {
-            statusBadge = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-semibold">อนุมัติแล้ว</span>`;
-          } else if (item.status === 'rejected') {
-            statusBadge = `<span class="px-2.5 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">ไม่อนุมัติ / ยกเลิก</span>`;
+          let statusBadge = "";
+          let isPartial = false;
+
+          // ตรวจสอบว่าอนุมัติแล้วได้ของครบทุกรายการหรือไม่
+          if (req.status === "approved") {
+            isPartial = (req.items || []).some(i => (i.approvedQty !== undefined && i.approvedQty < i.quantity));
+            
+            if (isPartial) {
+              statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">⚠️ อนุมัติ (จ่ายบางส่วน *)</span>`;
+            } else {
+              statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">✅ อนุมัติ (จ่ายครบ)</span>`;
+            }
+          } else if (req.status === "rejected") {
+            statusBadge = `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-bold">❌ ไม่อนุมัติ</span>`;
+          } else {
+            statusBadge = `<span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-bold">⏳ รออนุมัติ</span>`;
           }
 
-          const itemSummary = (item.items || []).map(i => `${i.sku_name || i.name} (${i.amount || i.qty})`).join(", ");
+          // แสดงรายการสินค้าแบบเปรียบเทียบ จำนวนที่ขอ vs จำนวนที่ได้
+          const itemsRows = (req.items || []).map(i => {
+            const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+            const reqQty = i.quantity;
+            const appQty = (req.status === "pending") ? "-" : (i.approvedQty !== undefined ? i.approvedQty : i.quantity);
+            const isItemShortage = (req.status === "approved" && i.approvedQty !== undefined && i.approvedQty < i.quantity);
 
-          // ปุ่ม Action (แสดงเฉพาะสถานะ pending)
-          let actionButtons = `<span class="text-xs text-slate-400">-</span>`;
-          if (item.status === 'pending') {
-            actionButtons = `
-              <div class="flex justify-center space-x-2">
-                <button onclick="openEditModal('${item.id}')" class="px-2.5 py-1 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-xs font-semibold border border-amber-200 transition">
-                  ✏️ แก้ไข
-                </button>
-                <button onclick="cancelRequisition('${item.id}')" class="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-semibold border border-red-200 transition">
-                  🗑️ ยกเลิก
-                </button>
-              </div>
+            return `
+              <tr class="${isItemShortage ? 'bg-amber-50/60' : 'border-b border-slate-100'}">
+                <td class="py-2.5 px-3">
+                  <div class="font-bold text-slate-800">${i.sku_name} ${isItemShortage ? '<span class="text-amber-600 font-black">*</span>' : ''}</div>
+                  <div class="text-[10px] text-slate-400">${attrStr}</div>
+                </td>
+                <td class="py-2.5 px-3 text-center font-bold text-slate-600">${reqQty} ${i.unit || 'ชิ้น'}</td>
+                <td class="py-2.5 px-3 text-center font-bold ${isItemShortage ? 'text-amber-600 font-black' : 'text-emerald-600'}">
+                  ${appQty} ${i.unit || 'ชิ้น'}
+                </td>
+                <td class="py-2.5 px-3 text-slate-500">
+                  ${i.adjustNote ? `<span class="text-amber-700 font-semibold">⚠️ ${i.adjustNote}</span>` : '-'}
+                </td>
+              </tr>
             `;
-          }
+          }).join("");
 
-          html += `
-            <tr class="hover:bg-slate-50 border-b border-slate-100">
-              <td class="p-4 text-xs text-slate-500">${dateStr}</td>
-              <td class="p-4 font-semibold text-slate-800">${itemSummary || '-'}</td>
-              <td class="p-4 text-slate-600 text-xs">${item.purpose || '-'}</td>
-              <td class="p-4">${statusBadge}</td>
-              <td class="p-4 text-center">${actionButtons}</td>
-            </tr>
-          `;
-        });
-
-        tbody.innerHTML = html;
-
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
-      }
-    }
-
-    // --- ฟังก์ชั่นยกเลิกคำขอ ---
-    window.cancelRequisition = async function(reqId) {
-      if (!confirm("คุณต้องการยกเลิกคำขอเบิกพัสดุนี้ใช่หรือไม่?")) return;
-
-      try {
-        // อัปเดตสถานะเป็น rejected (หรือใช้ deleteDoc(doc(db, "requisition_requests", reqId)) หากต้องการลบถาวร)
-        await updateDoc(doc(db, "requisition_requests", reqId), {
-          status: "rejected",
-          cancel_reason: "ยกเลิกโดยผู้ใช้งาน"
-        });
-
-        alert("ยกเลิกคำขอเบิกเรียบร้อยแล้ว");
-        location.reload();
-      } catch (err) {
-        alert("เกิดข้อผิดพลาดในการยกเลิก: " + err.message);
-      }
-    };
-
-    // --- ฟังก์ชั่นเปิด Modal แก้ไข ---
-    const editModal = document.getElementById("editModal");
-    window.openEditModal = function(reqId) {
-      const data = historyDataMap.get(reqId);
-      if (!data) return;
-
-      document.getElementById("editRequestId").value = reqId;
-      document.getElementById("editPurpose").value = data.purpose === '-' ? '' : data.purpose;
-
-      const container = document.getElementById("editItemsContainer");
-      let itemsHtml = "";
-
-      (data.items || []).forEach((item, index) => {
-        itemsHtml += `
-          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-sm">
-            <span class="font-medium text-slate-700">${item.sku_name || item.name}</span>
-            <div class="flex items-center space-x-2">
-              <span class="text-xs text-slate-400">จำนวน:</span>
-              <input type="number" min="1" value="${item.amount || item.qty}" data-index="${index}" class="edit-item-qty w-16 p-1 text-center border border-slate-300 rounded-lg font-bold text-blue-600">
+          const card = document.createElement("div");
+          card.className = `bg-white p-6 rounded-2xl border ${isPartial ? 'border-amber-200' : 'border-slate-200'} shadow-sm space-y-3`;
+          
+          card.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                ${statusBadge}
+                <span class="text-xs text-slate-400 ml-2">วันที่ขอเบิก: ${dateStr}</span>
+                <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${req.userName || 'ไม่ระบุชื่อ'}</p>
+              </div>
             </div>
-          </div>
-        `;
-      });
 
-      container.innerHTML = itemsHtml;
-      editModal.classList.remove("hidden");
-    };
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="py-2 px-3">SKU / รายการ</th>
+                    <th class="py-2 px-3 text-center w-24">จำนวนที่ขอ</th>
+                    <th class="py-2 px-3 text-center w-24">จำนวนที่ได้</th>
+                    <th class="py-2 px-3">เหตุผล / หมายเหตุปรับลด</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">${itemsRows}</tbody>
+              </table>
+            </div>
 
-    function closeEditModal() {
-      editModal.classList.add("hidden");
-    }
+            ${req.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">💬 <span class="font-bold">หมายเหตุผู้ขอเบิก:</span> ${req.note}</p>` : ''}
+            ${req.status === "rejected" ? `<p class="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100">❌ <span class="font-bold">เหตุผลที่ไม่อนุมัติ:</span> ${req.rejectReason || 'ไม่ระบุเหตุผล'}</p>` : ''}
+          `;
 
-    document.getElementById("btnCloseEditModal").addEventListener("click", closeEditModal);
-    document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
-
-    // --- บันทึกการแก้ไข ---
-    document.getElementById("btnSaveEdit").addEventListener("click", async () => {
-      const reqId = document.getElementById("editRequestId").value;
-      const data = historyDataMap.get(reqId);
-      if (!data) return;
-
-      const newPurpose = document.getElementById("editPurpose").value.trim() || "-";
-      const qtyInputs = document.querySelectorAll(".edit-item-qty");
-
-      // อัปเดตจำนวนสินค้าใน Array
-      let updatedItems = [...data.items];
-      qtyInputs.forEach(input => {
-        const idx = parseInt(input.getAttribute("data-index"));
-        const newQty = parseInt(input.value) || 1;
-        if (updatedItems[idx]) {
-          if (updatedItems[idx].amount !== undefined) updatedItems[idx].amount = newQty;
-          if (updatedItems[idx].qty !== undefined) updatedItems[idx].qty = newQty;
-        }
-      });
-
-      try {
-        await updateDoc(doc(db, "requisition_requests", reqId), {
-          items: updatedItems,
-          purpose: newPurpose
+          container.appendChild(card);
         });
 
-        alert("อัปเดตข้อมูลคำขอเบิกเรียบร้อยแล้ว!");
-        closeEditModal();
-        location.reload();
       } catch (err) {
-        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+        container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl text-center text-rose-600 text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</div>`;
       }
-    });
+    }
+
+    loadHistory();
   </script>
 </body>
 </html>

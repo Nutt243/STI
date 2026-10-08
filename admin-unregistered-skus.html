@@ -3,125 +3,135 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockMaster - บาร์โค้ดรอจัดหมวดหมู่</title>
+  <title>StockMaster - สแกนรับเข้า & จัดกลุ่ม SKU</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
 
   <!-- Navbar -->
-  <nav class="bg-slate-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-6">
-        <span class="text-2xl font-bold text-blue-400">📦 StockMaster</span>
-        <div class="hidden md:flex space-x-4 text-sm">
-          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
-          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
-          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only">รายการรออนุมัติ</a>
-          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only">จัดการสต็อก</a>
-          <a href="admin-unregistered-skus.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1 admin-only">รอจัดหมวดหมู่</a>
-          <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only">จัดการผู้ใช้</a>
+  <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+          <span class="font-bold text-lg tracking-tight">StockMaster</span>
         </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <span id="userDisplayName" class="text-sm text-slate-300"></span>
-        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
-          ออกจากระบบ
-        </button>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
+          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
+          <a href="approvals.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">อนุมัติคำขอ</a>
+          <a href="admin-unregistered-skus.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white">รับสินค้าเข้า & คัดแยก</a>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">Loading...</span>
+          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1">ออกจากระบบ</button>
+        </div>
       </div>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-800">รายการสินค้าสั่งเพิ่มใหม่ (รอจัดหมวดหมู่)</h1>
-        <p class="text-slate-500 text-sm">ยิงบาร์โค้ดรับสินค้าเข้าคลังล่วงหน้า และมาใส่รายละเอียดสินค้าในภายหลัง</p>
-      </div>
-      <span id="pendingCountBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full">
-        รอลงทะเบียน 0 รายการ
-      </span>
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">⚡ สแกนรับสินค้าเข้าคลัง (Batch Mode)</h1>
+      <p class="text-xs text-slate-500 mt-1">ยิงบาร์โค้ดต่อเนื่องได้ทันที กำหนด SKU หลักและคุณลักษณะเฉพาะเพื่อจัดกลุ่มรวมสต็อกได้ด้านล่าง</p>
     </div>
 
-    <!-- Rapid Barcode Scanner Box -->
-    <div class="bg-blue-60 border border-blue-200 rounded-xl p-5 shadow-sm space-y-2">
-      <label class="block text-sm font-bold text-blue-900">⚡ ยิงบาร์โค้ดรับเข้าแบบเร่งด่วน (Quick Barcode Capture)</label>
-      <div class="flex gap-2">
-        <input type="text" id="quickBarcodeInput" placeholder="สแกนหรือกรอกรหัสบาร์โค้ดที่นี่แล้วกด Enter..."
-          class="flex-1 px-4 py-2.5 bg-white border border-blue-300 rounded-lg text-base font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        <button id="btnQuickAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
-          + บันทึกบาร์โค้ด
+    <!-- Scanner Box -->
+    <div class="bg-blue-600 p-6 rounded-2xl shadow-lg text-white space-y-3">
+      <div class="flex justify-between items-center">
+        <label class="text-xs font-bold uppercase tracking-wider text-blue-100">📷 ช่องยิงบาร์โค้ด (ยิงซ้ำ = บวกจำนวนเพิ่ม)</label>
+        <span class="text-xs bg-blue-700 text-blue-200 px-3 py-1 rounded-full">Auto-Focus</span>
+      </div>
+      <input type="text" id="scanInput" placeholder="ยิงบาร์โค้ดรวดเดียวที่นี่..." 
+             class="w-full p-4 bg-white text-slate-900 font-mono font-bold text-lg rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-inner" autofocus>
+    </div>
+
+    <!-- Batch Review Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden space-y-4 p-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <h2 class="text-lg font-black text-slate-800">📋 รายการรอรับเข้าคลัง (Pending Batch)</h2>
+          <p class="text-xs text-slate-400">กำหนด SKU หลักและ Specific Attributes เพื่อให้ระบบนำยอดไปรวมกับ Variant เดิมโดยอัตโนมัติ</p>
+        </div>
+        <button id="btnApproveAllReady" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
+          ✅ อนุมัติรายการที่พร้อมรับเข้าทั้งหมด
         </button>
       </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100">
+            <tr>
+              <th class="p-3">บาร์โค้ด</th>
+              <th class="p-3">SKU หลัก (หมวดหมู่สินค้า)</th>
+              <th class="p-3 w-32">จำนวน</th>
+              <th class="p-3">Specific Attributes (จัดกลุ่มย่อย)</th>
+              <th class="p-3 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="batchTableBody" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="5" class="p-8 text-center text-slate-400">ยังไม่มีรายการสแกน ยิงบาร์โค้ดด้านบนเพื่อเริ่มบันทึก</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-slate-800 text-slate-200 text-sm">
-            <th class="p-4">วันที่รับเข้า</th>
-            <th class="p-4">รหัสบาร์โค้ด / SKU</th>
-            <th class="p-4">จำนวนตั้งต้น</th>
-            <th class="p-4">สถานะ</th>
-            <th class="p-4 text-center">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="unregisteredTableBody" class="divide-y divide-slate-100 text-sm">
-          <tr><td colspan="5" class="p-8 text-center text-slate-400">กำลังโหลดรายการบาร์โค้ด...</td></tr>
-        </tbody>
-      </table>
-    </div>
   </main>
 
-  <!-- Modal สำหรับลงทะเบียนระบุรายละเอียด -->
-  <div id="registerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-      <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-        <h3 class="font-bold text-lg">ระบุรายละเอียดสินค้า (จัดหมวดหมู่)</h3>
-        <button onclick="closeRegisterModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+  <!-- Modal: Edit SKU & Specific Attributes -->
+  <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-800 text-lg">⚙️ ตั้งค่ารายละเอียดสินค้า</h3>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
       </div>
-      <form id="registerForm" class="p-6 space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสบาร์โค้ด / SKU ID</label>
-          <input type="text" id="regBarcode" readonly class="w-full px-3.5 py-2 bg-slate-100 font-mono border border-slate-300 rounded-lg text-sm text-slate-600">
-        </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อสินค้า <span class="text-red-500">*</span></label>
-          <input type="text" id="regName" required placeholder="เช่น ปากกาเคมีตราม้า สีพาสเทล"
-            class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
+      <form id="modalForm" class="space-y-4">
+        <input type="hidden" id="modalBarcode">
 
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Master SKU Selection / Creation -->
+        <div class="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
-            <input type="text" id="regCategory" required placeholder="เช่น เครื่องเขียน, อุปกรณ์ช่าง"
-              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">SKU หลัก (เช่น ปากกา, รองเท้า)</label>
+            <input type="text" id="modalSkuName" placeholder="เช่น ปากกา" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยนับ</label>
-            <input type="text" id="regUnit" value="ชิ้น" placeholder="ชิ้น, กล่อง, แผง"
-              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนคงเหลือ</label>
-            <input type="number" id="regQty" min="0" value="1"
-              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">แจ้งเตือนขั้นต่ำ</label>
-            <input type="number" id="regMinAlert" min="0" value="5"
-              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หมวดหมู่</label>
+              <select id="modalCategory" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm">
+                <option value="เครื่องเขียน">เครื่องเขียน</option>
+                <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
+                <option value="ทั่วไป">ทั่วไป</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หน่วยนับ</label>
+              <input type="text" id="modalUnit" value="ด้าม" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm">
+            </div>
           </div>
         </div>
 
-        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-          <button type="button" onclick="closeRegisterModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">ยกเลิก</button>
-          <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow">ย้ายเข้าสต็อกหลัก</button>
+        <!-- Specific Attributes -->
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ (เพื่อจำแนกและรวมกอง)</label>
+          <p class="text-[11px] text-slate-400">เช่น Color: น้ำเงิน ระบบจะนำสินค้านี้ไปรวมยอดกับ "ปากกาน้ำเงิน" ตัวเดิมทันที</p>
+          <div id="attrContainer" class="space-y-2">
+            <!-- Dynamic attr rows -->
+          </div>
+          <button type="button" id="btnAddAttrRow" class="text-xs font-bold text-blue-600 hover:underline">+ เพิ่มคุณลักษณะ (เช่น Color, Size)</button>
+        </div>
+
+        <!-- 2 ปุ่มมาตรฐาน: บันทึก และ ยกเลิก -->
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="btnCancelModal" class="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition">ยกเลิก</button>
+          <button type="submit" class="w-1/2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition text-sm">💾 บันทึกรายละเอียด</button>
         </div>
       </form>
     </div>
@@ -130,130 +140,245 @@
   <script type="module">
     import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
-    import { collection, query, where, getDocs, setDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin']);
 
-    const quickBarcodeInput = document.getElementById("quickBarcodeInput");
-    const unregisteredTableBody = document.getElementById("unregisteredTableBody");
-    const pendingCountBadge = document.getElementById("pendingCountBadge");
+    let skusMap = new Map();
+    let batchQueue = new Map(); 
 
-    async function loadUnregisteredSKUs() {
-      try {
-        const q = query(collection(db, "unregistered_skus"), where("status", "==", "pending_details"));
-        const snapshot = await getDocs(q);
+    async function initData() {
+      const skuSnap = await getDocs(collection(db, "skus"));
+      skusMap.clear();
+      skuSnap.forEach(d => skusMap.set(d.id, { id: d.id, ...d.data() }));
 
-        pendingCountBadge.textContent = `รอลงทะเบียน ${snapshot.size} รายการ`;
-
-        if (snapshot.empty) {
-          unregisteredTableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">🎉 ไม่มีรายการบาร์โค้ดที่ค้างจัดหมวดหมู่</td></tr>`;
-          return;
-        }
-
-        let html = "";
-        snapshot.forEach(docSnap => {
-          const item = docSnap.data();
-          const id = docSnap.id;
-          const dateStr = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString('th-TH') : '-';
-
-          html += `
-            <tr class="hover:bg-slate-50 border-b border-slate-100">
-              <td class="p-4 text-xs text-slate-500">${dateStr}</td>
-              <td class="p-4 font-mono font-bold text-blue-600">${id}</td>
-              <td class="p-4 font-semibold text-slate-700">${item.quantity || 1}</td>
-              <td class="p-4"><span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">รอจัดหมวดหมู่</span></td>
-              <td class="p-4 text-center space-x-2">
-                <button onclick="openRegisterModal('${id}', ${item.quantity || 1})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition">
-                  ✏️ จัดหมวดหมู่/ใส่รายละเอียด
-                </button>
-                <button onclick="deletePendingSku('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition">
-                  ✕ ลบ
-                </button>
-              </td>
-            </tr>
-          `;
-        });
-        unregisteredTableBody.innerHTML = html;
-      } catch (err) {
-        unregisteredTableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
-      }
+      const unregSnap = await getDocs(collection(db, "unregistered_skus"));
+      unregSnap.forEach(d => {
+        const barcode = d.data().barcode || d.id;
+        addToBatch(barcode, 1);
+      });
     }
 
-    async function addQuickBarcode(barcode) {
-      if (!barcode) return;
-      try {
-        await setDoc(doc(db, "unregistered_skus", barcode), {
-          status: "pending_details",
-          quantity: 1,
-          createdAt: Timestamp.now()
-        }, { merge: true });
-
-        quickBarcodeInput.value = "";
-        loadUnregisteredSKUs();
-      } catch (err) {
-        alert("เกิดข้อผิดพลาดในการบันทึกบาร์โค้ด: " + err.message);
-      }
-    }
-
-    quickBarcodeInput.addEventListener("keypress", (e) => {
+    // Continuous Scanner Event Input
+    const scanInput = document.getElementById("scanInput");
+    scanInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        addQuickBarcode(quickBarcodeInput.value.trim());
+        const barcode = scanInput.value.trim();
+        if (barcode) {
+          addToBatch(barcode, 1);
+          scanInput.value = "";
+        }
       }
     });
 
-    document.getElementById("btnQuickAdd").onclick = () => addQuickBarcode(quickBarcodeInput.value.trim());
+    function addToBatch(barcode, qty) {
+      if (batchQueue.has(barcode)) {
+        const item = batchQueue.get(barcode);
+        item.qty += qty;
+      } else {
+        const matchedSku = skusMap.get(barcode);
+        batchQueue.set(barcode, {
+          barcode: barcode,
+          qty: qty,
+          sku: matchedSku || null,
+          attributes: {}
+        });
+      }
+      renderBatchTable();
+    }
 
-    window.openRegisterModal = (barcode, qty) => {
-      document.getElementById("regBarcode").value = barcode;
-      document.getElementById("regQty").value = qty;
-      document.getElementById("registerModal").classList.remove("hidden");
+    function renderBatchTable() {
+      const tbody = document.getElementById("batchTableBody");
+      tbody.innerHTML = "";
+
+      if (batchQueue.size === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">ยังไม่มีรายการสแกน ยิงบาร์โค้ดด้านบนเพื่อเริ่มบันทึก</td></tr>`;
+        return;
+      }
+
+      batchQueue.forEach((item, barcode) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition";
+
+        const isReady = !!item.sku;
+        const attrSummary = Object.entries(item.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "(ไม่มี - รวมเข้ากองหลัก)";
+
+        tr.innerHTML = `
+          <td class="p-3 font-mono font-bold text-slate-800">${barcode}</td>
+          <td class="p-3">
+            ${isReady 
+              ? `<span class="font-bold text-slate-800">${item.sku.sku_name}</span>`
+              : `<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนด SKU</span>`}
+          </td>
+          <td class="p-3">
+            <input type="number" value="${item.qty}" min="1" onchange="updateQty('${barcode}', this.value)" 
+                   class="w-20 p-1.5 border border-slate-200 rounded-lg text-center font-bold text-blue-600 focus:ring-2 focus:ring-blue-500">
+          </td>
+          <td class="p-3 text-xs text-slate-600 max-w-xs truncate">${attrSummary}</td>
+          <td class="p-3 text-center space-x-1">
+            <button onclick="openDetailModal('${barcode}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">
+              ⚙️ ตั้งค่า
+            </button>
+            <button onclick="approveSingle('${barcode}')" class="px-3 py-1 ${isReady ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'} text-white text-xs font-bold rounded-lg transition" ${!isReady ? 'disabled' : ''}>
+              ✅ รับเข้า
+            </button>
+            <button onclick="removeItem('${barcode}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition">&times;</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.updateQty = (barcode, val) => {
+      if (batchQueue.has(barcode)) batchQueue.get(barcode).qty = parseInt(val) || 1;
     };
 
-    window.closeRegisterModal = () => {
-      document.getElementById("registerModal").classList.add("hidden");
+    window.removeItem = (barcode) => {
+      batchQueue.delete(barcode);
+      renderBatchTable();
     };
 
-    window.deletePendingSku = async (id) => {
-      if (!confirm(`ลบรายการบาร์โค้ด ${id} หรือไม่?`)) return;
-      await deleteDoc(doc(db, "unregistered_skus", id));
-      loadUnregisteredSKUs();
+    // Modal Control
+    window.openDetailModal = (barcode) => {
+      const item = batchQueue.get(barcode);
+      if (!item) return;
+
+      document.getElementById("modalBarcode").value = barcode;
+      document.getElementById("modalSkuName").value = item.sku ? item.sku.sku_name : "";
+
+      const container = document.getElementById("attrContainer");
+      container.innerHTML = "";
+      Object.entries(item.attributes).forEach(([k, v]) => addAttrRow(k, v));
+
+      document.getElementById("detailModal").classList.remove("hidden");
+      document.getElementById("detailModal").classList.add("flex");
     };
 
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    function addAttrRow(k = "", v = "") {
+      const div = document.createElement("div");
+      div.className = "flex gap-2 items-center";
+      div.innerHTML = `
+        <input type="text" placeholder="ชื่อคุณลักษณะ (เช่น Color)" value="${k}" class="attr-k w-1/2 p-2 border border-slate-200 rounded-lg text-xs">
+        <input type="text" placeholder="ค่า (เช่น น้ำเงิน)" value="${v}" class="attr-v w-1/2 p-2 border border-slate-200 rounded-lg text-xs">
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-1">&times;</button>
+      `;
+      document.getElementById("attrContainer").appendChild(div);
+    }
+
+    document.getElementById("btnAddAttrRow").addEventListener("click", () => addAttrRow());
+
+    const closeModal = () => document.getElementById("detailModal").classList.add("hidden");
+    document.getElementById("btnCloseModal").addEventListener("click", closeModal);
+    document.getElementById("btnCancelModal").addEventListener("click", closeModal);
+
+    // Save Details Button in Modal
+    document.getElementById("modalForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const barcode = document.getElementById("regBarcode").value;
-      const name = document.getElementById("regName").value.trim();
-      const category = document.getElementById("regCategory").value.trim();
-      const unit = document.getElementById("regUnit").value.trim() || "ชิ้น";
-      const qty = parseInt(document.getElementById("regQty").value) || 0;
-      const minAlert = parseInt(document.getElementById("modalMinAlert")?.value || 5);
+      const barcode = document.getElementById("modalBarcode").value;
+      const skuName = document.getElementById("modalSkuName").value.trim();
 
-      try {
-        // 1. เพิ่มในคลังสินค้าหลัก (skus)
-        await setDoc(doc(db, "skus", barcode), {
-          sku_name: name,
+      if (!skuName) return alert("โปรดระบุชื่อ SKU หลัก");
+
+      const category = document.getElementById("modalCategory").value;
+      const unit = document.getElementById("modalUnit").value;
+      const item = batchQueue.get(barcode);
+
+      // 1. Create or Find Master SKU ID
+      let skuId = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === skuName.toLowerCase())?.id;
+
+      if (!skuId) {
+        skuId = "SKU-" + Date.now();
+        await setDoc(doc(db, "skus", skuId), {
+          sku_name: skuName,
           category: category,
           unit: unit,
-          total_quantity: qty,
-          min_stock_alert: minAlert,
-          barcode: barcode,
-          status: "active",
-          updatedAt: Timestamp.now()
+          updatedAt: serverTimestamp()
+        });
+        skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit });
+      }
+
+      // 2. Set SKU info & Attributes into Batch Item
+      item.sku = skusMap.get(skuId);
+      item.attributes = collectAttrs();
+
+      closeModal();
+      renderBatchTable();
+    });
+
+    function collectAttrs() {
+      const attrs = {};
+      const keys = document.querySelectorAll(".attr-k");
+      const vals = document.querySelectorAll(".attr-v");
+      keys.forEach((k, idx) => {
+        if (k.value.trim() && vals[idx].value.trim()) {
+          attrs[k.value.trim()] = vals[idx].value.trim();
+        }
+      });
+      return attrs;
+    }
+
+    // Smart Merge Logic when approving items
+    window.approveSingle = async (barcode) => {
+      const item = batchQueue.get(barcode);
+      if (!item || !item.sku) return;
+
+      try {
+        // Find existing variant under the same SKU with identical specific attributes
+        const q = query(collection(db, "products"), where("sku_id", "==", item.sku.id));
+        const snap = await getDocs(q);
+
+        let existingDocId = null;
+        let existingQty = 0;
+
+        snap.forEach(d => {
+          const data = d.data();
+          if (JSON.stringify(data.specific_attributes || {}) === JSON.stringify(item.attributes)) {
+            existingDocId = d.id;
+            existingQty = data.quantity || 0;
+          }
         });
 
-        // 2. ลบออกจากรายการรอจัดหมวด
-        await deleteDoc(doc(db, "unregistered_skus", barcode));
+        if (existingDocId) {
+          // Add quantity to existing variant (รวมกอง)
+          await updateDoc(doc(db, "products", existingDocId), {
+            quantity: existingQty + item.qty,
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          // Create new variant under this SKU
+          await addDoc(collection(db, "products"), {
+            sku_id: item.sku.id,
+            barcode: barcode,
+            quantity: item.qty,
+            specific_attributes: item.attributes,
+            createdAt: serverTimestamp()
+          });
+        }
 
-        alert("เพิ่มสินค้าเข้าสต็อกหลักเรียบร้อยแล้ว!");
-        closeRegisterModal();
-        loadUnregisteredSKUs();
+        try { await deleteDoc(doc(db, "unregistered_skus", barcode)); } catch(e) {}
+
+        batchQueue.delete(barcode);
+        renderBatchTable();
+        alert(`รับเข้าคลังสำเร็จ! รวมยอดเข้ากลุ่ม "${item.sku.sku_name}" เรียบร้อยแล้ว`);
       } catch (err) {
         alert("เกิดข้อผิดพลาด: " + err.message);
       }
+    };
+
+    // Approve All
+    document.getElementById("btnApproveAllReady").addEventListener("click", async () => {
+      let count = 0;
+      for (const barcode of Array.from(batchQueue.keys())) {
+        const item = batchQueue.get(barcode);
+        if (item && item.sku) {
+          await window.approveSingle(barcode);
+          count++;
+        }
+      }
     });
 
-    loadUnregisteredSKUs();
+    initData();
   </script>
 </body>
 </html>

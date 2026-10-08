@@ -3,410 +3,494 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockMaster - อนุมัติการเบิกสินค้า</title>
+  <title>StockMaster - อนุมัติคำขอเบิก</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
 
   <!-- Navbar -->
-  <nav class="bg-slate-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-6">
-        <span class="text-2xl font-bold text-blue-400">📦 StockMaster</span>
-        <div class="hidden md:flex space-x-4 text-sm">
-          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
-          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
-          <a href="approvals.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1 admin-only">รายการรออนุมัติ</a>
-          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only">จัดการสต็อก</a>
-          <a href="admin-unregistered-skus.html" class="hover:text-blue-300 py-1 admin-only">รอจัดหมวดหมู่</a>
-          <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only">จัดการผู้ใช้</a>
+  <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+          <span class="font-bold text-lg tracking-tight">StockMaster</span>
         </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <span id="userDisplayName" class="text-sm text-slate-300"></span>
-        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
-          ออกจากระบบ
-        </button>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
+          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
+          <a href="approvals.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-amber-500 text-white">อนุมัติคำขอ</a>
+          <a href="admin-unregistered-skus.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">รับสินค้าเข้า & คัดแยก</a>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">Loading...</span>
+          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1">ออกจากระบบ</button>
+        </div>
       </div>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow">
-    <div class="flex justify-between items-center mb-6">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">รายการคำขอเบิกที่รอตรวจสอบ/อนุมัติ</h1>
-        <p class="text-slate-500 text-sm">ตรวจสอบรายการ หยิบสินค้า สแกนบาร์โค้ด และยืนยันการตัดสต็อก</p>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">⏳ รายการอนุมัติคำขอเบิกสินค้า</h1>
+        <p class="text-xs text-slate-500 mt-1">เรียงตามลำดับคิวค้างเบิก (เก่าสุด ไป ใหม่สุด)</p>
       </div>
-      <button id="btnRefresh" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm transition">
-        🔄 รีเฟรชข้อมูล
-      </button>
+      <button id="btnRefresh" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรช</button>
     </div>
 
-    <!-- Table List -->
-    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-slate-800 text-slate-200 text-sm">
-              <th class="p-4">เลขที่คำขอ</th>
-              <th class="p-4">ผู้ขอเบิก</th>
-              <th class="p-4">วันที่ขอ</th>
-              <th class="p-4">จำนวนรายการ</th>
-              <th class="p-4">สถานะ</th>
-              <th class="p-4 text-center">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="requestsTableBody" class="divide-y divide-slate-100 text-sm">
-            <tr>
-              <td colspan="6" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูลคำขอเบิก...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div id="approvalList" class="space-y-4">
+      <div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดรายการ...</div>
     </div>
   </main>
 
-  <!-- Modal: Barcode Verification & Fulfillment -->
-  <div id="fulfillmentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-      
-      <!-- Modal Header -->
-      <div class="bg-slate-900 text-white p-5 flex justify-between items-center">
+  <!-- Modal สแกนตรวจสินค้าก่อนจ่าย -->
+  <div id="scanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-40">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 flex-shrink-0">
         <div>
-          <h2 class="text-lg font-bold flex items-center gap-2">
-            <span>🔍 ตรวจนับสินค้าก่อนอนุมัติ</span>
-            <span id="modalReqId" class="text-blue-400 text-sm font-normal"></span>
-          </h2>
-          <p class="text-slate-400 text-xs mt-0.5" id="modalUserInfo"></p>
+          <h3 class="font-black text-slate-800 text-lg">🔍 สแกนและตรวจสอบสินค้าจ่ายออก</h3>
+          <p class="text-xs text-slate-500">ผู้ขอเบิก: <span id="modalUserName" class="font-bold text-slate-700">-</span></p>
         </div>
-        <button id="btnCloseModal" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+        <button id="btnCloseScanModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
       </div>
 
-      <!-- Scanner Input Box -->
-      <div class="p-4 bg-blue-50 border-b border-blue-100">
-        <label class="block text-xs font-semibold text-blue-900 mb-1">ช่องสแกนบาร์โค้ด (Barcode Scanner Active)</label>
-        <div class="relative">
-          <input type="text" id="barcodeInput" autocomplete="off" placeholder="ยิงบาร์โค้ดสินค้าที่นี่..."
-            class="w-full px-4 py-2.5 bg-white border-2 border-blue-400 rounded-lg text-lg font-mono focus:outline-none focus:ring-4 focus:ring-blue-200 shadow-inner">
-          <span class="absolute right-3 top-3 text-xs text-blue-500 font-semibold">Auto-Focused</span>
-        </div>
-        <!-- Alert Warning Box -->
-        <div id="scanAlert" class="hidden mt-2 p-2.5 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg font-medium flex items-center gap-2">
-          <span>⚠️</span> <span id="scanAlertMsg"></span>
-        </div>
-      </div>
-
-      <!-- Modal Body / Item Checklist -->
-      <div class="p-5 overflow-y-auto flex-grow space-y-3" id="modalItemsContainer">
-        <!-- Items list will be rendered here -->
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
-        <button id="btnRejectRequest" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
-          ปฏิเสธคำขอ
-        </button>
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 flex-shrink-0">
+        <label class="block text-xs font-bold text-slate-700">ยิงสแกนบาร์โค้ดสินค้าที่นี่ (ระบบจะติ๊กเลือกให้อัตโนมัติ):</label>
         <div class="flex gap-2">
-          <button id="btnCancelModal" class="bg-slate-300 hover:bg-slate-400 text-slate-700 px-4 py-2 rounded-lg text-sm transition">
-            ยกเลิก
-          </button>
-          <button id="btnApproveAndDeduct" disabled class="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow">
-            ยืนยันการอนุมัติและตัดสต็อก
-          </button>
+          <input type="text" id="barcodeInput" placeholder="สแกนบาร์โค้ดเพื่อตรวจสอบ..." autofocus 
+                 class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500">
+          <button id="btnCheckBarcode" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition whitespace-nowrap">สแกน</button>
         </div>
       </div>
 
+      <div class="border border-slate-200 rounded-xl overflow-y-auto flex-1">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 font-bold text-slate-600 border-b border-slate-200 sticky top-0">
+            <tr>
+              <th class="p-3 text-center w-12">ตรวจ</th>
+              <th class="p-3">SKU / รายการ</th>
+              <th class="p-3 text-center w-24">ขอเบิก</th>
+              <th class="p-3 text-center w-32">อนุมัติจ่ายจริง</th>
+              <th class="p-3">หมายเหตุปรับลดจำนวน</th>
+            </tr>
+          </thead>
+          <tbody id="scanTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2 flex-shrink-0 border-t border-slate-100">
+        <button id="btnCancelModal" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
+        <button id="btnConfirmApprove" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md text-xs transition">
+          ✅ ยืนยันอนุมัติจ่ายสินค้า
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- JavaScript Logic -->
+  <!-- Modal Pop-up ปฏิเสธคำขอเบิก -->
+  <div id="rejectModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="text-rose-500 bg-rose-100 p-2 rounded-xl">❌</span>
+          <h3 class="font-black text-slate-800 text-base">ปฏิเสธคำขอเบิกสินค้า</h3>
+        </div>
+        <button id="btnCloseRejectModal" class="text-slate-400 hover:text-slate-600 font-bold text-xl leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs font-bold text-slate-700">ระบุเหตุผลการไม่อนุมัติ <span class="text-rose-500">*</span></label>
+        <textarea id="rejectReasonInput" rows="3" placeholder="ตัวอย่าง: สินค้าหมดสต็อกชั่วคราว, เอกสารไม่สมบูรณ์, ข้อมูลเบิกไม่ถูกต้อง..." 
+                  class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:bg-white resize-none"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnCancelReject" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
+        <button id="btnConfirmReject" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md text-xs transition">
+          ยืนยันปฏิเสธคำขอ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pop-up แจ้งเตือนสินค้าไม่พอในสต็อก -->
+  <div id="stockWarnModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="text-amber-600 bg-amber-100 p-2 rounded-xl">⚠️</span>
+          <h3 class="font-black text-slate-800 text-base">จำนวนสินค้าในสต็อกไม่พอ!</h3>
+        </div>
+        <button id="btnCloseWarnModal" class="text-slate-400 hover:text-slate-600 font-bold text-xl leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs text-amber-900">
+        <p class="font-bold text-sm text-amber-800" id="warnSkuTitle">-</p>
+        <div class="space-y-1">
+          <p>• จำนวนที่ขอเบิก: <span id="warnReqQty" class="font-bold">0</span> ชิ้น</p>
+          <p>• สต็อกที่มีในระบบ: <span id="warnStockQty" class="font-bold text-rose-600">0</span> ชิ้น</p>
+        </div>
+        <p id="warnMessageText" class="text-slate-600 border-t border-amber-200 pt-2 mt-2">
+          ต้องการปรับจำนวนอนุมัติจ่ายลงให้เท่ากับจำนวนที่มีอยู่ในสต็อกอัตโนมัติหรือไม่?
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnWarnDismiss" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">แก้ไขเอง</button>
+        <button id="btnWarnAutoAdjust" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md text-xs transition">
+          ⚡ ปรับลดจำนวนเท่าที่มี
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
-    import { 
-      collection, query, where, getDocs, doc, getDoc, runTransaction, Timestamp 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ตรวจสอบสิทธิ์ (เฉพาะ Admin)
     checkUserAuth(['admin']);
 
-    let currentRequest = null;
-    let requestItems = [];
+    let activeReqId = null;
+    let activeReqItems = [];
+    let rejectTargetReqId = null;
+    let pendingWarnItemIndex = null;
+    let pendingWarnStockAvailable = 0;
 
-    // --- Web Audio Synthesizer (เสียง Beep แจ้งเตือน) ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playBeep(freq = 880, type = 'sine', duration = 0.15) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-      osc.stop(audioCtx.currentTime + duration);
-    }
+    async function loadApprovals() {
+      const container = document.getElementById("approvalList");
+      container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดรายการ...</div>`;
 
-    const soundSuccess = () => { playBeep(1046.5, 'sine', 0.1); setTimeout(() => playBeep(1318.5, 'sine', 0.15), 100); };
-    const soundError = () => { playBeep(300, 'sawtooth', 0.25); };
-
-    // --- DOM Elements ---
-    const requestsTableBody = document.getElementById("requestsTableBody");
-    const fulfillmentModal = document.getElementById("fulfillmentModal");
-    const barcodeInput = document.getElementById("barcodeInput");
-    const scanAlert = document.getElementById("scanAlert");
-    const scanAlertMsg = document.getElementById("scanAlertMsg");
-    const modalItemsContainer = document.getElementById("modalItemsContainer");
-    const btnApproveAndDeduct = document.getElementById("btnApproveAndDeduct");
-
-    // --- 1. Load Pending Requests ---
-    async function loadPendingRequests() {
-      requestsTableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>`;
       try {
-        const q = query(collection(db, "requisition_requests"), where("status", "==", "pending"));
-        const querySnapshot = await getDocs(q);
+        const q = query(collection(db, "requisitions"), orderBy("createdAt", "asc"));
+        const snap = await getDocs(q);
+        
+        container.innerHTML = "";
+        let pendingCount = 0;
 
-        if (querySnapshot.empty) {
-          requestsTableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">ไม่มีรายการคำขอเบิกที่ค้างอนุมัติ</td></tr>`;
-          return;
+        snap.forEach(d => {
+          const req = d.data();
+          if (req.status !== "pending") return;
+
+          pendingCount++;
+          const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
+          
+          const card = document.createElement("div");
+          card.className = "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4";
+
+          const itemsRows = (req.items || []).map(i => {
+            const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+            return `
+              <tr class="border-b border-slate-100">
+                <td class="py-2.5 font-bold text-slate-800">${i.sku_name}</td>
+                <td class="py-2.5 text-slate-500">${attrStr}</td>
+                <td class="py-2.5 text-center font-bold text-blue-600">${i.quantity} ${i.unit || 'ชิ้น'}</td>
+              </tr>
+            `;
+          }).join("");
+
+          card.innerHTML = `
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">⏳ คิวที่ ${pendingCount}</span>
+                <span class="text-xs text-slate-400 ml-2">เวลาขอเบิก: ${dateStr}</span>
+                <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${req.userName || 'ไม่ระบุชื่อ'}</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="openRejectModal('${d.id}')" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl transition">❌ ปฏิเสธคำขอ</button>
+                <button onclick="openScanModal('${d.id}')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition">🔍 ตรวจสอบ & สแกนจ่ายสินค้า</button>
+              </div>
+            </div>
+
+            <div>
+              <table class="w-full text-left text-xs">
+                <thead class="text-slate-400 font-bold uppercase border-b border-slate-100">
+                  <tr>
+                    <th class="pb-2">SKU / รายการ</th>
+                    <th class="pb-2">คุณลักษณะ</th>
+                    <th class="pb-2 text-center">จำนวนที่ขอ</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">${itemsRows}</tbody>
+              </table>
+            </div>
+
+            ${req.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">💬 <span class="font-bold">หมายเหตุผู้ขอเบิก:</span> ${req.note}</p>` : ''}
+          `;
+
+          container.appendChild(card);
+        });
+
+        if (pendingCount === 0) {
+          container.innerHTML = `<div class="bg-white p-12 rounded-2xl text-center text-slate-400 font-bold">ไม่มีรายการคำขอเบิกที่ค้างอยู่</div>`;
         }
 
-        let html = "";
-        querySnapshot.forEach((docSnap) => {
-          const req = docSnap.data();
-          const reqId = docSnap.id;
-          const dateStr = req.createdAt ? new Date(req.createdAt.toDate()).toLocaleString('th-TH') : '-';
-          const itemCount = req.items ? req.items.length : 0;
-
-          html += `
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-              <td class="p-4 font-mono font-medium text-slate-700">${reqId}</td>
-              <td class="p-4 font-medium text-slate-800">${req.user_name || 'ไม่ระบุ'}</td>
-              <td class="p-4 text-slate-500 text-xs">${dateStr}</td>
-              <td class="p-4 text-slate-700">${itemCount} รายการ</td>
-              <td class="p-4"><span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">รอการตรวจสอบ</span></td>
-              <td class="p-4 text-center">
-                <button onclick="openFulfillmentModal('${reqId}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow">
-                  🔍 ตรวจสอบ/หยิบของ
-                </button>
-              </td>
-            </tr>
-          `;
-        });
-        requestsTableBody.innerHTML = html;
       } catch (err) {
-        console.error("Error loading requests:", err);
-        requestsTableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+        container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl text-center text-rose-600 text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</div>`;
       }
     }
 
-    // --- 2. Open Modal & Prepare Checklist ---
-    window.openFulfillmentModal = async (reqId) => {
+    // Modal สแกน
+    window.openScanModal = async (reqId) => {
+      activeReqId = reqId;
+
+      const reqRef = doc(db, "requisitions", reqId);
+      const reqSnap = await getDoc(reqRef);
+      if (!reqSnap.exists()) return;
+
+      const reqData = reqSnap.data();
+      document.getElementById("modalUserName").innerText = reqData.userName || "ผู้ใช้งาน";
+      document.getElementById("barcodeInput").value = "";
+
+      activeReqItems = (reqData.items || []).map((item, idx) => ({
+        ...item,
+        index: idx,
+        checked: false,
+        approvedQty: item.quantity,
+        adjustNote: ""
+      }));
+
+      renderScanTable();
+
+      document.getElementById("scanModal").classList.remove("hidden");
+      document.getElementById("scanModal").classList.add("flex");
+      document.getElementById("barcodeInput").focus();
+    };
+
+    function renderScanTable() {
+      const tbody = document.getElementById("scanTableBody");
+      tbody.innerHTML = "";
+
+      activeReqItems.forEach(item => {
+        const attrStr = Object.entries(item.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+        const tr = document.createElement("tr");
+        tr.className = item.checked ? "bg-emerald-50/50" : "hover:bg-slate-50";
+
+        tr.innerHTML = `
+          <td class="p-3 text-center">
+            <input type="checkbox" id="chk_${item.index}" ${item.checked ? 'checked' : ''} 
+                   onchange="toggleCheck(${item.index}, this.checked)"
+                   class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+          </td>
+          <td class="p-3">
+            <div class="font-bold text-slate-800">${item.sku_name}</div>
+            <div class="text-[10px] text-slate-400">${attrStr}</div>
+          </td>
+          <td class="p-3 text-center font-bold text-slate-600">${item.quantity} ${item.unit || 'ชิ้น'}</td>
+          <td class="p-3 text-center">
+            <input type="number" min="0" max="${item.quantity}" value="${item.approvedQty}" 
+                   onchange="updateApprovedQty(${item.index}, this.value)"
+                   class="w-20 p-1.5 border border-slate-300 rounded-lg text-center font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 text-xs">
+          </td>
+          <td class="p-3">
+            <input type="text" placeholder="${item.approvedQty < item.quantity ? 'ระบุเหตุผลที่เบิกไม่ครบ' : 'หมายเหตุเพิ่มเติม (ถ้ามี)'}" 
+                   value="${item.adjustNote}" 
+                   onchange="updateAdjustNote(${item.index}, this.value)"
+                   class="w-full p-1.5 border ${item.approvedQty < item.quantity ? 'border-amber-400 bg-amber-50' : 'border-slate-200'} rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.toggleCheck = (index, isChecked) => {
+      activeReqItems[index].checked = isChecked;
+      renderScanTable();
+    };
+
+    window.updateApprovedQty = (index, val) => {
+      const qty = parseInt(val) || 0;
+      activeReqItems[index].approvedQty = qty;
+      renderScanTable();
+    };
+
+    window.updateAdjustNote = (index, val) => {
+      activeReqItems[index].adjustNote = val.trim();
+    };
+
+    document.getElementById("btnCheckBarcode").addEventListener("click", checkBarcode);
+    document.getElementById("barcodeInput").addEventListener("keypress", (e) => {
+      if (e.key === 'Enter') checkBarcode();
+    });
+
+    function checkBarcode() {
+      const input = document.getElementById("barcodeInput").value.trim();
+      if (!input) return;
+
+      let matchedItem = activeReqItems.find(i => 
+        i.product_id === input || i.barcode === input || i.sku_name.toLowerCase().includes(input.toLowerCase())
+      );
+
+      if (matchedItem) {
+        matchedItem.checked = true;
+        renderScanTable();
+        alert(`✅ สแกนเจอ: "${matchedItem.sku_name}"\nระบบทำการติ๊กถูกตรวจสอบให้เรียบร้อยแล้ว`);
+      } else {
+        alert(`❌ ไม่พบรายการ: "${input}" ในคำขอเบิกนี้!`);
+      }
+
+      document.getElementById("barcodeInput").value = "";
+      document.getElementById("barcodeInput").focus();
+    }
+
+    // --- Pop-up เตือนสินค้าไม่พอ ---
+    function showStockWarnModal(itemIdx, title, reqQty, stockQty) {
+      pendingWarnItemIndex = itemIdx;
+      pendingWarnStockAvailable = stockQty;
+
+      document.getElementById("warnSkuTitle").innerText = title;
+      document.getElementById("warnReqQty").innerText = reqQty;
+      document.getElementById("warnStockQty").innerText = stockQty;
+
+      if (stockQty <= 0) {
+        document.getElementById("warnMessageText").innerText = "สินค้าชิ้นนี้ในสต็อกหมดแล้ว (เหลือ 0) ต้องการปรับจำนวนอนุมัติเป็น 0 ชิ้นเพื่อยกเลิกจ่ายเฉพาะรายการนี้หรือไม่?";
+      } else {
+        document.getElementById("warnMessageText").innerText = `สินค้ามีไม่พอจ่าย! ต้องการปรับลดจำนวนอนุมัติลงเหลือ ${stockQty} ชิ้น (เท่าที่มีอยู่ในสต็อก) หรือไม่?`;
+      }
+
+      document.getElementById("stockWarnModal").classList.remove("hidden");
+      document.getElementById("stockWarnModal").classList.add("flex");
+    }
+
+    function closeStockWarnModal() {
+      document.getElementById("stockWarnModal").classList.add("hidden");
+    }
+
+    document.getElementById("btnCloseWarnModal").addEventListener("click", closeStockWarnModal);
+    document.getElementById("btnWarnDismiss").addEventListener("click", closeStockWarnModal);
+
+    document.getElementById("btnWarnAutoAdjust").addEventListener("click", () => {
+      if (pendingWarnItemIndex !== null) {
+        activeReqItems[pendingWarnItemIndex].approvedQty = pendingWarnStockAvailable;
+        if (!activeReqItems[pendingWarnItemIndex].adjustNote) {
+          activeReqItems[pendingWarnItemIndex].adjustNote = pendingWarnStockAvailable === 0 ? "สินค้าหมดสต็อก" : "สินค้าในสต็อกไม่พอจ่าย";
+        }
+        renderScanTable();
+      }
+      closeStockWarnModal();
+    });
+
+    // ยืนยันอนุมัติ
+    document.getElementById("btnConfirmApprove").addEventListener("click", async () => {
+      const uncheckedItems = activeReqItems.filter(i => !i.checked);
+      if (uncheckedItems.length > 0) {
+        alert(`⚠️ กรุณาตรวจสอบ/ติ๊กถูกเลือกสินค้าให้ครบทุกรายการก่อนกดอนุมัติ (ยังเหลืออีก ${uncheckedItems.length} รายการ)`);
+        return;
+      }
+
+      for (const item of activeReqItems) {
+        if (item.approvedQty < item.quantity && !item.adjustNote) {
+          alert(`⚠️ รายการ "${item.sku_name}" มีการจ่ายน้อยกว่าที่ขอเบิก (${item.approvedQty}/${item.quantity})\nกรุณาระบุหมายเหตุการจ่ายไม่ครบในช่องหมายเหตุด้วยครับ`);
+          return;
+        }
+      }
+
       try {
-        const reqDoc = await getDoc(doc(db, "requisition_requests", reqId));
-        if (!reqDoc.exists()) return alert("ไม่พบข้อมูลคำขอนี้");
+        for (let idx = 0; idx < activeReqItems.length; idx++) {
+          const item = activeReqItems[idx];
+          if (item.approvedQty === 0) continue;
 
-        currentRequest = { id: reqDoc.id, ...reqDoc.data() };
-        
-        // แปลง Items เพื่อใช้ทำ State ตรวจนับ
-        requestItems = currentRequest.items.map(item => ({
-          ...item,
-          scanned_count: 0,
-          is_verified: false,
-          verified_by_manual: false
-        }));
+          const prodRef = doc(db, "products", item.product_id);
+          const prodSnap = await getDoc(prodRef);
 
-        document.getElementById("modalReqId").textContent = `(${currentRequest.id})`;
-        document.getElementById("modalUserInfo").textContent = `ผู้เบิก: ${currentRequest.user_name || '-'} | วัตถุประสงค์: ${currentRequest.purpose || '-'}`;
+          if (!prodSnap.exists()) {
+            alert(`❌ ไม่พบสินค้า "${item.sku_name}" ในระบบสต็อกแล้ว`);
+            return;
+          }
 
-        renderModalItems();
-        hideAlert();
-        fulfillmentModal.classList.remove("hidden");
+          const currentStock = prodSnap.data().quantity || 0;
 
-        // Focus ที่ช่องบาร์โค้ดทันที
-        setTimeout(() => barcodeInput.focus(), 200);
+          if (currentStock < item.approvedQty) {
+            showStockWarnModal(idx, item.sku_name, item.approvedQty, currentStock);
+            return;
+          }
+        }
 
+        for (const item of activeReqItems) {
+          if (item.approvedQty <= 0) continue;
+
+          const prodRef = doc(db, "products", item.product_id);
+          const prodSnap = await getDoc(prodRef);
+          const currentStock = prodSnap.data().quantity || 0;
+
+          await updateDoc(prodRef, {
+            quantity: currentStock - item.approvedQty,
+            updatedAt: serverTimestamp()
+          });
+        }
+
+        await updateDoc(doc(db, "requisitions", activeReqId), {
+          status: "approved",
+          items: activeReqItems.map(i => ({
+            product_id: i.product_id,
+            sku_name: i.sku_name,
+            attributes: i.attributes || {},
+            quantity: i.quantity,
+            approvedQty: i.approvedQty,
+            adjustNote: i.adjustNote || "",
+            unit: i.unit || 'ชิ้น'
+          })),
+          approvedAt: serverTimestamp()
+        });
+
+        alert("🚀 ยืนยันการอนุมัติและตัดสต็อกสินค้าเรียบร้อยแล้ว!");
+        document.getElementById("scanModal").classList.add("hidden");
+        loadApprovals();
+
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดระหว่างดำเนินการ: " + err.message);
+      }
+    });
+
+    document.getElementById("btnCloseScanModal").addEventListener("click", () => document.getElementById("scanModal").classList.add("hidden"));
+    document.getElementById("btnCancelModal").addEventListener("click", () => document.getElementById("scanModal").classList.add("hidden"));
+
+    // --- Modal ปฏิเสธคำขอ (Reject Modal) ---
+    window.openRejectModal = (reqId) => {
+      rejectTargetReqId = reqId;
+      document.getElementById("rejectReasonInput").value = "";
+      document.getElementById("rejectModal").classList.remove("hidden");
+      document.getElementById("rejectModal").classList.add("flex");
+      document.getElementById("rejectReasonInput").focus();
+    };
+
+    function closeRejectModal() {
+      rejectTargetReqId = null;
+      document.getElementById("rejectModal").classList.add("hidden");
+    }
+
+    document.getElementById("btnCloseRejectModal").addEventListener("click", closeRejectModal);
+    document.getElementById("btnCancelReject").addEventListener("click", closeRejectModal);
+
+    document.getElementById("btnConfirmReject").addEventListener("click", async () => {
+      const reason = document.getElementById("rejectReasonInput").value.trim();
+      if (!reason) {
+        alert("⚠️ กรุณาระบุเหตุผลการปฏิเสธคำขอก่อนครับ");
+        document.getElementById("rejectReasonInput").focus();
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "requisitions", rejectTargetReqId), {
+          status: "rejected",
+          rejectReason: reason,
+          rejectedAt: serverTimestamp()
+        });
+        alert("❌ ปฏิเสธคำขอเรียบร้อยแล้ว รายการถูกย้ายไปที่หน้าประวัติการเบิก (History)");
+        closeRejectModal();
+        loadApprovals();
       } catch (err) {
         alert("เกิดข้อผิดพลาด: " + err.message);
       }
-    };
-
-    // --- 3. Render Modal Items List ---
-    function renderModalItems() {
-      modalItemsContainer.innerHTML = "";
-      let allVerified = true;
-
-      requestItems.forEach((item, index) => {
-        const isComplete = item.scanned_count >= item.amount || item.is_verified;
-        if (!isComplete) allVerified = false;
-
-        const card = document.createElement("div");
-        card.className = `p-4 rounded-xl border transition ${
-          isComplete ? "bg-emerald-50 border-emerald-300" : "bg-slate-50 border-slate-200"
-        }`;
-
-        card.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <div class="font-semibold text-slate-800 text-base">${item.sku_name}</div>
-              <div class="text-xs text-slate-500 font-mono mt-0.5">SKU ID: ${item.sku_id} ${item.barcode ? `| Barcode: ${item.barcode}` : ''}</div>
-            </div>
-            <div class="text-right">
-              <div class="text-lg font-bold font-mono ${isComplete ? "text-emerald-700" : "text-blue-600"}">
-                ${item.scanned_count} / ${item.amount}
-              </div>
-              <span class="text-xs text-slate-400">จำนวนที่ต้องการ</span>
-            </div>
-          </div>
-
-          <div class="mt-3 flex justify-between items-center pt-2 border-t border-slate-200/60">
-            <span class="text-xs font-semibold ${isComplete ? "text-emerald-600" : "text-amber-600"}">
-              ${isComplete ? "✓ ตรวจสอบเรียบร้อย" : "⏳ รอการสแกนตรวจนับ"}
-            </span>
-            <button onclick="manualVerify(${index})" class="text-xs ${
-              isComplete ? "text-slate-400 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 underline font-medium"
-            }" ${isComplete ? "disabled" : ""}>
-              ${item.is_verified ? "ยืนยันด้วยตนเองแล้ว" : "ยืนยันด้วยตนเอง (ไม่ใช้บาร์โค้ด)"}
-            </button>
-          </div>
-        `;
-        modalItemsContainer.appendChild(card);
-      });
-
-      // ปลดล็อกปุ่มอนุมัติเมื่อสแกนตรวจครบทุกรายการ
-      btnApproveAndDeduct.disabled = !allVerified;
-    }
-
-    // --- 4. Barcode Scan Handler ---
-    barcodeInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const code = barcodeInput.value.trim();
-        barcodeInput.value = "";
-        hideAlert();
-
-        if (!code) return;
-
-        // หาว่าบาร์โค้ดนี้ตรงกับ SKU หรือ Product บาร์โค้ดตัวไหนในรายการ
-        const item = requestItems.find(i => i.barcode === code || i.sku_id === code);
-
-        if (!item) {
-          showAlert(`บาร์โค้ด "${code}" ไม่ตรงกับรายการใดๆ ในคำขอเบิกนี้!`);
-          soundError();
-          return;
-        }
-
-        if (item.scanned_count >= item.amount) {
-          showAlert(`รายการ "${item.sku_name}" สแกนครบจำนวนที่ขอแล้ว!`);
-          soundError();
-          return;
-        }
-
-        // เพิ่มจำนวนสแกน
-        item.scanned_count += 1;
-        if (item.scanned_count >= item.amount) {
-          item.is_verified = true;
-        }
-
-        soundSuccess();
-        renderModalItems();
-      }
     });
 
-    // ให้ช่อง Input คืนค่า Focus ตลอดเวลาที่ Modal เปิดอยู่
-    document.addEventListener("click", (e) => {
-      if (!fulfillmentModal.classList.contains("hidden") && !e.target.closest("button") && !e.target.closest("input")) {
-        barcodeInput.focus();
-      }
-    });
-
-    // --- 5. Manual Verify Action ---
-    window.manualVerify = (index) => {
-      if (confirm(`ยืนยันการนับรายการ "${requestItems[index].sku_name}" โดยไม่สแกนบาร์โค้ด?`)) {
-        requestItems[index].scanned_count = requestItems[index].amount;
-        requestItems[index].is_verified = true;
-        requestItems[index].verified_by_manual = true;
-        soundSuccess();
-        renderModalItems();
-      }
-    };
-
-    function showAlert(msg) {
-      scanAlertMsg.textContent = msg;
-      scanAlert.classList.remove("hidden");
-    }
-
-    function hideAlert() {
-      scanAlert.classList.add("hidden");
-    }
-
-    // --- 6. Approve & Deduct Stock Transaction ---
-    btnApproveAndDeduct.addEventListener("click", async () => {
-      if (!confirm("ยืนยันการอนุมัติคำขอนี้ และดำเนินการตัดสต็อกสินค้าในระบบ?")) return;
-
-      btnApproveAndDeduct.disabled = true;
-      btnApproveAndDeduct.textContent = "กำลังดำเนินการตัดสต็อก...";
-
-      try {
-        // ใช้ Firestore Transaction ป้องกัน Data Race
-        await runTransaction(db, async (transaction) => {
-
-          // อ่านและตรวจสอบสต็อกของทุก SKU ก่อนตัด
-          for (const item of requestItems) {
-            const skuRef = doc(db, "skus", item.sku_id);
-            const skuSnap = await transaction.get(skuRef);
-
-            if (!skuSnap.exists()) {
-              throw new Error(`ไม่พบ SKU ID: ${item.sku_id} ในระบบ`);
-            }
-
-            const currentQty = skuSnap.data().total_quantity || 0;
-            if (currentQty < item.amount) {
-              throw new Error(`สินค้า "${item.sku_name}" มีสต็อกไม่พอ (คงเหลือ: ${currentQty}, ขอเบิก: ${item.amount})`);
-            }
-
-            // ตัดสต็อก SKU รวม
-            transaction.update(skuRef, {
-              total_quantity: currentQty - item.amount,
-              updatedAt: Timestamp.now()
-            });
-          }
-
-          // อัปเดตสถานะ Requisition Request เป็น Approved
-          const reqRef = doc(db, "requisition_requests", currentRequest.id);
-          transaction.update(reqRef, {
-            status: "approved",
-            approvedAt: Timestamp.now(),
-            items: requestItems
-          });
-        });
-
-        alert("อนุมัติคำขอเบิกและตัดสต็อกเรียบร้อยแล้ว!");
-        closeModal();
-        loadPendingRequests();
-
-      } catch (err) {
-        alert("การตัดสต็อกล้มเหลว: " + err.message);
-        btnApproveAndDeduct.disabled = false;
-        btnApproveAndDeduct.textContent = "ยืนยันการอนุมัติและตัดสต็อก";
-      }
-    });
-
-    // Close Modal Functions
-    function closeModal() {
-      fulfillmentModal.classList.add("hidden");
-      currentRequest = null;
-      requestItems = [];
-    }
-
-    document.getElementById("btnCloseModal").onclick = closeModal;
-    document.getElementById("btnCancelModal").onclick = closeModal;
-    document.getElementById("btnRefresh").onclick = loadPendingRequests;
-
-    // Load initial data
-    loadPendingRequests();
+    document.getElementById("btnRefresh").addEventListener("click", loadApprovals);
+    loadApprovals();
   </script>
 </body>
 </html>
