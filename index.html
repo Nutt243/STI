@@ -3,23 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockMaster - สรุปภาพรวมการเบิกสินค้า</title>
+  <title>StockMaster - หน้าหลัก</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans">
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- Navigation Bar -->
-  <nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">📦</span>
-        <span class="font-bold text-slate-800 text-lg">StockMaster</span>
+  <!-- Navbar -->
+  <nav class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-6">
+        <a href="index.html" class="text-2xl font-bold text-blue-400">📦 StockMaster</a>
+        <div class="hidden md:flex space-x-4 text-sm">
+          <a href="index.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1">หน้าหลัก</a>
+          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
+          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
+          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only hidden">รายการรออนุมัติ</a>
+          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only hidden">จัดการสต็อก</a>
+          <a href="admin-unregistered-skus.html" class="hover:text-blue-300 py-1 admin-only hidden">รอจัดหมวดหมู่</a>
+          <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only hidden">จัดการผู้ใช้</a>
+        </div>
       </div>
       <div class="flex items-center space-x-4">
-        <a href="requisition.html" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition shadow">
-          + ทำรายการเบิกใหม่
-        </a>
-        <div class="h-6 w-px bg-slate-200"></div>
+        <span id="userDisplayName" class="text-sm text-slate-300"></span>
         <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
           ออกจากระบบ
         </button>
@@ -28,60 +33,38 @@
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
     
-    <!-- Header Welcome -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center">
+    <!-- Hero / Quick Menu -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold">สวัสดีครับ, <span id="userName">กำลังโหลด...</span> 👋</h1>
-        <p class="text-blue-100 text-sm mt-1">ยินดีต้อนรับสู่ระบบติดตามรายการเบิกพัสดุและอุปกรณ์</p>
+        <h1 class="text-2xl font-bold text-slate-800">ยินดีต้อนรับสู่ระบบจัดการสต็อกพัสดุ</h1>
+        <p class="text-slate-500 text-sm mt-1">เลือกทำรายการขอเบิกพัสดุ หรือตรวจสอบสถานะคำขอของคุณได้ที่นี่</p>
       </div>
-      <span id="userEmail" class="bg-white/20 text-xs px-3 py-1.5 rounded-full mt-4 md:mt-0 backdrop-blur-sm">
-        loading...
-      </span>
+      <a href="requisition.html" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow transition">
+        + ขอเบิกสินค้าใหม่
+      </a>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="text-slate-500 text-xs font-semibold uppercase">รายการเบิกทั้งหมด</div>
-        <div class="text-3xl font-bold text-slate-800 mt-2" id="statTotalCount">0</div>
-        <p class="text-slate-400 text-xs mt-1">จำนวนครั้งที่ทำรายการเบิก</p>
-      </div>
-
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="text-amber-500 text-xs font-semibold uppercase">รออนุมัติ</div>
-        <div class="text-3xl font-bold text-amber-600 mt-2" id="statPendingCount">0</div>
-        <p class="text-slate-400 text-xs mt-1">รายการที่กำลังรอการตรวจสอบ</p>
-      </div>
-
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="text-emerald-500 text-xs font-semibold uppercase">อนุมัติแล้ว</div>
-        <div class="text-3xl font-bold text-emerald-600 mt-2" id="statApprovedCount">0</div>
-        <p class="text-slate-400 text-xs mt-1">รายการที่อนุมัติเรียบร้อยแล้ว</p>
-      </div>
-    </div>
-
-    <!-- History Table -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-        <h2 class="font-bold text-slate-800 text-lg">ประวัติการเบิกของฉัน</h2>
+    <!-- Recent History Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+        <h2 class="text-lg font-bold text-slate-800">ประวัติการเบิกของคุณ (ล่าสุด)</h2>
+        <a href="history.html" class="text-xs font-semibold text-blue-600 hover:text-blue-800">ดูทั้งหมด &rarr;</a>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-600">
-          <thead class="bg-slate-50 text-slate-700 text-xs uppercase border-b border-slate-100">
-            <tr>
-              <th class="px-6 py-3.5">วันที่ทำรายการ</th>
-              <th class="px-6 py-3.5">รายการพัสดุ</th>
-              <th class="px-6 py-3.5 text-center">จำนวนรวม</th>
-              <th class="px-6 py-3.5 text-center">สถานะ</th>
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-xs font-semibold uppercase tracking-wider">
+              <th class="p-4">วันที่ทำรายการ</th>
+              <th class="p-4">รายการพัสดุ</th>
+              <th class="p-4">วัตถุประสงค์</th>
+              <th class="p-4">สถานะ</th>
             </tr>
           </thead>
-          <tbody id="historyTableBody" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="4" class="px-6 py-8 text-center text-slate-400">กำลังโหลดข้อมูลรายการเบิก...</td>
-            </tr>
+          <tbody id="myHistoryTableBody" class="divide-y divide-slate-100 text-sm">
+            <tr><td colspan="4" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูลประวัติ...</td></tr>
           </tbody>
         </table>
       </div>
@@ -90,131 +73,79 @@
   </main>
 
   <script type="module">
-    import { auth, db } from "./js/firebase-config.js";
-    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { collection, query, where, getDocs, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { db, auth } from "./js/firebase-config.js";
+    import { checkUserAuth } from "./js/auth.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const userName = document.getElementById("userName");
-    const userEmail = document.getElementById("userEmail");
-    const statTotalCount = document.getElementById("statTotalCount");
-    const statPendingCount = document.getElementById("statPendingCount");
-    const statApprovedCount = document.getElementById("statApprovedCount");
-    const historyTableBody = document.getElementById("historyTableBody");
-    const btnLogout = document.getElementById("btnLogout");
+    checkUserAuth(['admin', 'user']);
 
-    // Check Auth State
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        // หากยังไม่ログイン -> Redirect ไปหน้า login.html
-        window.location.href = "login.html";
-        return;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadUserRecentHistory(user.uid);
       }
-
-      // ดึง Profile จาก Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        
-        // เช็ก status การอนุมัติการใช้งานระบบ
-        if (userData.status !== "approved") {
-          alert("บัญชีของคุณยังไม่อนุมัติให้เข้าใช้งานระบบ");
-          await signOut(auth);
-          window.location.href = "login.html";
-          return;
-        }
-
-        userName.textContent = userData.name || user.email;
-        userEmail.textContent = user.email;
-      }
-
-      // โหลดประวัติการเบิกของ User คนนี้
-      loadUserRequisitions(user.uid);
     });
 
-    // Load User Requisitions
-    async function loadUserRequisitions(userId) {
+    async function loadUserRecentHistory(uid) {
+      const tbody = document.getElementById("myHistoryTableBody");
       try {
+        // ดึงข้อมูลโดยกรองเฉพาะ user_id (หลีกเลี่ยง Composite Index Error)
         const q = query(
-          collection(db, "requisitions"),
-          where("userId", "==", userId),
-          orderBy("createdAt", "desc")
+          collection(db, "requisition_requests"),
+          where("user_id", "==", uid)
         );
 
-        const querySnapshot = await getDocs(q);
-        
-        let total = 0;
-        let pending = 0;
-        let approved = 0;
-        let rowsHtml = "";
+        const snapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-          historyTableBody.innerHTML = `
-            <tr>
-              <td colspan="4" class="px-6 py-8 text-center text-slate-400">คุณยังไม่มีประวัติการเบิกพัสดุ</td>
-            </tr>`;
-          updateStats(0, 0, 0);
+        if (snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">ยังไม่มีประวัติการขอเบิกพัสดุ</td></tr>`;
           return;
         }
 
-        querySnapshot.forEach((docSnap) => {
-          const req = docSnap.data();
-          total++;
+        let list = [];
+        snapshot.forEach(docSnap => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
 
-          if (req.status === "pending") pending++;
-          if (req.status === "approved") approved++;
+        // จัดเรียงตามเวลาด้วย JavaScript (จากใหม่ไปเก่า)
+        list.sort((a, b) => {
+          const tA = a.createdAt ? a.createdAt.toMillis() : 0;
+          const tB = b.createdAt ? b.createdAt.toMillis() : 0;
+          return tB - tA;
+        });
 
-          // คำนวณจำนวนชิ้นรวม
-          const itemCount = req.items ? req.items.reduce((sum, item) => sum + Number(item.qty), 0) : 0;
-          const itemNames = req.items ? req.items.map(i => `${i.name} (${i.qty})`).join(", ") : "-";
+        // แสดงผลเฉพาะ 5 รายการล่าสุด
+        const recentList = list.slice(0, 5);
 
-          // Format Date
-          const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleDateString("th-TH", {
-            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-          }) : "-";
-
-          // Status Badge Style
-          let statusBadge = `<span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold">รออนุมัติ</span>`;
-          if (req.status === "approved") {
-            statusBadge = `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold">อนุมัติแล้ว</span>`;
-          } else if (req.status === "rejected") {
-            statusBadge = `<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-xs font-semibold">ปฏิเสธ</span>`;
+        let html = "";
+        recentList.forEach(item => {
+          const dateStr = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString('th-TH') : '-';
+          
+          let statusBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">รออนุมัติ</span>`;
+          if (item.status === 'approved') {
+            statusBadge = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-semibold">อนุมัติแล้ว</span>`;
+          } else if (item.status === 'rejected') {
+            statusBadge = `<span class="px-2.5 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">ไม่อนุมัติ</span>`;
           }
 
-          rowsHtml += `
-            <tr class="hover:bg-slate-50/50 transition">
-              <td class="px-6 py-4 text-xs text-slate-500">${dateStr}</td>
-              <td class="px-6 py-4 font-medium text-slate-800">${itemNames}</td>
-              <td class="px-6 py-4 text-center font-semibold text-slate-700">${itemCount} ชิ้น</td>
-              <td class="px-6 py-4 text-center">${statusBadge}</td>
+          const itemSummary = (item.items || []).map(i => `${i.sku_name} (${i.amount})`).join(", ");
+
+          html += `
+            <tr class="hover:bg-slate-50 border-b border-slate-100">
+              <td class="p-4 text-xs text-slate-500">${dateStr}</td>
+              <td class="p-4 font-semibold text-slate-800">${itemSummary || '-'}</td>
+              <td class="p-4 text-slate-600 text-xs">${item.purpose || '-'}</td>
+              <td class="p-4">${statusBadge}</td>
             </tr>
           `;
         });
 
-        historyTableBody.innerHTML = rowsHtml;
-        updateStats(total, pending, approved);
+        tbody.innerHTML = html;
 
-      } catch (error) {
-        console.error("Error loading requisitions:", error);
-        historyTableBody.innerHTML = `
-          <tr>
-            <td colspan="4" class="px-6 py-8 text-center text-rose-500">เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}</td>
-          </tr>`;
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-500">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</td></tr>`;
       }
     }
-
-    function updateStats(total, pending, approved) {
-      statTotalCount.textContent = total;
-      statPendingCount.textContent = pending;
-      statApprovedCount.textContent = approved;
-    }
-
-    // Logout Action
-    btnLogout.addEventListener("click", async () => {
-      if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-        await signOut(auth);
-        window.location.href = "login.html?loggedOut=true";
-      }
-    });
   </script>
 </body>
 </html>

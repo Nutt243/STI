@@ -1,85 +1,66 @@
-// js/auth.js
-import { auth, db } from "./firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { auth } from "./firebase-config.js";
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db } from "./firebase-config.js";
 
-/**
- * ฟังก์ชันตรวจเช็กการเข้าถึงหน้าเว็บตาม Role และ Status
- * @param {Array<string>} allowedRoles - เช่น ['admin', 'user']
- */
-export function checkUserAuth(allowedRoles = ['admin', 'user']) {
+// ฟังก์ชันออกจากระบบ พร้อมป๊อปอัปยืนยัน
+export async function logoutUser() {
+  const confirmLogout = confirm("คุณต้องการออกจากระบบใช่หรือไม่?");
+  if (!confirmLogout) return;
+
+  try {
+    await signOut(auth);
+    window.location.href = "login.html";
+  } catch (error) {
+    alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
+  }
+}
+
+// ตรวจสอบสิทธิ์การเข้าใช้งาน
+export function checkUserAuth(allowedRoles = []) {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
-      // ถ้ายังไม่ได้เข้าสู่ระบบ ให้ส่งกลับไปหน้า Login (หรือ index.html)
-      if (!window.location.pathname.endsWith("index.html") && window.location.pathname !== "/") {
-        window.location.href = "index.html";
-      }
+      window.location.href = "login.html";
       return;
     }
 
     try {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        // แสดงชื่อผู้ใช้ใน Navbar
+        const nameEl = document.getElementById("userDisplayName");
+        if (nameEl) {
+          nameEl.textContent = userData.name || user.email;
+        }
 
-      if (!userSnap.exists()) {
-        alert("ไม่พบข้อมูลผู้ใช้งานในระบบ");
-        await signOut(auth);
-        window.location.href = "index.html";
-        return;
+        // ซ่อน/แสดง เมนูเฉพาะ Admin
+        const adminElements = document.querySelectorAll(".admin-only");
+        adminElements.forEach(el => {
+          if (userData.role === "admin") {
+            el.classList.remove("hidden");
+          } else {
+            el.classList.add("hidden");
+          }
+        });
+
+        // ตรวจสอบ Role
+        if (allowedRoles.length > 0 && !allowedRoles.includes(userData.role)) {
+          alert("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
+          window.location.href = "index.html";
+        }
       }
-
-      const userData = userSnap.data();
-
-      // 1. ตรวจสอบสถานะการอนุมัติ
-      if (userData.status !== "approved") {
-        alert("บัญชีของคุณยังไมได้รับการอนุมัติ หรือถูกระงับการใช้งาน");
-        await signOut(auth);
-        window.location.href = "index.html";
-        return;
-      }
-
-      // 2. ตรวจสอบ Role ว่าตรงกับหน้าที่เข้าใช้งานหรือไม่
-      const userRole = userData.role || "user";
-      if (!allowedRoles.includes(userRole)) {
-        alert("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
-        window.location.href = userRole === "admin" ? "admin-dashboard.html" : "requisition.html";
-        return;
-      }
-
-      // 3. ปรับ UI ของ Navbar ตามสิทธิ์ผู้ใช้
-      updateNavbarUI(user, userData);
-
-    } catch (error) {
-      console.error("Error verifying user auth:", error);
+    } catch (err) {
+      console.error("Error checking auth status:", err);
     }
   });
 }
 
-/**
- * แสดง/ซ่อน เมนู Navbar และชื่อผู้ใช้
- */
-function updateNavbarUI(user, userData) {
-  const userDisplayName = document.getElementById("userDisplayName");
-  if (userDisplayName) {
-    userDisplayName.textContent = userData.name || user.email;
-  }
-
-  // ซ่อน/แสดง เมนูตาม Role
-  const adminElements = document.querySelectorAll(".admin-only");
-  adminElements.forEach(el => {
-    el.style.display = (userData.role === "admin") ? "block" : "none";
-  });
-
-  // ผูก Event ปุ่ม Logout
+// ผูก Event ให้ปุ่ม logout ทุกหน้าอัตโนมัติ
+document.addEventListener("DOMContentLoaded", () => {
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) {
-    btnLogout.onclick = async () => {
-      try {
-        await signOut(auth);
-        window.location.href = "index.html";
-      } catch (err) {
-        console.error("Logout failed:", err);
-      }
-    };
+    btnLogout.addEventListener("click", logoutUser);
   }
-}
+});

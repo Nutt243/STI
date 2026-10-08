@@ -18,6 +18,7 @@
           <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
           <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only">รายการรออนุมัติ</a>
           <a href="admin-dashboard.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1 admin-only">จัดการสต็อก</a>
+          <a href="admin-unregistered-skus.html" class="hover:text-blue-300 py-1 admin-only">รอจัดหมวดหมู่</a>
           <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only">จัดการผู้ใช้</a>
         </div>
       </div>
@@ -37,16 +38,21 @@
         <h1 class="text-2xl font-bold text-slate-800">จัดการสต็อกและรายการสินค้า (SKU)</h1>
         <p class="text-slate-500 text-sm">เพิ่ม ปรับยอด หรือตั้งค่าการแจ้งเตือนสต็อกขั้นต่ำ</p>
       </div>
-      <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow">
-        + เพิ่ม SKU สินค้าใหม่
-      </button>
+      <div class="flex gap-2">
+        <a href="admin-unregistered-skus.html" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center gap-1">
+          <span>⚡ ยิงบาร์โค้ดด่วน (รอจัดหมวด)</span>
+        </a>
+        <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow">
+          + เพิ่ม SKU สินค้าใหม่
+        </button>
+      </div>
     </div>
 
     <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-slate-800 text-slate-200 text-sm">
-            <th class="p-4">SKU ID</th>
+            <th class="p-4">SKU / Barcode</th>
             <th class="p-4">ชื่อสินค้า</th>
             <th class="p-4">หมวดหมู่</th>
             <th class="p-4">สต็อกคงเหลือ</th>
@@ -61,10 +67,66 @@
     </div>
   </main>
 
+  <!-- Modal สำหรับ เพิ่ม / แก้ไข SKU -->
+  <div id="skuModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+      <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <h3 id="modalTitle" class="font-bold text-lg">เพิ่ม SKU สินค้าใหม่</h3>
+        <button onclick="closeSkuModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+      <form id="skuForm" class="p-6 space-y-4">
+        <input type="hidden" id="isEditMode" value="false">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">รหัส SKU / Barcode <span class="text-red-500">*</span></label>
+          <input type="text" id="modalSkuId" required placeholder="เช่น SKU-1001 หรือยิงบาร์โค้ด"
+            class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อสินค้า <span class="text-red-500">*</span></label>
+          <input type="text" id="modalSkuName" required placeholder="เช่น กระดาษ A4 80GSM"
+            class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่</label>
+            <input type="text" id="modalCategory" placeholder="ทั่วไป" value="ทั่วไป"
+              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยนับ</label>
+            <input type="text" id="modalUnit" placeholder="ชิ้น / กล่อง / รีม" value="ชิ้น"
+              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนสต็อกตั้งต้น</label>
+            <input type="number" id="modalQty" min="0" value="0"
+              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">แจ้งเตือนสต็อกขั้นต่ำ</label>
+            <input type="number" id="modalMinAlert" min="0" value="5"
+              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeSkuModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">ยกเลิก</button>
+          <button type="submit" id="btnSaveSku" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
-    import { collection, getDocs, setDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, setDoc, getDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin']);
 
@@ -92,7 +154,8 @@
               </td>
               <td class="p-4 text-slate-500">${sku.min_stock_alert || 0} ${sku.unit || 'ชิ้น'}</td>
               <td class="p-4 text-center">
-                <button onclick="editSku('${docSnap.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-2">แก้ไข</button>
+                <button onclick="editSku('${docSnap.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-3">แก้ไข</button>
+                <button onclick="deleteSku('${docSnap.id}')" class="text-red-500 hover:text-red-700 text-xs font-semibold">ลบ</button>
               </td>
             </tr>
           `;
@@ -104,25 +167,81 @@
       }
     }
 
-    window.openAddModal = async () => {
-      const skuId = prompt("กรอก รหัส SKU (เช่น SKU-001):");
-      if (!skuId) return;
-      const skuName = prompt("กรอก ชื่อสินค้า:");
-      const qty = parseInt(prompt("กรอก จำนวนสต็อกตั้งต้น:", "0"));
+    // Modal Control Functions
+    window.openAddModal = () => {
+      document.getElementById("modalTitle").textContent = "เพิ่ม SKU สินค้าใหม่";
+      document.getElementById("isEditMode").value = "false";
+      document.getElementById("modalSkuId").disabled = false;
+      document.getElementById("skuForm").reset();
+      document.getElementById("skuModal").classList.remove("hidden");
+    };
 
-      if (skuId && skuName) {
-        await setDoc(doc(db, "skus", skuId), {
-          sku_name: skuName,
-          total_quantity: qty || 0,
-          unit: "ชิ้น",
-          category: "ทั่วไป",
-          min_stock_alert: 5,
-          updatedAt: Timestamp.now()
-        });
-        alert("เพิ่ม SKU สำเร็จ");
-        loadStockData();
+    window.closeSkuModal = () => {
+      document.getElementById("skuModal").classList.add("hidden");
+    };
+
+    window.editSku = async (skuId) => {
+      try {
+        const skuDoc = await getDoc(doc(db, "skus", skuId));
+        if (!skuDoc.exists()) return alert("ไม่พบข้อมูล SKU");
+
+        const data = skuDoc.data();
+        document.getElementById("modalTitle").textContent = `แก้ไขข้อมูล SKU: ${skuId}`;
+        document.getElementById("isEditMode").value = "true";
+        document.getElementById("modalSkuId").value = skuId;
+        document.getElementById("modalSkuId").disabled = true;
+        document.getElementById("modalSkuName").value = data.sku_name || "";
+        document.getElementById("modalCategory").value = data.category || "ทั่วไป";
+        document.getElementById("modalUnit").value = data.unit || "ชิ้น";
+        document.getElementById("modalQty").value = data.total_quantity || 0;
+        document.getElementById("modalMinAlert").value = data.min_stock_alert || 5;
+
+        document.getElementById("skuModal").classList.remove("hidden");
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
       }
     };
+
+    window.deleteSku = async (skuId) => {
+      if (!confirm(`คุณต้องการลบ SKU: ${skuId} หรือไม่?`)) return;
+      try {
+        await deleteDoc(doc(db, "skus", skuId));
+        alert("ลบรายการเรียบร้อยแล้ว");
+        loadStockData();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการลบ: " + err.message);
+      }
+    };
+
+    // Handle Form Submit
+    document.getElementById("skuForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const skuId = document.getElementById("modalSkuId").value.trim();
+      const skuName = document.getElementById("modalSkuName").value.trim();
+      const category = document.getElementById("modalCategory").value.trim() || "ทั่วไป";
+      const unit = document.getElementById("modalUnit").value.trim() || "ชิ้น";
+      const qty = parseInt(document.getElementById("modalQty").value) || 0;
+      const minAlert = parseInt(document.getElementById("modalMinAlert").value) || 0;
+
+      try {
+        await setDoc(doc(db, "skus", skuId), {
+          sku_name: skuName,
+          category: category,
+          unit: unit,
+          total_quantity: qty,
+          min_stock_alert: minAlert,
+          barcode: skuId,
+          status: "active",
+          updatedAt: Timestamp.now()
+        }, { merge: true });
+
+        alert("บันทึกข้อมูล SKU เรียบร้อยแล้ว");
+        closeSkuModal();
+        loadStockData();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+      }
+    });
 
     loadStockData();
   </script>
