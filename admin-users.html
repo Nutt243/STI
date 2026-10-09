@@ -3,122 +3,183 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockMaster - จัดการผู้ใช้งาน</title>
+  <title>StockMaster - จัดการผู้ใช้งานและสิทธิ์ระบบ</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
 
   <!-- Navbar -->
-  <nav class="bg-slate-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-6">
-        <span class="text-2xl font-bold text-blue-400">📦 StockMaster</span>
-        <div class="hidden md:flex space-x-4 text-sm">
-          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
-          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
-          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only">รายการรออนุมัติ</a>
-          <a href="admin-unregistered-skus.html" class="hover:text-blue-300 py-1 admin-only">รอจัดหมวดหมู่</a>
-          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only">จัดการสต็อก</a>
-          <a href="admin-users.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1 admin-only">จัดการผู้ใช้</a>
+  <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="index.html" class="flex items-center space-x-3">
+          <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+          <span class="font-bold text-lg tracking-tight">StockMaster</span>
+        </a>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก/สต็อก</a>
+          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
+          <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">⏳ อนุมัติคำขอ</a>
+          <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+          <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
         </div>
-      </div>
-      <div class="flex items-center space-x-4">
-        <span id="userDisplayName" class="text-sm text-slate-300"></span>
-        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
-          ออกจากระบบ
-        </button>
+
+        <div class="flex items-center space-x-3">
+          <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">Loading...</span>
+          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1">ออกจากระบบ</button>
+        </div>
       </div>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow">
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-slate-800">จัดการผู้ใช้งานและสิทธิ์เข้าถึง</h1>
-      <p class="text-slate-500 text-sm">อนุมัติสมาชิกใหม่ ปรับเปลี่ยนสิทธิ์ (Role) หรือระงับบัญชีผู้ใช้</p>
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">👥 จัดการผู้ใช้งาน & อนุมัติสิทธิ์การเข้าใช้งาน</h1>
+        <p class="text-xs text-slate-500 mt-1">อนุมัติสมาชิกใหม่ ปรับเปลี่ยนสิทธิ์ (User / Manager / Admin) หรือระงับการเข้าใช้งานระบบ</p>
+      </div>
+      <button id="btnRefresh" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรชข้อมูล</button>
     </div>
 
-    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-slate-800 text-slate-200 text-sm">
-            <th class="p-4">อีเมล / UID</th>
-            <th class="p-4">ชื่อ-นามสกุล</th>
-            <th class="p-4">สิทธิ์ (Role)</th>
-            <th class="p-4">สถานะ</th>
-            <th class="p-4 text-center">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="usersTableBody" class="divide-y divide-slate-100 text-sm">
-          <tr><td colspan="5" class="p-8 text-center text-slate-400">กำลังโหลดรายการผู้ใช้งาน...</td></tr>
-        </tbody>
-      </table>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-600">
+          <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100">
+            <tr>
+              <th class="p-4">ผู้ใช้งาน / อีเมล</th>
+              <th class="p-4">วันที่สมัคร</th>
+              <th class="p-4 text-center">สถานะการอนุมัติ</th>
+              <th class="p-4 text-center">สิทธิ์บทบาท (Role)</th>
+              <th class="p-4 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="5" class="p-8 text-center text-slate-400 font-bold">กำลังโหลดรายชื่อผู้ใช้งาน...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
   </main>
 
   <script type="module">
     import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
-    import { collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // เข้าหน้านี้ได้เฉพาะ Admin เท่านั้น
     checkUserAuth(['admin']);
 
     async function loadUsers() {
-      const tableBody = document.getElementById("usersTableBody");
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">กำลังโหลดรายชื่อผู้ใช้งาน...</td></tr>`;
+
       try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        let html = "";
+        const snap = await getDocs(collection(db, "users"));
+        tbody.innerHTML = "";
 
-        querySnapshot.forEach(docSnap => {
-          const user = docSnap.data();
-          const uid = docSnap.id;
-          const isPending = user.status === "pending_approval";
+        if (snap.empty) {
+          tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">ยังไม่มีข้อมูลผู้ใช้งานในระบบ</td></tr>`;
+          return;
+        }
 
-          html += `
-            <tr class="hover:bg-slate-50 border-b border-slate-100">
-              <td class="p-4 font-mono text-slate-700">${user.email || uid}</td>
-              <td class="p-4 font-medium text-slate-800">${user.name || '-'}</td>
-              <td class="p-4"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-xs">${user.role || 'user'}</span></td>
-              <td class="p-4">
-                <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  user.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                }">
-                  ${user.status || 'pending'}
-                </span>
-              </td>
-              <td class="p-4 text-center space-x-2">
-                ${isPending ? `
-                  <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs">อนุมัติ</button>
-                  <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-xs">ปฏิเสธ</button>
-                ` : `
-                  <button onclick="toggleRole('${uid}', '${user.role}')" class="text-blue-600 hover:underline text-xs font-semibold">เปลี่ยน Role</button>
-                `}
-              </td>
-            </tr>
+        snap.forEach(d => {
+          const u = d.data();
+          const userId = d.id;
+          const dateStr = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString('th-TH') : "-";
+          
+          const isApproved = u.status === "active";
+          const isPending = u.status === "pending" || !u.status;
+          const role = u.role || "user";
+
+          let roleBadgeClass = "text-slate-700 bg-slate-50 border-slate-200";
+          if (role === 'admin') roleBadgeClass = "text-purple-700 bg-purple-50 border-purple-200 font-bold";
+          if (role === 'manager') roleBadgeClass = "text-amber-700 bg-amber-50 border-amber-200 font-bold";
+
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition";
+
+          tr.innerHTML = `
+            <td class="p-4">
+              <div class="font-bold text-slate-800 text-sm">${u.name || 'ไม่ระบุชื่อ'}</div>
+              <div class="text-slate-400 font-mono text-[11px]">${u.email || userId}</div>
+            </td>
+            <td class="p-4 text-slate-500 font-mono">${dateStr}</td>
+            <td class="p-4 text-center">
+              ${isApproved 
+                ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2.5 py-1 rounded-full font-bold">✅ อนุมัติแล้ว (Active)</span>'
+                : (isPending 
+                    ? '<span class="bg-amber-100 text-amber-800 text-[10px] px-2.5 py-1 rounded-full font-bold">⏳ รออนุมัติ (Pending)</span>'
+                    : '<span class="bg-rose-100 text-rose-800 text-[10px] px-2.5 py-1 rounded-full font-bold">🚫 ระงับใช้งาน (Disabled)</span>')
+              }
+            </td>
+            <td class="p-4 text-center">
+              <select onchange="changeRole('${userId}', this.value)" class="p-1.5 border rounded-lg text-xs font-bold ${roleBadgeClass}">
+                <option value="user" ${role === 'user' ? 'selected' : ''}>User (ผู้ใช้ทั่วไป)</option>
+                <option value="manager" ${role === 'manager' ? 'selected' : ''}>Manager (ผู้จัดการ)</option>
+                <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin (ผู้ดูแลระบบ)</option>
+              </select>
+            </td>
+            <td class="p-4 text-center space-x-1">
+              ${isPending 
+                ? `<button onclick="updateUserStatus('${userId}', 'active')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition">✅ อนุมัติสิทธิ์</button>
+                   <button onclick="updateUserStatus('${userId}', 'rejected')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">❌ ปฏิเสธ</button>`
+                : (isApproved 
+                    ? `<button onclick="updateUserStatus('${userId}', 'disabled')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">🚫 ระงับใช้งาน</button>`
+                    : `<button onclick="updateUserStatus('${userId}', 'active')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl transition">🔓 ปลดระงับ</button>`)
+              }
+            </td>
           `;
+
+          tbody.appendChild(tr);
         });
 
-        tableBody.innerHTML = html;
-
       } catch (err) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-rose-600 text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</td></tr>`;
       }
     }
 
-    window.updateUserStatus = async (uid, status) => {
-      await updateDoc(doc(db, "users", uid), { status });
-      alert(`อัปเดตสถานะเป็น ${status} เรียบร้อยแล้ว`);
-      loadUsers();
-    };
+    window.updateUserStatus = async (userId, newStatus) => {
+      const actionText = newStatus === 'active' ? 'อนุมัติผู้ใช้งานนี้' : (newStatus === 'disabled' ? 'ระงับการใช้งาน' : 'ปฏิเสธการสมัคร');
+      if (!confirm(`คุณต้องการ${actionText}ใช่หรือไม่?`)) return;
 
-    window.toggleRole = async (uid, currentRole) => {
-      const newRole = currentRole === "admin" ? "user" : "admin";
-      if (confirm(`สลับสิทธิ์ผู้ใช้งานเป็น ${newRole}?`)) {
-        await updateDoc(doc(db, "users", uid), { role: newRole });
+      try {
+        await updateDoc(doc(db, "users", userId), {
+          status: newStatus,
+          updatedAt: serverTimestamp()
+        });
+        alert("อัปเดตสถานะการอนุมัติเรียบร้อยแล้ว!");
         loadUsers();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
       }
     };
 
+    window.changeRole = async (userId, newRole) => {
+      if (!confirm(`คุณต้องการปรับเปลี่ยนสิทธิ์ผู้ใช้นี้เป็น "${newRole.toUpperCase()}" ใช่หรือไม่?`)) {
+        loadUsers();
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "users", userId), {
+          role: newRole,
+          updatedAt: serverTimestamp()
+        });
+        alert(`ปรับสิทธิ์เป็น ${newRole.toUpperCase()} เรียบร้อยแล้ว!`);
+        loadUsers();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      }
+    };
+
+    document.getElementById("btnRefresh").addEventListener("click", loadUsers);
     loadUsers();
   </script>
 </body>

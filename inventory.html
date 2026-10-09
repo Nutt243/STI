@@ -8,24 +8,37 @@
 </head>
 <body class="bg-slate-50 min-h-screen font-sans">
 
-  <!-- Navbar -->
-  <nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+<nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      
+      <a href="index.html" class="flex items-center space-x-3">
+        <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+        <span class="font-bold text-lg tracking-tight">StockMaster</span>
+      </a>
+
+      <!-- เมนูหลักตามสิทธิ์ -->
+      <div class="hidden md:flex items-center space-x-1">
+        <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
+        
+        <!-- สำหรับ Manager และ Admin -->
+        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
+        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
+        
+        <!-- สำหรับ Admin เท่านั้น -->
+        <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
+      </div>
+
       <div class="flex items-center space-x-3">
-        <span class="text-2xl">📦</span>
-        <span class="font-bold text-slate-800 text-lg">StockMaster (Admin)</span>
+        <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
+        <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
-      <div class="flex items-center space-x-4">
-        <a href="approvals.html" class="text-slate-600 hover:text-blue-600 text-sm font-medium transition">
-          รายการรออนุมัติ
-        </a>
-        <div class="h-6 w-px bg-slate-200"></div>
-        <button id="btnLogout" class="text-slate-500 hover:text-red-600 text-sm font-medium transition">
-          ออกจากระบบ
-        </button>
-      </div>
+
     </div>
-  </nav>
+  </div>
+</nav>
 
   <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
     <div class="flex justify-between items-center">

@@ -8,29 +8,37 @@
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- Navbar -->
-  <nav class="bg-slate-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-6">
-        <a href="index.html" class="text-2xl font-bold text-blue-400">📦 StockMaster</a>
-        <div class="hidden md:flex space-x-4 text-sm">
-          <a href="index.html" class="text-blue-400 border-b-2 border-blue-400 font-semibold py-1">หน้าหลัก</a>
-          <a href="requisition.html" class="hover:text-blue-300 py-1">ขอเบิกสินค้า</a>
-          <a href="history.html" class="hover:text-blue-300 py-1">ประวัติการเบิก</a>
-          <a href="approvals.html" class="hover:text-blue-300 py-1 admin-only hidden">รายการรออนุมัติ</a>
-          <a href="admin-dashboard.html" class="hover:text-blue-300 py-1 admin-only hidden">จัดการสต็อก</a>
-          <a href="admin-unregistered-skus.html" class="hover:text-blue-300 py-1 admin-only hidden">รอจัดหมวดหมู่</a>
-          <a href="admin-users.html" class="hover:text-blue-300 py-1 admin-only hidden">จัดการผู้ใช้</a>
-        </div>
+<nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      
+      <a href="index.html" class="flex items-center space-x-3">
+        <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+        <span class="font-bold text-lg tracking-tight">StockMaster</span>
+      </a>
+
+      <!-- เมนูหลักตามสิทธิ์ -->
+      <div class="hidden md:flex items-center space-x-1">
+        <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
+        
+        <!-- สำหรับ Manager และ Admin -->
+        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
+        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
+        
+        <!-- สำหรับ Admin เท่านั้น -->
+        <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
-      <div class="flex items-center space-x-4">
-        <span id="userDisplayName" class="text-sm text-slate-300"></span>
-        <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
-          ออกจากระบบ
-        </button>
+
+      <div class="flex items-center space-x-3">
+        <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
+        <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
+
     </div>
-  </nav>
+  </div>
+</nav>
 
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
@@ -78,7 +86,7 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    checkUserAuth(['admin', 'user']);
+    checkUserAuth(['admin', 'manager', 'user']);
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
