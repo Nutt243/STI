@@ -6,7 +6,7 @@
   <title>StockMaster - จัดการผู้ใช้งานและสิทธิ์ระบบ</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800"  >
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
 
   <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,7 +17,6 @@
           <span class="font-bold text-lg tracking-tight">StockMaster</span>
         </a>
 
-        <!-- Desktop Nav -->
         <div class="hidden md:flex items-center space-x-1">
           <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
           <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
@@ -33,7 +32,6 @@
           <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
         </div>
 
-        <!-- Hamburger Mobile -->
         <div class="flex md:hidden items-center">
           <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +43,6 @@
       </div>
     </div>
 
-    <!-- Mobile Menu -->
     <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
       <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
         <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
@@ -60,7 +57,6 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
   <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -119,8 +115,8 @@
           const userId = d.id;
           const dateStr = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString('th-TH') : "-";
           
-          const isApproved = u.status === "active";
-          const isPending = u.status === "pending" || !u.status;
+          const isApproved = u.status === "active" || u.status === "approved";
+          const isPending = u.status === "pending" || u.status === "pending_approval" || !u.status;
           const role = u.role || "user";
 
           let roleBadgeClass = "text-slate-700 bg-slate-50 border-slate-200";
@@ -154,7 +150,7 @@
             <td class="p-3 sm:p-4 text-center space-x-1 whitespace-nowrap">
               ${isPending 
                 ? `<button onclick="updateUserStatus('${userId}', 'active')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg shadow-xs transition">✅ อนุมัติ</button>
-                   <button onclick="updateUserStatus('${userId}', 'rejected')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold rounded-lg transition">❌ ปฏิเสธ</button>`
+                   <button onclick="updateUserStatus('${userId}', 'disabled')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold rounded-lg transition">❌ ปฏิเสธ</button>`
                 : (isApproved 
                     ? `<button onclick="updateUserStatus('${userId}', 'disabled')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold rounded-lg transition">🚫 ระงับ</button>`
                     : `<button onclick="updateUserStatus('${userId}', 'active')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg transition">🔓 ปลดระงับ</button>`)

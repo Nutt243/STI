@@ -10,7 +10,6 @@
 
   <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 w-full max-w-md">
     
-    <!-- Logo & Title -->
     <div class="text-center mb-6">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-2xl text-3xl mb-3">
         📦
@@ -19,7 +18,6 @@
       <p class="text-slate-500 text-sm mt-1" id="pageSubtitle">เข้าสู่ระบบเพื่อจัดการคลังสินค้า</p>
     </div>
 
-    <!-- Toggle Login / Register Tabs -->
     <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
       <button id="tabLogin" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-blue-600 shadow-sm transition">
         เข้าสู่ระบบ
@@ -38,26 +36,20 @@
       </div>
 
       <div>
-        <div class="flex justify-between items-center mb-1">
-          <label class="block text-xs font-semibold text-slate-700">รหัสผ่าน</label>
-          
-        </div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่าน</label>
         <input type="password" id="loginPassword" required placeholder="••••••••"
           class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
       </div>
 
       <div class="flex items-center justify-between">
-      <!-- กลุ่มเช็คบ็อกซ์ + ข้อความให้อยู่ติดกัน -->
-      <label class="flex items-center space-x-2 cursor-pointer">
-        <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
-        <span class="text-xs text-slate-600">จดจำการเข้าสู่ระบบ</span>
-      </label>
-
-      <!-- ปุ่มลืมรหัสผ่านอยู่ชิดขวา -->
-      <button type="button" id="btnForgotPassword" class="text-xs text-blue-600 hover:underline">
-        ลืมรหัสผ่าน?
-      </button>
-    </div>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+          <span class="text-xs text-slate-600">จดจำการเข้าสู่ระบบ</span>
+        </label>
+        <button type="button" id="btnForgotPassword" class="text-xs text-blue-600 hover:underline">
+          ลืมรหัสผ่าน?
+        </button>
+      </div>
 
       <button type="submit" id="btnLogin"
         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition shadow hover:shadow-lg">
@@ -91,13 +83,11 @@
       </button>
     </form>
 
-    <!-- Divider -->
     <div class="relative my-6">
       <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
       <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400">หรือ</span></div>
     </div>
 
-    <!-- Google Sign-In -->
     <button type="button" id="btnGoogle"
       class="w-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
       <svg class="w-4 h-4" viewBox="0 0 24 24">
@@ -111,7 +101,6 @@
 
   </div>
 
-  <!-- Forgot Password Modal -->
   <div id="forgotModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
       <h3 class="font-bold text-slate-800 text-lg">รีเซ็ตรหัสผ่าน</h3>
@@ -137,9 +126,8 @@
       browserLocalPersistence,
       browserSessionPersistence
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // DOM Elements
     const tabLogin = document.getElementById("tabLogin");
     const tabRegister = document.getElementById("tabRegister");
     const loginForm = document.getElementById("loginForm");
@@ -155,7 +143,6 @@
     const btnCancelReset = document.getElementById("btnCancelReset");
     const btnSendReset = document.getElementById("btnSendReset");
 
-    // Toggle Tabs
     tabLogin.addEventListener("click", () => {
       tabLogin.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-blue-600 shadow-sm transition";
       tabRegister.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-700 transition";
@@ -172,7 +159,6 @@
       pageSubtitle.textContent = "ลงทะเบียนเพื่อขออนุมัติเข้าใช้งานระบบ";
     });
 
-    // Check User Role & Redirect
     async function checkUserAndRedirect(user) {
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
@@ -181,8 +167,8 @@
           name: user.displayName || user.email.split('@')[0],
           email: user.email,
           role: "user",
-          status: "pending_approval",
-          createdAt: Timestamp.now()
+          status: "pending",
+          createdAt: serverTimestamp()
         });
         alert("ลงทะเบียนสำเร็จ! บัญชีของคุณกำลังอยู่ในระหว่างรอ Admin อนุมัติการใช้งาน");
         await auth.signOut();
@@ -191,27 +177,25 @@
 
       const userData = userDoc.data();
 
-      if (userData.status === "pending_approval") {
+      if (userData.status === "pending" || userData.status === "pending_approval") {
         alert("บัญชีของคุณกำลังอยู่ในระหว่างรอ Admin อนุมัติการใช้งาน");
         await auth.signOut();
         return;
       }
 
-      if (userData.status === "rejected") {
-        alert("บัญชีของคุณถูกปฏิเสธการเข้าใช้งาน กรุณาติดต่อผู้ดูแลระบบ");
+      if (userData.status === "disabled" || userData.status === "rejected") {
+        alert("บัญชีของคุณถูกปฏิเสธหรือระงับการเข้าใช้งาน กรุณาติดต่อผู้ดูแลระบบ");
         await auth.signOut();
         return;
       }
 
-      // สถานะ approved -> แยกสาย redirect
-      if (userData.role === "admin") {
+      if (userData.role === "admin" || userData.role === "manager") {
         window.location.href = "approvals.html";
       } else {
-        window.location.href = "index.html"; // Redirect ไปยังหน้า Dashboard
+        window.location.href = "index.html";
       }
     }
 
-    // Login Form Event
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("loginEmail").value.trim();
@@ -236,7 +220,6 @@
       }
     });
 
-    // Register Form Event
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("regName").value.trim();
@@ -254,8 +237,8 @@
           name: name,
           email: email,
           role: "user",
-          status: "pending_approval",
-          createdAt: Timestamp.now()
+          status: "pending",
+          createdAt: serverTimestamp()
         });
 
         alert("ลงทะเบียนเรียบร้อยแล้ว! กรุณารอ Admin อนุมัติสิทธิ์ก่อนเข้าใช้งาน");
@@ -272,7 +255,6 @@
       }
     });
 
-    // Google Sign-In Event
     btnGoogle.addEventListener("click", async () => {
       const provider = new GoogleAuthProvider();
       try {
@@ -283,7 +265,6 @@
       }
     });
 
-    // Forgot Password Events
     btnForgotPassword.addEventListener("click", () => forgotModal.classList.remove("hidden"));
     btnCancelReset.addEventListener("click", () => forgotModal.classList.add("hidden"));
 
@@ -301,15 +282,14 @@
         alert("เกิดข้อผิดพลาด: " + error.message);
       }
     });
-    // 🔔 เพิ่มส่วนนี้ต่อท้ายใน <script type="module"> ของ login.html
-window.addEventListener("DOMContentLoaded", () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("loggedOut") === "true") {
-    alert("ออกจากระบบเรียบร้อยแล้ว");
-    // ลบ parameter ออกจาก URL เพื่อไม่ให้แจ้งเตือนซ้ำเวลา Refresh
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-});
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("loggedOut") === "true") {
+        alert("ออกจากระบบเรียบร้อยแล้ว");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    });
   </script>
 </body>
 </html>

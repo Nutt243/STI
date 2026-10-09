@@ -4,7 +4,6 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-
 
 export function checkUserAuth(allowedRoles = []) {
   onAuthStateChanged(auth, async (user) => {
-    // 1. ถ้ายังไม่ได้ล็อกอิน ให้เด้งไปหน้า login
     if (!user) {
       window.location.href = "login.html";
       return;
@@ -16,10 +15,10 @@ export function checkUserAuth(allowedRoles = []) {
       const userData = userSnap.exists() ? userSnap.data() : {};
       
       const userRole = (userData.role || "user").toLowerCase();
-      const userStatus = (userData.status || "approved").toLowerCase();
+      const userStatus = (userData.status || "pending").toLowerCase();
       const userName = userData.name || user.displayName || user.email;
 
-      const isUserApproved = userStatus === "approved" || userStatus === "active";
+      const isUserApproved = userStatus === "active" || userStatus === "approved";
 
       if (!isUserApproved) {
         alert("⚠️ บัญชีของคุณยังไม่อนุมัติการเข้าใช้งาน หรือถูกระงับสิทธิ์ โปรดติดต่อ Admin");
@@ -28,14 +27,12 @@ export function checkUserAuth(allowedRoles = []) {
         return;
       }
 
-      // แสดงชื่อผู้ใช้และบทบาท
       const nameElem = document.getElementById("userDisplayName");
       if (nameElem) nameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
       
       const mobileNameElem = document.getElementById("mobileUserDisplayName");
       if (mobileNameElem) mobileNameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
 
-      // แสดง/ซ่อน เมนูตามสิทธิ์
       if (userRole === "admin" || userRole === "manager") {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.remove("hidden"));
       } else {
@@ -48,30 +45,27 @@ export function checkUserAuth(allowedRoles = []) {
         document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
       }
 
-      // ตรวจสอบสิทธิ์เข้าถึงหน้า
       if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
         alert(`⚠️ หน้านี้สำหรับสิทธิ์ ${allowedRoles.join(" / ").toUpperCase()} เท่านั้น`);
         window.location.href = "index.html";
         return;
       }
 
-      // ✅ แสดงผลหน้าเว็บเมื่อเช็กสิทธิ์เสร็จสิ้น
       document.body.style.display = "block";
 
     } catch (err) {
       console.error("Auth Check Error:", err);
-      // หากเกิด Error ให้เปิดหน้าเว็บออกมาก่อน เพื่อไม่ให้หน้าจอขาวค้าง
-      document.body.style.display = "block";
+      await signOut(auth);
+      window.location.href = "login.html";
     }
   });
 }
 
-// Event Logout & Mobile Menu Toggle
 document.addEventListener("DOMContentLoaded", () => {
   const handleLogout = async () => {
     if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
       await signOut(auth);
-      window.location.href = "login.html";
+      window.location.href = "login.html?loggedOut=true";
     }
   };
 

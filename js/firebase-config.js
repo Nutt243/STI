@@ -1,9 +1,7 @@
-// js/firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ⚙️ นำ Config จาก Firebase Console ของคุณมาวางตรงนี้
 const firebaseConfig = {
   apiKey: "AIzaSyCkkTi0LbMnmrFXsHvc_V6-W_NA7DDVaY0",
   authDomain: "stockcom02-86eaf.firebaseapp.com",

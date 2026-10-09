@@ -6,7 +6,7 @@
   <title>StockMaster - เบิกสินค้า</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800 pb-20 lg:pb-0" >
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 pb-20 lg:pb-0" style="display: none;">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,7 +17,6 @@
         <span class="font-bold text-lg tracking-tight">StockMaster</span>
       </a>
 
-      <!-- Desktop Nav -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
         <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">เบิกสินค้า</a>
@@ -33,7 +32,6 @@
         <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
 
-      <!-- Hamburger Mobile -->
       <div class="flex md:hidden items-center">
         <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +43,6 @@
     </div>
   </div>
 
-  <!-- Mobile Dropdown Menu -->
   <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
     <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
       <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
@@ -60,11 +57,9 @@
   </div>
 </nav>
 
-  <!-- Main Content Layout -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Left Column: SKU Accordion List -->
       <div class="lg:col-span-2 space-y-4">
         <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
@@ -75,11 +70,9 @@
         </div>
 
         <div id="skuAccordionList" class="space-y-3">
-          <!-- Accordion Items Render Here -->
         </div>
       </div>
 
-      <!-- Right Column: Desktop Requisition Cart (ซ่อนใน Mobile View) -->
       <div class="hidden lg:block lg:col-span-1">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sticky top-20 space-y-4">
           <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -109,7 +102,6 @@
     </div>
   </main>
 
-  <!-- 🛒 Floating Action Button (FAB) ตะกร้าสินค้าสำหรับมือถือ -->
   <button id="btnMobileCartFAB" class="lg:hidden fixed bottom-5 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl z-40 flex items-center justify-center transition-transform active:scale-95 border-2 border-white">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"></path>
@@ -117,7 +109,6 @@
     <span id="mobileCartBadge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">0</span>
   </button>
 
-  <!-- Summary Cart Modal Popup (ใช้แสดงตะกร้าทั้งบนมือถือและคอม) -->
   <div id="summaryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -162,7 +153,6 @@
     </div>
   </div>
 
-  <!-- Pop-up แจ้งเตือนยืนยันก่อนส่งคำขอ (Confirmation Modal) -->
   <div id="confirmConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
       <div class="inline-flex items-center justify-center w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl text-2xl mb-1">
@@ -188,7 +178,6 @@
     let cart = new Map(); 
     let groupedInventory = new Map(); 
 
-    // ซิงก์หมายเหตุระหว่าง Desktop และ Modal
     const noteInputs = document.querySelectorAll(".requisitionNoteInput");
     noteInputs.forEach(input => {
       input.addEventListener("input", (e) => {
@@ -263,7 +252,7 @@
                 <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
                   <div>
                     <p class="font-bold text-slate-700">${attrSummary}</p>
-                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-600">${p.quantity}</span>${group.sku.unit || 'ชิ้น'}</p>
+                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-600">${p.quantity}</span> ${group.sku.unit || 'ชิ้น'}</p>
                   </div>
                   <button onclick="addToCart('${p.id}', '${skuId}')" 
                           class="w-full sm:w-auto px-3 py-1.5 font-bold rounded-lg transition text-center ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
@@ -353,7 +342,6 @@
       cart.forEach((val, productId) => {
         const attrStr = Object.entries(val.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
         
-        // Render Desktop Right Cart Panel
         const desktopDiv = document.createElement("div");
         desktopDiv.className = "pt-2 flex justify-between items-center text-xs gap-2";
         desktopDiv.innerHTML = `
@@ -369,7 +357,6 @@
         `;
         desktopContainer.appendChild(desktopDiv);
 
-        // Render Summary Table in Modal (Mobile & Desktop)
         const summaryTr = document.createElement("tr");
         summaryTr.innerHTML = `
           <td class="p-2.5 font-bold text-slate-800">${val.skuName}</td>
@@ -415,7 +402,6 @@
     document.querySelectorAll(".btnClearCart").forEach(btn => btn.addEventListener("click", clearCart));
     document.getElementById("btnClearCartModal").addEventListener("click", clearCart);
 
-    // Modal Control
     const openCartModal = () => {
       const user = auth.currentUser;
       document.getElementById("summaryUser").innerText = user ? (user.displayName || user.email) : "ผู้ใช้งาน";
@@ -429,7 +415,6 @@
     document.querySelectorAll(".btnOpenSummaryModal").forEach(btn => btn.addEventListener("click", openCartModal));
     document.getElementById("btnCloseModal").addEventListener("click", closeCartModal);
 
-    // Confirmation Pop-up Logic
     document.getElementById("btnSubmitRequisition").addEventListener("click", () => {
       if (cart.size === 0) return;
       document.getElementById("confirmConfirmModal").classList.remove("hidden");
