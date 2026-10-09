@@ -267,12 +267,11 @@
       }
     }
 
-    // 🚀 เพิ่มระบบประมวลผลบาร์โค้ดแบบ Auto-submit แม่นยำสูง
+    // 🚀 ระบบประมวลผลบาร์โค้ดแบบ Auto-submit แม่นยำสูง (สแกนแล้วเพิ่มเข้าตารางทันทีไม่ต้องกด Enter)
     const scanInput = document.getElementById("scanInput");
     let scanTimeout = null;
 
     function processScanInput() {
-      clearTimeout(scanTimeout);
       const barcode = scanInput.value.trim();
       if (!barcode) return;
 
@@ -283,18 +282,18 @@
     if (scanInput) {
       scanInput.addEventListener("input", () => {
         clearTimeout(scanTimeout);
+        const val = scanInput.value.trim();
+        if (!val) return;
+
         scanTimeout = setTimeout(() => {
           processScanInput();
-        }, 150);
-      });
-
-      scanInput.addEventListener("change", () => {
-        processScanInput();
+        }, 100);
       });
 
       scanInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
+          clearTimeout(scanTimeout);
           processScanInput();
         }
       });
