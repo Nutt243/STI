@@ -279,21 +279,54 @@
 
       const reqData = reqSnap.data();
       document.getElementById("modalUserName").innerText = reqData.userName || "ผู้ใช้งาน";
-      document.getElementById("barcodeInput").value = "";
 
-      activeReqItems = (reqData.items || []).map((item, idx) => ({
-        ...item,
-        index: idx,
-        checked: false,
-        approvedQty: item.quantity,
-        adjustNote: ""
-      }));
+      const modalBarcodeInput = document.getElementById("barcodeInput");
+      if (modalBarcodeInput) modalBarcodeInput.value = "";
+
+      const prodSnap = await getDocs(collection(db, "products"));
+      const prodMap = new Map();
+      prodSnap.forEach(pDoc => {
+        prodMap.set(pDoc.id, { id: pDoc.id, ...pDoc.data() });
+      });
+
+      const isAttrEqual = (attr1 = {}, attr2 = {}) => {
+        const keys1 = Object.keys(attr1);
+        const keys2 = Object.keys(attr2);
+        if (keys1.length !== keys2.length) return false;
+        return keys1.every(k => String(attr1[k]).trim().toLowerCase() === String(attr2[k]).trim().toLowerCase());
+      };
+
+      activeReqItems = (reqData.items || []).map((item, idx) => {
+        const prodInfo = prodMap.get(item.product_id);
+        const resolvedBarcode = item.barcode || (prodInfo ? prodInfo.barcode : "");
+
+        const exactMatchingBarcodes = Array.from(prodMap.values())
+          .filter(p => isAttrEqual(p.specific_attributes, item.attributes))
+          .map(p => p.barcode)
+          .filter(Boolean);
+
+        const validBarcodes = Array.from(new Set([
+          resolvedBarcode, 
+          ...(item.barcodes || []), 
+          ...exactMatchingBarcodes
+        ])).filter(Boolean);
+
+        return {
+          ...item,
+          index: idx,
+          checked: false,
+          approvedQty: item.quantity,
+          adjustNote: "",
+          barcode: resolvedBarcode,
+          validBarcodes: validBarcodes
+        };
+      });
 
       renderScanTable();
 
       document.getElementById("scanModal").classList.remove("hidden");
       document.getElementById("scanModal").classList.add("flex");
-      document.getElementById("barcodeInput").focus();
+      if (modalBarcodeInput) modalBarcodeInput.focus();
     };
 
     document.getElementById("btnModalToggleCamera").addEventListener("click", () => {
@@ -374,27 +407,59 @@
     };
 
     document.getElementById("btnCheckBarcode").addEventListener("click", checkBarcode);
-    document.getElementById("barcodeInput").addEventListener("keypress", (e) => {
-      if (e.key === 'Enter') checkBarcode();
-    });
 
     function checkBarcode() {
       const input = document.getElementById("barcodeInput").value.trim();
       if (!input) return;
 
       let matchedItem = activeReqItems.find(i => 
-        i.product_id === input || i.barcode === input || i.sku_name.toLowerCase().includes(input.toLowerCase())
+        !i.checked && (
+          i.product_id === input || 
+          i.barcode === input || 
+          (i.validBarcodes && i.validBarcodes.includes(input))
+        )
       );
+
+      if (!matchedItem) {
+        matchedItem = activeReqItems.find(i => 
+          i.product_id === input || 
+          i.barcode === input || 
+          (i.validBarcodes && i.validBarcodes.includes(input))
+        );
+      }
 
       if (matchedItem) {
         matchedItem.checked = true;
         renderScanTable();
       } else {
-        alert(`❌ ไม่พบรายการ: "${input}" ในคำขอเบิกนี้!`);
+        alert(`❌ ไม่พบรายการบาร์โค้ด: "${input}" ที่ตรงกับคุณลักษณะในคำขอเบิกนี้!`);
       }
 
       document.getElementById("barcodeInput").value = "";
       document.getElementById("barcodeInput").focus();
+    }
+
+    const modalBarcodeInput = document.getElementById("barcodeInput");
+    let modalScanTimeout = null;
+
+    if (modalBarcodeInput) {
+      modalBarcodeInput.addEventListener("input", () => {
+        clearTimeout(modalScanTimeout);
+        const val = modalBarcodeInput.value.trim();
+        if (!val) return;
+
+        modalScanTimeout = setTimeout(() => {
+          checkBarcode();
+        }, 100);
+      });
+
+      modalBarcodeInput.addEventListener("keypress", (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          clearTimeout(modalScanTimeout);
+          checkBarcode();
+        }
+      });
     }
 
     function showStockWarnModal(itemIdx, title, reqQty, stockQty) {

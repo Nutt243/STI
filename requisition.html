@@ -185,7 +185,6 @@
       });
     });
 
-// ฟังก์ชันจัดเรียง Key-Value ของ Attributes เพื่อใช้เป็น Key ในการ Group
     function normalizeAttrs(attrs = {}) {
       if (!attrs || Object.keys(attrs).length === 0) return "DEFAULT_NO_ATTR";
       return Object.keys(attrs)
@@ -205,7 +204,7 @@
       prodSnap.forEach(d => {
         const p = { id: d.id, ...d.data() };
         const skuId = p.sku_id;
-        const sku = skus.get(skuId) || { sku_name: "ทั่วไป / ไม่ระบุ SKU", unit: "ชิ้น" };
+        const sku = skus.get(skuId) || { sku_name: "ทั่วไป / ไม่ระบุ SKU", category: "ทั่วไป", unit: "ชิ้น" };
 
         if (!groupedInventory.has(skuId)) {
           groupedInventory.set(skuId, {
@@ -218,19 +217,20 @@
         const group = groupedInventory.get(skuId);
         group.totalQty += (p.quantity || 0);
 
-        // จัดกลุ่มย่อยตาม Attribute
         const normKey = normalizeAttrs(p.specific_attributes);
 
         if (group.variantMap.has(normKey)) {
           const variant = group.variantMap.get(normKey);
           variant.quantity += (p.quantity || 0);
           variant.productIds.push(p.id);
+          if (p.barcode) variant.barcodes.push(p.barcode);
         } else {
           group.variantMap.set(normKey, {
             variantKey: normKey,
             attributes: p.specific_attributes || {},
             quantity: p.quantity || 0,
-            productIds: [p.id]
+            productIds: [p.id],
+            barcodes: p.barcode ? [p.barcode] : []
           });
         }
       });
@@ -260,7 +260,7 @@
               <span id="icon-${accordionId}" class="text-slate-400 font-bold transition-transform transform shrink-0">▶</span>
               <div class="min-w-0">
                 <h3 class="font-black text-slate-800 text-sm sm:text-base truncate">${group.sku.sku_name}</h3>
-                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: ${group.sku.category || 'ทั่วไป'} | ${variants.length} รายการย่อย</p>
+                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: <span class="text-slate-600 font-bold">${group.sku.category || 'ทั่วไป'}</span> | ${variants.length} รายการย่อย</p>
               </div>
             </div>
             <div class="text-right shrink-0">
@@ -338,6 +338,7 @@
           unit: group.sku.unit || 'ชิ้น',
           attributes: variant.attributes,
           productIds: variant.productIds,
+          barcodes: variant.barcodes || [],
           maxQty: variant.quantity,
           qty: 1
         });
@@ -469,7 +470,8 @@
             sku_name: val.skuName,
             attributes: val.attributes,
             quantity: val.qty,
-            unit: val.unit
+            unit: val.unit,
+            barcodes: val.barcodes || []
           });
         });
 
