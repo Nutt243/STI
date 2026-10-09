@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StockMaster - อนุมัติคำขอเบิก</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library สแกนบาร์โค้ดผ่านกล้อง -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,7 +89,17 @@
       </div>
 
       <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-2 flex-shrink-0">
-        <label class="block text-xs font-bold text-slate-700">ยิงสแกนบาร์โค้ดสินค้าที่นี่:</label>
+        <div class="flex justify-between items-center">
+          <label class="block text-xs font-bold text-slate-700">สแกนบาร์โค้ดสินค้าที่นี่:</label>
+          <button id="btnModalToggleCamera" class="text-xs bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg shadow-xs hover:bg-blue-700 transition">
+            📷 เปิด/ปิด กล้องสแกน
+          </button>
+        </div>
+
+        <div id="modalCameraArea" class="hidden bg-slate-900 rounded-xl overflow-hidden border-2 border-blue-400 my-2">
+          <div id="modalReader" class="w-full"></div>
+        </div>
+
         <div class="flex gap-2">
           <input type="text" id="barcodeInput" placeholder="สแกนบาร์โค้ดเพื่อตรวจสอบ..." autofocus 
                  class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500">
@@ -132,7 +144,7 @@
 
       <div class="space-y-2">
         <label class="block text-xs font-bold text-slate-700">ระบุเหตุผลการไม่อนุมัติ <span class="text-rose-500">*</span></label>
-        <textarea id="rejectReasonInput" rows="3" placeholder="ตัวอย่าง: สินค้าหมดสต็อกชั่วคราว, เอกสารไม่สมบูรณ์..." 
+        <textarea id="rejectReasonInput" rows="3" placeholder="ตัวอย่าง: สินค้าหมดสต็อกชั่วคราว..." 
                   class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:bg-white resize-none"></textarea>
       </div>
 
@@ -188,6 +200,10 @@
     let rejectTargetReqId = null;
     let pendingWarnItemIndex = null;
     let pendingWarnStockAvailable = 0;
+
+    let modalQrCode = null;
+    let lastScannedText = "";
+    let lastScannedTime = 0;
 
     async function loadApprovals() {
       const container = document.getElementById("approvalList");
@@ -288,6 +304,33 @@
       document.getElementById("barcodeInput").focus();
     };
 
+    // ปุ่มเปิด/ปิด กล้องสแกนใน Modal
+    document.getElementById("btnModalToggleCamera").addEventListener("click", () => {
+      const area = document.getElementById("modalCameraArea");
+      if (modalQrCode && modalQrCode.isScanning) {
+        modalQrCode.stop().then(() => area.classList.add("hidden"));
+      } else {
+        area.classList.remove("hidden");
+        if (!modalQrCode) modalQrCode = new Html5Qrcode("modalReader");
+        
+        modalQrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 220, height: 140 } },
+          (decodedText) => {
+            const now = Date.now();
+            if (decodedText === lastScannedText && (now - lastScannedTime) < 1500) return;
+            
+            lastScannedText = decodedText;
+            lastScannedTime = now;
+            
+            document.getElementById("barcodeInput").value = decodedText;
+            checkBarcode();
+          },
+          () => {}
+        ).catch(err => alert("ไม่สามารถเปิดกล้องได้: " + err));
+      }
+    });
+
     function renderScanTable() {
       const tbody = document.getElementById("scanTableBody");
       tbody.innerHTML = "";
@@ -355,7 +398,6 @@
       if (matchedItem) {
         matchedItem.checked = true;
         renderScanTable();
-        alert(`✅ สแกนเจอ: "${matchedItem.sku_name}"\nระบบทำการติ๊กถูกตรวจสอบให้เรียบร้อยแล้ว`);
       } else {
         alert(`❌ ไม่พบรายการ: "${input}" ในคำขอเบิกนี้!`);
       }
@@ -463,7 +505,7 @@
         });
 
         alert("🚀 ยืนยันการอนุมัติและตัดสต็อกสินค้าเรียบร้อยแล้ว!");
-        document.getElementById("scanModal").classList.add("hidden");
+        closeScanModalFunc();
         loadApprovals();
 
       } catch (err) {
@@ -471,8 +513,19 @@
       }
     });
 
-    document.getElementById("btnCloseScanModal").addEventListener("click", () => document.getElementById("scanModal").classList.add("hidden"));
-    document.getElementById("btnCancelModal").addEventListener("click", () => document.getElementById("scanModal").classList.add("hidden"));
+    const closeScanModalFunc = () => {
+      if (modalQrCode && modalQrCode.isScanning) {
+        modalQrCode.stop().then(() => {
+          document.getElementById("modalCameraArea").classList.add("hidden");
+          document.getElementById("scanModal").classList.add("hidden");
+        });
+      } else {
+        document.getElementById("scanModal").classList.add("hidden");
+      }
+    };
+
+    document.getElementById("btnCloseScanModal").addEventListener("click", closeScanModalFunc);
+    document.getElementById("btnCancelModal").addEventListener("click", closeScanModalFunc);
 
     window.openRejectModal = (reqId) => {
       rejectTargetReqId = reqId;

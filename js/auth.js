@@ -2,11 +2,10 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-/**
- * ฟังก์ชันตรวจสอบสิทธิ์การเข้าใช้งาน
- * @param {Array<string>} allowedRoles - รายชื่อ Role ที่อนุญาต เช่น ['admin'] หรือ ['admin', 'manager']
- */
 export function checkUserAuth(allowedRoles = []) {
+  // ซ่อนเนื้อหาทั้งหมดไว้ก่อนระหว่างรอเช็กสิทธิ์
+  document.body.style.display = "none";
+
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       window.location.href = "login.html";
@@ -19,10 +18,9 @@ export function checkUserAuth(allowedRoles = []) {
       const userData = userSnap.exists() ? userSnap.data() : {};
       
       const userRole = (userData.role || "user").toLowerCase();
-      const userStatus = (userData.status || "approved").toLowerCase(); // ค่าเริ่มต้นให้เป็น approved/active
+      const userStatus = (userData.status || "approved").toLowerCase();
       const userName = userData.name || user.displayName || user.email;
 
-      // 🛑 ตรวจสอบการอนุมัติบัญชี: ยอมรับทั้ง 'approved' และ 'active'
       const isUserApproved = userStatus === "approved" || userStatus === "active";
 
       if (!isUserApproved) {
@@ -32,17 +30,14 @@ export function checkUserAuth(allowedRoles = []) {
         return;
       }
 
-      // แสดงชื่อผู้ใช้และบทบาทบน Navbar ทั้ง Mobile และ Desktop
+      // แสดงชื่อผู้ใช้และบทบาท
       const nameElem = document.getElementById("userDisplayName");
-      if (nameElem) {
-        nameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
-      }
+      if (nameElem) nameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
+      
       const mobileNameElem = document.getElementById("mobileUserDisplayName");
-      if (mobileNameElem) {
-        mobileNameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
-      }
+      if (mobileNameElem) mobileNameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
 
-      // ⚙️ แสดง/ซ่อน เมนูตามบทบาท
+      // ซ่อน/แสดง เมนูตามบทบาท
       if (userRole === "admin" || userRole === "manager") {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.remove("hidden"));
       } else {
@@ -55,14 +50,19 @@ export function checkUserAuth(allowedRoles = []) {
         document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
       }
 
-      // 🔒 บล็อกการเข้าถึงหน้า หากบทบาทไม่ตรง
+      // บล็อกการเข้าถึงหากบทบาทไม่ตรง
       if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
         alert(`⚠️ หน้านี้สำหรับสิทธิ์ ${allowedRoles.join(" / ").toUpperCase()} เท่านั้น`);
         window.location.href = "index.html";
+        return;
       }
+
+      // ✅ ผ่านทุกเงื่อนไขแล้ว ค่อยแสดงหน้าเว็บออกมา
+      document.body.style.display = "block";
 
     } catch (err) {
       console.error("Auth Check Error:", err);
+      window.location.href = "login.html";
     }
   });
 }
@@ -82,7 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnMobileLogout = document.getElementById("btnMobileLogout");
   if (btnMobileLogout) btnMobileLogout.addEventListener("click", handleLogout);
 
-  // Mobile Menu Toggle
   const btnMobileMenu = document.getElementById("btnMobileMenu");
   const mobileNavMenu = document.getElementById("mobileNavMenu");
   if (btnMobileMenu && mobileNavMenu) {

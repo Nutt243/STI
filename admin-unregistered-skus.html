@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StockMaster - สแกนรับเข้า & จัดกลุ่ม SKU</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library สแกนบาร์โค้ดผ่านกล้อง -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,16 +67,24 @@
 
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
       <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">⚡ สแกนรับสินค้าเข้าคลัง (Batch Mode)</h1>
-      <p class="text-xs text-slate-500 mt-1">ยิงบาร์โค้ดหรือกรอกต่อเนื่องได้ทันที กำหนด SKU หลักและคุณลักษณะเพื่อรวมสต็อกอัตโนมัติ</p>
+      <p class="text-xs text-slate-500 mt-1">ยิงบาร์โค้ดผ่านกล้องมือถือหรือเครื่องสแกนต่อเนื่องได้ทันที</p>
     </div>
 
     <!-- Scanner Box -->
     <div class="bg-blue-600 p-4 sm:p-6 rounded-2xl shadow-lg text-white space-y-3">
       <div class="flex justify-between items-center">
-        <label class="text-xs font-bold uppercase tracking-wider text-blue-100">📷 ช่องยิงบาร์โค้ด (ยิงซ้ำ = บวกจำนวนเพิ่ม)</label>
-        <span class="text-[10px] sm:text-xs bg-blue-700 text-blue-200 px-2.5 py-0.5 rounded-full">Auto-Focus</span>
+        <label class="text-xs font-bold uppercase tracking-wider text-blue-100">📷 สแกนบาร์โค้ด (ยิงซ้ำ = บวกจำนวนเพิ่ม)</label>
+        <button id="btnToggleCamera" class="text-xs bg-white text-blue-700 font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
+          <span>📷 เปิด/ปิด กล้องสแกน</span>
+        </button>
       </div>
-      <input type="text" id="scanInput" placeholder="ยิงบาร์โค้ดรวดเดียวที่นี่..." 
+
+      <!-- พื้นที่แสดงกล้องถ่ายรูปสแกน -->
+      <div id="cameraScannerArea" class="hidden bg-slate-900 rounded-xl overflow-hidden border-2 border-blue-400">
+        <div id="reader" class="w-full"></div>
+      </div>
+
+      <input type="text" id="scanInput" placeholder="ยิงบาร์โค้ด หรือพิมพ์ที่นี่..." 
              class="w-full p-3 sm:p-4 bg-white text-slate-900 font-mono font-bold text-base sm:text-lg rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-inner" autofocus>
     </div>
 
@@ -123,7 +133,6 @@
       <form id="modalForm" class="space-y-4 overflow-y-auto flex-1 pr-1">
         <input type="hidden" id="modalBarcode">
 
-        <!-- Master SKU Selection / Creation -->
         <div class="space-y-3 p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl">
           <div>
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">SKU หลัก (เช่น ปากกา, รองเท้า)</label>
@@ -145,13 +154,10 @@
           </div>
         </div>
 
-        <!-- Specific Attributes -->
         <div class="space-y-2">
           <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ (เพื่อจำแนกและรวมกอง)</label>
           <p class="text-[11px] text-slate-400">เช่น Color: น้ำเงิน ระบบจะนำสินค้านี้ไปรวมยอดกับ "ปากกาน้ำเงิน" ตัวเดิมทันที</p>
-          <div id="attrContainer" class="space-y-2">
-            <!-- Dynamic attr rows -->
-          </div>
+          <div id="attrContainer" class="space-y-2"></div>
           <button type="button" id="btnAddAttrRow" class="text-xs font-bold text-blue-600 hover:underline">+ เพิ่มคุณลักษณะ (เช่น Color, Size)</button>
         </div>
 
@@ -172,6 +178,9 @@
 
     let skusMap = new Map();
     let batchQueue = new Map(); 
+    let html5QrCode = null;
+    let lastScannedText = "";
+    let lastScannedTime = 0;
 
     async function initData() {
       const skuSnap = await getDocs(collection(db, "skus"));
@@ -185,6 +194,7 @@
       });
     }
 
+    // สแกนผ่านคีย์บอร์ด / เลเซอร์
     const scanInput = document.getElementById("scanInput");
     scanInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
@@ -194,6 +204,34 @@
           addToBatch(barcode, 1);
           scanInput.value = "";
         }
+      }
+    });
+
+    // เปิด/ปิด กล้องสแกนมือถือ
+    document.getElementById("btnToggleCamera").addEventListener("click", () => {
+      const area = document.getElementById("cameraScannerArea");
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+          area.classList.add("hidden");
+        });
+      } else {
+        area.classList.remove("hidden");
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          (decodedText) => {
+            const now = Date.now();
+            // ป้องกันการยิงซ้ำรวดเดียวใน 1.5 วินาที
+            if (decodedText === lastScannedText && (now - lastScannedTime) < 1500) return;
+            
+            lastScannedText = decodedText;
+            lastScannedTime = now;
+            addToBatch(decodedText, 1);
+          },
+          () => {}
+        ).catch(err => alert("ไม่สามารถเปิดกล้องได้: " + err));
       }
     });
 
@@ -238,16 +276,12 @@
           </td>
           <td class="p-3">
             <input type="number" value="${item.qty}" min="1" onchange="updateQty('${barcode}', this.value)" 
-                   class="w-16 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 text-xs">
+                   class="w-16 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600 text-xs">
           </td>
           <td class="p-3 text-xs text-slate-600 max-w-xs truncate">${attrSummary}</td>
           <td class="p-3 text-center whitespace-nowrap space-x-1">
-            <button onclick="openDetailModal('${barcode}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">
-              ⚙️
-            </button>
-            <button onclick="approveSingle('${barcode}')" class="px-2.5 py-1 ${isReady ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'} text-white text-xs font-bold rounded-lg transition" ${!isReady ? 'disabled' : ''}>
-              ✅
-            </button>
+            <button onclick="openDetailModal('${barcode}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">⚙️</button>
+            <button onclick="approveSingle('${barcode}')" class="px-2.5 py-1 ${isReady ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'} text-white text-xs font-bold rounded-lg transition" ${!isReady ? 'disabled' : ''}>✅</button>
             <button onclick="removeItem('${barcode}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition">&times;</button>
           </td>
         `;
