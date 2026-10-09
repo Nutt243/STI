@@ -3,10 +3,8 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 export function checkUserAuth(allowedRoles = []) {
-  // ซ่อนเนื้อหาทั้งหมดไว้ก่อนระหว่างรอเช็กสิทธิ์
-  document.body.style.display = "none";
-
   onAuthStateChanged(auth, async (user) => {
+    // 1. ถ้ายังไม่ได้ล็อกอิน ให้เด้งไปหน้า login
     if (!user) {
       window.location.href = "login.html";
       return;
@@ -37,7 +35,7 @@ export function checkUserAuth(allowedRoles = []) {
       const mobileNameElem = document.getElementById("mobileUserDisplayName");
       if (mobileNameElem) mobileNameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
 
-      // ซ่อน/แสดง เมนูตามบทบาท
+      // แสดง/ซ่อน เมนูตามสิทธิ์
       if (userRole === "admin" || userRole === "manager") {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.remove("hidden"));
       } else {
@@ -50,19 +48,20 @@ export function checkUserAuth(allowedRoles = []) {
         document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
       }
 
-      // บล็อกการเข้าถึงหากบทบาทไม่ตรง
+      // ตรวจสอบสิทธิ์เข้าถึงหน้า
       if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
         alert(`⚠️ หน้านี้สำหรับสิทธิ์ ${allowedRoles.join(" / ").toUpperCase()} เท่านั้น`);
         window.location.href = "index.html";
         return;
       }
 
-      // ✅ ผ่านทุกเงื่อนไขแล้ว ค่อยแสดงหน้าเว็บออกมา
+      // ✅ แสดงผลหน้าเว็บเมื่อเช็กสิทธิ์เสร็จสิ้น
       document.body.style.display = "block";
 
     } catch (err) {
       console.error("Auth Check Error:", err);
-      window.location.href = "login.html";
+      // หากเกิด Error ให้เปิดหน้าเว็บออกมาก่อน เพื่อไม่ให้หน้าจอขาวค้าง
+      document.body.style.display = "block";
     }
   });
 }
