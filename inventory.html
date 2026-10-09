@@ -72,7 +72,7 @@
 
     checkUserAuth(['admin']);
 
-    async function loadInventory() {
+async function loadInventory() {
       const tbody = document.getElementById("inventoryTableBody");
       try {
         const skuSnap = await getDocs(collection(db, "skus"));
@@ -81,7 +81,7 @@
 
         const snapshot = await getDocs(collection(db, "products"));
         if (snapshot.empty) {
-          tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">ยังไม่มีพัสดุในระบบ</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">ยังไม่มีพัสดุในระบบ</td></tr>`;
           return;
         }
 
@@ -93,6 +93,7 @@
 
           html += `
             <tr class="hover:bg-slate-50/50">
+              <td class="px-6 py-4 font-mono font-bold text-slate-800">${item.barcode || docSnap.id}</td>
               <td class="px-6 py-4 font-medium text-slate-800">${skuInfo.sku_name}</td>
               <td class="px-6 py-4 text-slate-500">${attrSummary}</td>
               <td class="px-6 py-4 text-center font-bold text-blue-600">${item.quantity || 0}</td>
@@ -106,7 +107,7 @@
         tbody.innerHTML = html;
       } catch (err) {
         console.error(err);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
       }
     }
 

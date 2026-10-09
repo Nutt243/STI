@@ -62,7 +62,7 @@
 
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
       <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">⚡ สแกนรับสินค้าเข้าคลัง (Batch Mode)</h1>
-      <p class="text-xs text-slate-500 mt-1">ยิงบาร์โค้ดผ่านกล้องมือถือหรือเครื่องสแกนต่อเนื่องได้ทันที</p>
+      <p class="text-xs text-slate-500 mt-1">ยิงบาร์โค้ดเพื่อบันทึกค้างไว้ในระบบ ทำต่อเมื่อไหร่ก็ได้ (ข้อมูลซิงก์เรียลไทม์)</p>
     </div>
 
     <div class="bg-blue-600 p-4 sm:p-6 rounded-2xl shadow-lg text-white space-y-3">
@@ -85,7 +85,7 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
         <div>
           <h2 class="text-base sm:text-lg font-black text-slate-800">📋 รายการรอรับเข้าคลัง (Pending Batch)</h2>
-          <p class="text-xs text-slate-400">กำหนด SKU หลักและ Specific Attributes เพื่อให้ระบบนำยอดไปรวมกับ Variant เดิมโดยอัตโนมัติ</p>
+          <p class="text-xs text-slate-400">กำหนด SKU หลักและ Specific Attributes โดยแยกเก็บตาม Barcode ตรงๆ</p>
         </div>
         <button id="btnApproveAllReady" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
           ✅ อนุมัติรายการที่พร้อมรับเข้าทั้งหมด
@@ -105,7 +105,7 @@
           </thead>
           <tbody id="batchTableBody" class="divide-y divide-slate-100">
             <tr>
-              <td colspan="5" class="p-8 text-center text-slate-400">ยังไม่มีรายการสแกน ยิงบาร์โค้ดด้านบนเพื่อเริ่มบันทึก</td>
+              <td colspan="5" class="p-8 text-center text-slate-400">กำลังโหลดรายการรอรับเข้า...</td>
             </tr>
           </tbody>
         </table>
@@ -146,8 +146,8 @@
         </div>
 
         <div class="space-y-2">
-          <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ (เพื่อจำแนกและรวมกอง)</label>
-          <p class="text-[11px] text-slate-400">เช่น Color: น้ำเงิน ระบบจะนำสินค้านี้ไปรวมยอดกับ "ปากกาน้ำเงิน" ตัวเดิมทันที</p>
+          <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ</label>
+          <p class="text-[11px] text-slate-400">เช่น Color: น้ำเงิน</p>
           <div id="attrContainer" class="space-y-2"></div>
           <button type="button" id="btnAddAttrRow" class="text-xs font-bold text-blue-600 hover:underline">+ เพิ่มคุณลักษณะ (เช่น Color, Size)</button>
         </div>
@@ -163,12 +163,12 @@
   <script type="module">
     import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
-    import { collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin','manager']);
 
     let skusMap = new Map();
-    let batchQueue = new Map(); 
+    let pendingMap = new Map();
     let html5QrCode = null;
     let lastScannedText = "";
     let lastScannedTime = 0;
@@ -178,10 +178,28 @@
       skusMap.clear();
       skuSnap.forEach(d => skusMap.set(d.id, { id: d.id, ...d.data() }));
 
-      const unregSnap = await getDocs(collection(db, "unregistered_skus"));
-      unregSnap.forEach(d => {
-        const barcode = d.data().barcode || d.id;
-        addToBatch(barcode, 1);
+      onSnapshot(collection(db, "unregistered_skus"), (snapshot) => {
+        pendingMap.clear();
+        snapshot.forEach(d => {
+          const data = d.data();
+          const barcode = data.barcode || d.id;
+          
+          let matchedSku = data.sku_id ? skusMap.get(data.sku_id) : null;
+          if (!matchedSku && data.sku_name) {
+            matchedSku = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === data.sku_name.toLowerCase()) || null;
+          }
+
+          pendingMap.set(barcode, {
+            docId: d.id,
+            barcode: barcode,
+            qty: data.qty || 1,
+            sku: matchedSku,
+            sku_id: data.sku_id || (matchedSku ? matchedSku.id : null),
+            sku_name: data.sku_name || (matchedSku ? matchedSku.sku_name : ""),
+            attributes: data.attributes || {}
+          });
+        });
+        renderBatchTable();
       });
     }
 
@@ -223,43 +241,55 @@
       }
     });
 
-    function addToBatch(barcode, qty) {
-      if (batchQueue.has(barcode)) {
-        const item = batchQueue.get(barcode);
-        item.qty += qty;
+    async function addToBatch(barcode, qty) {
+      const existing = pendingMap.get(barcode);
+      const matchedSku = skusMap.get(barcode);
+
+      if (existing) {
+        const newQty = (existing.qty || 0) + qty;
+        await setDoc(doc(db, "unregistered_skus", barcode), {
+          barcode: barcode,
+          qty: newQty,
+          sku_id: existing.sku ? existing.sku.id : (existing.sku_id || null),
+          sku_name: existing.sku ? existing.sku.sku_name : (existing.sku_name || ""),
+          attributes: existing.attributes || {},
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       } else {
-        const matchedSku = skusMap.get(barcode);
-        batchQueue.set(barcode, {
+        await setDoc(doc(db, "unregistered_skus", barcode), {
           barcode: barcode,
           qty: qty,
-          sku: matchedSku || null,
-          attributes: {}
+          sku_id: matchedSku ? matchedSku.id : null,
+          sku_name: matchedSku ? matchedSku.sku_name : "",
+          attributes: {},
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
       }
-      renderBatchTable();
     }
 
     function renderBatchTable() {
       const tbody = document.getElementById("batchTableBody");
       tbody.innerHTML = "";
 
-      if (batchQueue.size === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">ยังไม่มีรายการสแกน ยิงบาร์โค้ดด้านบนเพื่อเริ่มบันทึก</td></tr>`;
+      if (pendingMap.size === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">ยังไม่มีรายการค้างในระบบ ยิงบาร์โค้ดเพื่อเริ่มบันทึก</td></tr>`;
         return;
       }
 
-      batchQueue.forEach((item, barcode) => {
+      pendingMap.forEach((item, barcode) => {
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50 transition";
 
-        const isReady = !!item.sku;
-        const attrSummary = Object.entries(item.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "(ไม่มี - รวมเข้ากองหลัก)";
+        const isReady = !!(item.sku || item.sku_name);
+        const displayName = item.sku ? item.sku.sku_name : (item.sku_name || "");
+        const attrSummary = Object.entries(item.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "(ไม่มีคุณลักษณะเฉพาะ)";
 
         tr.innerHTML = `
           <td class="p-3 font-mono font-bold text-slate-800">${barcode}</td>
           <td class="p-3">
             ${isReady 
-              ? `<span class="font-bold text-slate-800">${item.sku.sku_name}</span>`
+              ? `<span class="font-bold text-slate-800">${displayName}</span>`
               : `<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนด SKU</span>`}
           </td>
           <td class="p-3">
@@ -277,21 +307,26 @@
       });
     }
 
-    window.updateQty = (barcode, val) => {
-      if (batchQueue.has(barcode)) batchQueue.get(barcode).qty = parseInt(val) || 1;
+    window.updateQty = async (barcode, val) => {
+      const q = parseInt(val) || 1;
+      await setDoc(doc(db, "unregistered_skus", barcode), {
+        qty: q,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
     };
 
-    window.removeItem = (barcode) => {
-      batchQueue.delete(barcode);
-      renderBatchTable();
+    window.removeItem = async (barcode) => {
+      if (confirm(`คุณต้องการลบรายการบาร์โค้ด "${barcode}" นี้หรือไม่?`)) {
+        await deleteDoc(doc(db, "unregistered_skus", barcode));
+      }
     };
 
     window.openDetailModal = (barcode) => {
-      const item = batchQueue.get(barcode);
+      const item = pendingMap.get(barcode);
       if (!item) return;
 
       document.getElementById("modalBarcode").value = barcode;
-      document.getElementById("modalSkuName").value = item.sku ? item.sku.sku_name : "";
+      document.getElementById("modalSkuName").value = item.sku ? item.sku.sku_name : (item.sku_name || "");
 
       const container = document.getElementById("attrContainer");
       container.innerHTML = "";
@@ -328,7 +363,6 @@
 
       const category = document.getElementById("modalCategory").value;
       const unit = document.getElementById("modalUnit").value;
-      const item = batchQueue.get(barcode);
 
       let skuId = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === skuName.toLowerCase())?.id;
 
@@ -343,11 +377,16 @@
         skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit });
       }
 
-      item.sku = skusMap.get(skuId);
-      item.attributes = collectAttrs();
+      const attrs = collectAttrs();
+
+      await setDoc(doc(db, "unregistered_skus", barcode), {
+        sku_id: skuId,
+        sku_name: skuName,
+        attributes: attrs,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
 
       closeModal();
-      renderBatchTable();
     });
 
     function collectAttrs() {
@@ -362,33 +401,29 @@
       return attrs;
     }
 
+    // 🚀 อนุมัติรับเข้า: เช็กว่ามี barcode นี้ใน products หรือไม่
     window.approveSingle = async (barcode) => {
-      const item = batchQueue.get(barcode);
-      if (!item || !item.sku) return;
+      const item = pendingMap.get(barcode);
+      if (!item || (!item.sku && !item.sku_id)) return;
+
+      const finalSkuId = item.sku ? item.sku.id : item.sku_id;
 
       try {
-        const q = query(collection(db, "products"), where("sku_id", "==", item.sku.id));
+        const q = query(collection(db, "products"), where("barcode", "==", barcode));
         const snap = await getDocs(q);
 
-        let existingDocId = null;
-        let existingQty = 0;
+        if (!snap.empty) {
+          const existingDoc = snap.docs[0];
+          const currentQty = existingDoc.data().quantity || 0;
 
-        snap.forEach(d => {
-          const data = d.data();
-          if (JSON.stringify(data.specific_attributes || {}) === JSON.stringify(item.attributes)) {
-            existingDocId = d.id;
-            existingQty = data.quantity || 0;
-          }
-        });
-
-        if (existingDocId) {
-          await updateDoc(doc(db, "products", existingDocId), {
-            quantity: existingQty + item.qty,
+          await updateDoc(doc(db, "products", existingDoc.id), {
+            quantity: currentQty + item.qty,
+            specific_attributes: item.attributes,
             updatedAt: serverTimestamp()
           });
         } else {
           await addDoc(collection(db, "products"), {
-            sku_id: item.sku.id,
+            sku_id: finalSkuId,
             barcode: barcode,
             quantity: item.qty,
             specific_attributes: item.attributes,
@@ -396,11 +431,8 @@
           });
         }
 
-        try { await deleteDoc(doc(db, "unregistered_skus", barcode)); } catch(e) {}
-
-        batchQueue.delete(barcode);
-        renderBatchTable();
-        alert(`รับเข้าคลังสำเร็จ! รวมยอดเข้ากลุ่ม "${item.sku.sku_name}" เรียบร้อยแล้ว`);
+        await deleteDoc(doc(db, "unregistered_skus", barcode));
+        alert(`รับเข้าคลังสำเร็จ! บันทึกรหัสบาร์โค้ด "${barcode}" เรียบร้อยแล้ว`);
       } catch (err) {
         alert("เกิดข้อผิดพลาด: " + err.message);
       }
@@ -408,9 +440,9 @@
 
     document.getElementById("btnApproveAllReady").addEventListener("click", async () => {
       let count = 0;
-      for (const barcode of Array.from(batchQueue.keys())) {
-        const item = batchQueue.get(barcode);
-        if (item && item.sku) {
+      for (const barcode of Array.from(pendingMap.keys())) {
+        const item = pendingMap.get(barcode);
+        if (item && (item.sku || item.sku_id)) {
           await window.approveSingle(barcode);
           count++;
         }

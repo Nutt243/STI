@@ -185,6 +185,15 @@
       });
     });
 
+// ฟังก์ชันจัดเรียง Key-Value ของ Attributes เพื่อใช้เป็น Key ในการ Group
+    function normalizeAttrs(attrs = {}) {
+      if (!attrs || Object.keys(attrs).length === 0) return "DEFAULT_NO_ATTR";
+      return Object.keys(attrs)
+        .sort()
+        .map(k => `${k.trim().toLowerCase()}:${String(attrs[k]).trim().toLowerCase()}`)
+        .join("|");
+    }
+
     async function loadInventory() {
       const skuSnap = await getDocs(collection(db, "skus"));
       const skus = new Map();
@@ -202,18 +211,33 @@
           groupedInventory.set(skuId, {
             sku: sku,
             totalQty: 0,
-            products: []
+            variantMap: new Map()
           });
         }
 
         const group = groupedInventory.get(skuId);
-        group.products.push(p);
         group.totalQty += (p.quantity || 0);
+
+        // จัดกลุ่มย่อยตาม Attribute
+        const normKey = normalizeAttrs(p.specific_attributes);
+
+        if (group.variantMap.has(normKey)) {
+          const variant = group.variantMap.get(normKey);
+          variant.quantity += (p.quantity || 0);
+          variant.productIds.push(p.id);
+        } else {
+          group.variantMap.set(normKey, {
+            variantKey: normKey,
+            attributes: p.specific_attributes || {},
+            quantity: p.quantity || 0,
+            productIds: [p.id]
+          });
+        }
       });
 
       renderAccordion();
     }
-
+    
     function renderAccordion() {
       const container = document.getElementById("skuAccordionList");
       container.innerHTML = "";
@@ -228,13 +252,15 @@
         const div = document.createElement("div");
         div.className = "bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs transition";
 
+        const variants = Array.from(group.variantMap.values());
+
         div.innerHTML = `
           <button onclick="toggleAccordion('${accordionId}')" class="w-full p-3.5 sm:p-4 flex justify-between items-center hover:bg-slate-50 text-left transition gap-2">
             <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <span id="icon-${accordionId}" class="text-slate-400 font-bold transition-transform transform shrink-0">▶</span>
               <div class="min-w-0">
                 <h3 class="font-black text-slate-800 text-sm sm:text-base truncate">${group.sku.sku_name}</h3>
-                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: ${group.sku.category || 'ทั่วไป'} | ${group.products.length} รายการย่อย</p>
+                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: ${group.sku.category || 'ทั่วไป'} | ${variants.length} รายการย่อย</p>
               </div>
             </div>
             <div class="text-right shrink-0">
@@ -245,16 +271,17 @@
           </button>
 
           <div id="${accordionId}" class="hidden border-t border-slate-100 bg-slate-50 p-2.5 sm:p-3 space-y-2">
-            ${group.products.map(p => {
-              const attrSummary = Object.entries(p.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ไม่มีคุณลักษณะเฉพาะ";
-              const isOutOfStock = p.quantity <= 0;
+            ${variants.map((v) => {
+              const attrSummary = Object.entries(v.attributes).map(([k,val]) => `${k}:${val}`).join(", ") || "ไม่มีคุณลักษณะเฉพาะ";
+              const isOutOfStock = v.quantity <= 0;
+
               return `
                 <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
                   <div>
-                    <p class="font-bold text-slate-700">${attrSummary}</p>
-                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-600">${p.quantity}</span> ${group.sku.unit || 'ชิ้น'}</p>
+                    <p class="font-bold text-slate-800">${attrSummary}</p>
+                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-600">${v.quantity}</span>${group.sku.unit || 'ชิ้น'}</p>
                   </div>
-                  <button onclick="addToCart('${p.id}', '${skuId}')" 
+                  <button onclick="addToCart('${skuId}', '${encodeURIComponent(v.variantKey)}')" 
                           class="w-full sm:w-auto px-3 py-1.5 font-bold rounded-lg transition text-center ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
                           ${isOutOfStock ? 'disabled' : ''}>
                     ${isOutOfStock ? 'สินค้าหมด' : '+ ใส่ตะกร้า'}
@@ -280,33 +307,38 @@
       }
     };
 
-    window.addToCart = (productId, skuId) => {
+    window.addToCart = (skuId, encodedVariantKey) => {
+      const variantKey = decodeURIComponent(encodedVariantKey);
       const group = groupedInventory.get(skuId);
       if (!group) return;
 
-      const product = group.products.find(p => p.id === productId);
-      if (!product) return;
+      const variant = group.variantMap.get(variantKey);
+      if (!variant) return;
 
-      if (product.quantity <= 0) {
+      if (variant.quantity <= 0) {
         alert("⚠️ สินค้ารายการนี้หมดแล้วในสต็อก!");
         return;
       }
 
-      if (cart.has(productId)) {
-        const item = cart.get(productId);
-        if (item.qty < product.quantity) {
+      const cartKey = `${skuId}___${variantKey}`;
+
+      if (cart.has(cartKey)) {
+        const item = cart.get(cartKey);
+        if (item.qty < variant.quantity) {
           item.qty++;
         } else {
-          alert(`⚠️ ไม่สามารถเพิ่มได้อีก! คุณเลือกครบตามจำนวนคงเหลือในสต็อกแล้ว (${product.quantity} ${group.sku.unit || 'ชิ้น'})`);
+          alert(`⚠️ ไม่สามารถเพิ่มได้อีก! คุณเลือกครบตามจำนวนคงเหลือในสต็อกแล้ว (${variant.quantity} ${group.sku.unit || 'ชิ้น'})`);
           return;
         }
       } else {
-        cart.set(productId, {
-          productId: productId,
+        cart.set(cartKey, {
+          cartKey: cartKey,
+          skuId: skuId,
           skuName: group.sku.sku_name,
           unit: group.sku.unit || 'ชิ้น',
-          attributes: product.specific_attributes || {},
-          maxQty: product.quantity,
+          attributes: variant.attributes,
+          productIds: variant.productIds,
+          maxQty: variant.quantity,
           qty: 1
         });
       }
@@ -339,7 +371,7 @@
       btnSubmit.disabled = false;
       btnOpens.forEach(btn => btn.disabled = false);
 
-      cart.forEach((val, productId) => {
+      cart.forEach((val, cartKey) => {
         const attrStr = Object.entries(val.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
         
         const desktopDiv = document.createElement("div");
@@ -350,9 +382,9 @@
             <p class="text-[10px] text-slate-500 truncate">${attrStr}</p>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${productId}', this.value)"
+            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${encodeURIComponent(cartKey)}', this.value)"
                    class="w-14 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600">
-            <button onclick="removeFromCart('${productId}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
+            <button onclick="removeFromCart('${encodeURIComponent(cartKey)}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
           </div>
         `;
         desktopContainer.appendChild(desktopDiv);
@@ -362,20 +394,21 @@
           <td class="p-2.5 font-bold text-slate-800">${val.skuName}</td>
           <td class="p-2.5 text-slate-500">${attrStr}</td>
           <td class="p-2.5 text-center">
-            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${productId}', this.value)"
+            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${encodeURIComponent(cartKey)}', this.value)"
                    class="w-12 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600">
           </td>
           <td class="p-2.5 text-center">
-            <button onclick="removeFromCart('${productId}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
+            <button onclick="removeFromCart('${encodeURIComponent(cartKey)}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
           </td>
         `;
         summaryTbody.appendChild(summaryTr);
       });
     }
 
-    window.updateCartQty = (productId, val) => {
-      if (cart.has(productId)) {
-        const item = cart.get(productId);
+    window.updateCartQty = (encodedCartKey, val) => {
+      const cartKey = decodeURIComponent(encodedCartKey);
+      if (cart.has(cartKey)) {
+        const item = cart.get(cartKey);
         const q = parseInt(val) || 1;
         if (q > item.maxQty) {
           alert(`⚠️ จำนวนที่คุณระบุเกินกว่าสินค้าที่มีอยู่ในสต็อก (${item.maxQty} ${item.unit})`);
@@ -389,8 +422,9 @@
       }
     };
 
-    window.removeFromCart = (productId) => {
-      cart.delete(productId);
+    window.removeFromCart = (encodedCartKey) => {
+      const cartKey = decodeURIComponent(encodedCartKey);
+      cart.delete(cartKey);
       renderCart();
     };
 
@@ -431,7 +465,7 @@
         const items = [];
         cart.forEach((val) => {
           items.push({
-            product_id: val.productId,
+            product_id: val.productIds[0] || "",
             sku_name: val.skuName,
             attributes: val.attributes,
             quantity: val.qty,
