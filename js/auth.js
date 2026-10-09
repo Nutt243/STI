@@ -32,21 +32,23 @@ export function checkUserAuth(allowedRoles = []) {
         return;
       }
 
-      // แสดงชื่อผู้ใช้และบทบาทบน Navbar
+      // แสดงชื่อผู้ใช้และบทบาทบน Navbar ทั้ง Mobile และ Desktop
       const nameElem = document.getElementById("userDisplayName");
       if (nameElem) {
         nameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
       }
+      const mobileNameElem = document.getElementById("mobileUserDisplayName");
+      if (mobileNameElem) {
+        mobileNameElem.innerText = `${userName} (${userRole.toUpperCase()})`;
+      }
 
       // ⚙️ แสดง/ซ่อน เมนูตามบทบาท
-      // สิทธิ์ Manager & Admin (เห็นหน้า อนุมัติเบิก + รับสินค้าเข้า)
       if (userRole === "admin" || userRole === "manager") {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.remove("hidden"));
       } else {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.add("hidden"));
       }
 
-      // สิทธิ์ Admin เท่านั้น (เห็นหน้า จัดการผู้ใช้งาน)
       if (userRole === "admin") {
         document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hidden"));
       } else {
@@ -65,15 +67,27 @@ export function checkUserAuth(allowedRoles = []) {
   });
 }
 
-// Event Logout
+// Event Logout & Mobile Menu Toggle
 document.addEventListener("DOMContentLoaded", () => {
+  const handleLogout = async () => {
+    if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
+      await signOut(auth);
+      window.location.href = "login.html";
+    }
+  };
+
   const btnLogout = document.getElementById("btnLogout");
-  if (btnLogout) {
-    btnLogout.addEventListener("click", async () => {
-      if (confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-        await signOut(auth);
-        window.location.href = "login.html";
-      }
+  if (btnLogout) btnLogout.addEventListener("click", handleLogout);
+
+  const btnMobileLogout = document.getElementById("btnMobileLogout");
+  if (btnMobileLogout) btnMobileLogout.addEventListener("click", handleLogout);
+
+  // Mobile Menu Toggle
+  const btnMobileMenu = document.getElementById("btnMobileMenu");
+  const mobileNavMenu = document.getElementById("mobileNavMenu");
+  if (btnMobileMenu && mobileNavMenu) {
+    btnMobileMenu.addEventListener("click", () => {
+      mobileNavMenu.classList.toggle("hidden");
     });
   }
 });

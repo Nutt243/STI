@@ -6,7 +6,7 @@
   <title>StockMaster - เบิกสินค้า</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 pb-20 lg:pb-0">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,41 +17,61 @@
         <span class="font-bold text-lg tracking-tight">StockMaster</span>
       </a>
 
-      <!-- เมนูหลักตามสิทธิ์ -->
+      <!-- Desktop Nav -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
-        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">เบิกสินค้า</a>
         <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
         
-        <!-- สำหรับ Manager และ Admin -->
         <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
         <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
-        
-        <!-- สำหรับ Admin เท่านั้น -->
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
-      <div class="flex items-center space-x-3">
+      <div class="hidden md:flex items-center space-x-3">
         <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
         <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
 
+      <!-- Hamburger Mobile -->
+      <div class="flex md:hidden items-center">
+        <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
     </div>
+  </div>
+
+  <!-- Mobile Dropdown Menu -->
+  <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
+    <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
+      <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
+      <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
+    </div>
+    <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก/สต็อก</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">เบิกสินค้า</a>
+    <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
+    <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">⏳ อนุมัติคำขอ</a>
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+    <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
   </div>
 </nav>
 
   <!-- Main Content Layout -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
       <!-- Left Column: SKU Accordion List -->
       <div class="lg:col-span-2 space-y-4">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h1 class="text-xl font-black text-slate-900 tracking-tight">📦 เลือกรายการเบิกสินค้า (แยกตาม SKU)</h1>
-            <p class="text-xs text-slate-500">กดขยาย SKU หลักเพื่อเลือกรายการย่อย (Specific Attributes) ลงตะกร้า</p>
+            <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">📦 เลือกรายการเบิกสินค้า (แยกตาม SKU)</h1>
+            <p class="text-xs text-slate-500">กดขยาย SKU หลักเพื่อเลือกรายการย่อยลงตะกร้า</p>
           </div>
-          <input type="text" id="searchInput" placeholder="🔍 ค้นหา SKU..." class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-48 focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+          <input type="text" id="searchInput" placeholder="🔍 ค้นหา SKU..." class="w-full sm:w-48 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
         </div>
 
         <div id="skuAccordionList" class="space-y-3">
@@ -59,27 +79,27 @@
         </div>
       </div>
 
-      <!-- Right Column: Requisition Cart -->
-      <div class="lg:col-span-1">
+      <!-- Right Column: Desktop Requisition Cart (ซ่อนใน Mobile View) -->
+      <div class="hidden lg:block lg:col-span-1">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sticky top-20 space-y-4">
           <div class="flex justify-between items-center border-b border-slate-100 pb-3">
             <h2 class="font-black text-slate-800 text-lg flex items-center gap-2">
-              🛒 ตะกร้าการเบิก <span id="cartBadge" class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+              🛒 ตะกร้าการเบิก <span id="desktopCartBadge" class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
             </h2>
-            <button id="btnClearCart" class="text-xs text-rose-500 hover:underline font-bold">ล้างตะกร้า</button>
+            <button class="btnClearCart text-xs text-rose-500 hover:underline font-bold">ล้างตะกร้า</button>
           </div>
 
-          <div id="cartItems" class="space-y-3 max-h-[350px] overflow-y-auto pr-1 divide-y divide-slate-100">
+          <div id="desktopCartItems" class="space-y-3 max-h-[350px] overflow-y-auto pr-1 divide-y divide-slate-100">
             <p class="text-xs text-slate-400 text-center py-8">ยังไม่มีรายการในตะกร้า<br>กด + เลือกสินค้าจากรายการซ้ายมือ</p>
           </div>
 
           <div class="border-t border-slate-100 pt-4 space-y-3">
             <div>
               <label class="block text-xs font-bold text-slate-600 uppercase mb-1">เหตุผลในการเบิก / หมายเหตุ</label>
-              <textarea id="requisitionNote" rows="2" placeholder="เช่น ใช้สำหรับงานตรวจพิสูจน์เคสประจำวัน..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white"></textarea>
+              <textarea id="desktopRequisitionNote" rows="2" placeholder="เช่น ใช้สำหรับงานตรวจพิสูจน์เคสประจำวัน..." class="requisitionNoteInput w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white"></textarea>
             </div>
 
-            <button id="btnOpenSummaryModal" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition disabled:bg-slate-300 disabled:cursor-not-allowed" disabled>
+            <button class="btnOpenSummaryModal w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition disabled:bg-slate-300 disabled:cursor-not-allowed" disabled>
               📋 ตรวจสอบ & ยืนยันการเบิก
             </button>
           </div>
@@ -89,37 +109,71 @@
     </div>
   </main>
 
-  <!-- Summary Modal Popup -->
-  <div id="summaryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+  <!-- 🛒 Floating Action Button (FAB) ตะกร้าสินค้าสำหรับมือถือ -->
+  <button id="btnMobileCartFAB" class="lg:hidden fixed bottom-5 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl z-40 flex items-center justify-center transition-transform active:scale-95 border-2 border-white">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"></path>
+    </svg>
+    <span id="mobileCartBadge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">0</span>
+  </button>
+
+  <!-- Summary Cart Modal Popup (ใช้แสดงตะกร้าทั้งบนมือถือและคอม) -->
+  <div id="summaryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-bold text-slate-800 text-lg">📄 สรุปรายการคำขอเบิกสินค้า</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🛒</span>
+          <h3 class="font-bold text-slate-800 text-base sm:text-lg">รายการสินค้าในตะกร้า</h3>
+        </div>
         <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-3 overflow-y-auto flex-1 pr-1">
         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
           <p><span class="font-bold text-slate-600">ผู้ขอเบิก:</span> <span id="summaryUser">-</span></p>
-          <p><span class="font-bold text-slate-600">หมายเหตุ:</span> <span id="summaryNote">-</span></p>
         </div>
 
-        <div class="border border-slate-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
-          <table class="w-full text-left text-xs">
+        <div class="border border-slate-200 rounded-xl overflow-hidden overflow-x-auto">
+          <table class="w-full text-left text-xs min-w-[280px]">
             <thead class="bg-slate-100 font-bold text-slate-600 border-b border-slate-200">
               <tr>
                 <th class="p-2.5">SKU / รายการ</th>
-                <th class="p-2.5">คุณลักษณะเฉพาะ</th>
-                <th class="p-2.5 text-center">จำนวนที่เบิก</th>
+                <th class="p-2.5">คุณลักษณะ</th>
+                <th class="p-2.5 text-center">จำนวน</th>
+                <th class="p-2.5 text-center w-10">จัดการ</th>
               </tr>
             </thead>
             <tbody id="summaryTableBody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">เหตุผลในการเบิก / หมายเหตุ</label>
+          <textarea id="modalRequisitionNote" rows="2" placeholder="เช่น ใช้สำหรับงานตรวจพิสูจน์เคสประจำวัน..." class="requisitionNoteInput w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white"></textarea>
+        </div>
       </div>
 
-      <div class="flex gap-3 pt-2">
-        <button id="btnCancelSubmit" class="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">กลับไปแก้ไข</button>
-        <button id="btnConfirmRequisition" class="w-1/2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition text-xs">🚀 ยืนยันส่งคำขอเบิก</button>
+      <div class="flex gap-2.5 pt-2 border-t border-slate-100">
+        <button id="btnClearCartModal" class="w-1/3 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-xs transition">ล้างตะกร้า</button>
+        <button id="btnSubmitRequisition" class="w-2/3 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5 disabled:bg-slate-300 disabled:cursor-not-allowed">
+          <span>🚀 ยืนยันส่งคำขอเบิก</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pop-up แจ้งเตือนยืนยันก่อนส่งคำขอ (Confirmation Modal) -->
+  <div id="confirmConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl text-2xl mb-1">
+        📦
+      </div>
+      <h3 class="font-black text-slate-800 text-lg">ยืนยันการเบิกสินค้า?</h3>
+      <p class="text-xs text-slate-500">คำขอของคุณจะถูกส่งไปยังระบบเพื่อให้ผู้จัดการ/Admin อนุมัติจ่ายสินค้า</p>
+      
+      <div class="flex gap-2 pt-2">
+        <button id="btnCancelFinalConfirm" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">กลับไปตรวจสอบ</button>
+        <button id="btnExecuteRequisition" class="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md text-xs transition">ส่งคำขอเบิก</button>
       </div>
     </div>
   </div>
@@ -133,6 +187,14 @@
 
     let cart = new Map(); 
     let groupedInventory = new Map(); 
+
+    // ซิงก์หมายเหตุระหว่าง Desktop และ Modal
+    const noteInputs = document.querySelectorAll(".requisitionNoteInput");
+    noteInputs.forEach(input => {
+      input.addEventListener("input", (e) => {
+        noteInputs.forEach(other => { if (other !== e.target) other.value = e.target.value; });
+      });
+    });
 
     async function loadInventory() {
       const skuSnap = await getDocs(collection(db, "skus"));
@@ -178,33 +240,33 @@
         div.className = "bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs transition";
 
         div.innerHTML = `
-          <button onclick="toggleAccordion('${accordionId}')" class="w-full p-4 flex justify-between items-center hover:bg-slate-50 text-left transition">
-            <div class="flex items-center gap-3">
-              <span id="icon-${accordionId}" class="text-slate-400 font-bold transition-transform transform">▶</span>
-              <div>
-                <h3 class="font-black text-slate-800 text-base">${group.sku.sku_name}</h3>
-                <p class="text-xs text-slate-400">หมวดหมู่: ${group.sku.category || 'ทั่วไป'} | มีทั้งหมด ${group.products.length} รายการย่อย</p>
+          <button onclick="toggleAccordion('${accordionId}')" class="w-full p-3.5 sm:p-4 flex justify-between items-center hover:bg-slate-50 text-left transition gap-2">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <span id="icon-${accordionId}" class="text-slate-400 font-bold transition-transform transform shrink-0">▶</span>
+              <div class="min-w-0">
+                <h3 class="font-black text-slate-800 text-sm sm:text-base truncate">${group.sku.sku_name}</h3>
+                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: ${group.sku.category || 'ทั่วไป'} | ${group.products.length} รายการย่อย</p>
               </div>
             </div>
-            <div class="text-right">
-              <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                ยอดรวม: ${group.totalQty} ${group.sku.unit || 'ชิ้น'}
+            <div class="text-right shrink-0">
+              <span class="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full whitespace-nowrap">
+                รวม: ${group.totalQty} ${group.sku.unit || 'ชิ้น'}
               </span>
             </div>
           </button>
 
-          <div id="${accordionId}" class="hidden border-t border-slate-100 bg-slate-50 p-3 space-y-2">
+          <div id="${accordionId}" class="hidden border-t border-slate-100 bg-slate-50 p-2.5 sm:p-3 space-y-2">
             ${group.products.map(p => {
-              const attrSummary = Object.entries(p.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ไม่มีคุณลักษณะเฉพาะ (รายการหลัก)";
+              const attrSummary = Object.entries(p.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ไม่มีคุณลักษณะเฉพาะ";
               const isOutOfStock = p.quantity <= 0;
               return `
-                <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
                   <div>
                     <p class="font-bold text-slate-700">${attrSummary}</p>
-                    <p class="text-[11px] text-slate-400">คงเหลือในสต็อก: <span class="font-bold text-slate-600">${p.quantity}</span>${group.sku.unit || 'ชิ้น'}</p>
+                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-600">${p.quantity}</span>${group.sku.unit || 'ชิ้น'}</p>
                   </div>
                   <button onclick="addToCart('${p.id}', '${skuId}')" 
-                          class="px-3 py-1.5 font-bold rounded-lg transition ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
+                          class="w-full sm:w-auto px-3 py-1.5 font-bold rounded-lg transition text-center ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
                           ${isOutOfStock ? 'disabled' : ''}>
                     ${isOutOfStock ? 'สินค้าหมด' : '+ ใส่ตะกร้า'}
                   </button>
@@ -263,34 +325,64 @@
     };
 
     function renderCart() {
-      const container = document.getElementById("cartItems");
-      container.innerHTML = "";
-      document.getElementById("cartBadge").innerText = cart.size;
+      const cartSize = cart.size;
+      document.getElementById("desktopCartBadge").innerText = cartSize;
+      document.getElementById("mobileCartBadge").innerText = cartSize;
 
-      if (cart.size === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">ยังไม่มีรายการในตะกร้า<br>กด + เลือกสินค้าจากรายการซ้ายมือ</p>`;
-        document.getElementById("btnOpenSummaryModal").disabled = true;
+      const desktopContainer = document.getElementById("desktopCartItems");
+      const summaryTbody = document.getElementById("summaryTableBody");
+      
+      desktopContainer.innerHTML = "";
+      summaryTbody.innerHTML = "";
+
+      const btnSubmit = document.getElementById("btnSubmitRequisition");
+      const btnOpens = document.querySelectorAll(".btnOpenSummaryModal");
+
+      if (cartSize === 0) {
+        desktopContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">ยังไม่มีรายการในตะกร้า<br>กด + เลือกสินค้าจากรายการซ้ายมือ</p>`;
+        summaryTbody.innerHTML = `<tr><td colspan="4" class="text-xs text-slate-400 text-center py-8">ยังไม่มีรายการในตะกร้า</td></tr>`;
+        
+        btnSubmit.disabled = true;
+        btnOpens.forEach(btn => btn.disabled = true);
         return;
       }
 
-      document.getElementById("btnOpenSummaryModal").disabled = false;
+      btnSubmit.disabled = false;
+      btnOpens.forEach(btn => btn.disabled = false);
 
       cart.forEach((val, productId) => {
         const attrStr = Object.entries(val.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
-        const div = document.createElement("div");
-        div.className = "pt-2 flex justify-between items-center text-xs";
-        div.innerHTML = `
-          <div class="pr-2">
-            <p class="font-bold text-slate-800">${val.skuName}</p>
-            <p class="text-[10px] text-slate-500">${attrStr}</p>
+        
+        // Render Desktop Right Cart Panel
+        const desktopDiv = document.createElement("div");
+        desktopDiv.className = "pt-2 flex justify-between items-center text-xs gap-2";
+        desktopDiv.innerHTML = `
+          <div class="pr-1 min-w-0 flex-1">
+            <p class="font-bold text-slate-800 truncate">${val.skuName}</p>
+            <p class="text-[10px] text-slate-500 truncate">${attrStr}</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 shrink-0">
             <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${productId}', this.value)"
                    class="w-14 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600">
-            <button onclick="removeFromCart('${productId}')" class="text-rose-500 font-bold px-1 hover:bg-rose-50 rounded">&times;</button>
+            <button onclick="removeFromCart('${productId}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
           </div>
         `;
-        container.appendChild(div);
+        desktopContainer.appendChild(desktopDiv);
+
+        // Render Summary Table in Modal (Mobile & Desktop)
+        const summaryTr = document.createElement("tr");
+        summaryTr.innerHTML = `
+          <td class="p-2.5 font-bold text-slate-800">${val.skuName}</td>
+          <td class="p-2.5 text-slate-500">${attrStr}</td>
+          <td class="p-2.5 text-center">
+            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${productId}', this.value)"
+                   class="w-12 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600">
+          </td>
+          <td class="p-2.5 text-center">
+            <button onclick="removeFromCart('${productId}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
+          </td>
+        `;
+        summaryTbody.appendChild(summaryTr);
       });
     }
 
@@ -315,40 +407,40 @@
       renderCart();
     };
 
-    document.getElementById("btnClearCart").addEventListener("click", () => {
+    const clearCart = () => {
       cart.clear();
       renderCart();
-    });
+    };
 
-    // Modal logic & submission unchanged...
-    document.getElementById("btnOpenSummaryModal").addEventListener("click", () => {
+    document.querySelectorAll(".btnClearCart").forEach(btn => btn.addEventListener("click", clearCart));
+    document.getElementById("btnClearCartModal").addEventListener("click", clearCart);
+
+    // Modal Control
+    const openCartModal = () => {
       const user = auth.currentUser;
       document.getElementById("summaryUser").innerText = user ? (user.displayName || user.email) : "ผู้ใช้งาน";
-      document.getElementById("summaryNote").innerText = document.getElementById("requisitionNote").value.trim() || "-";
-
-      const tbody = document.getElementById("summaryTableBody");
-      tbody.innerHTML = "";
-
-      cart.forEach((val) => {
-        const attrStr = Object.entries(val.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="p-2.5 font-bold text-slate-800">${val.skuName}</td>
-          <td class="p-2.5 text-slate-500">${attrStr}</td>
-          <td class="p-2.5 text-center font-bold text-blue-600">${val.qty} ${val.unit}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
       document.getElementById("summaryModal").classList.remove("hidden");
       document.getElementById("summaryModal").classList.add("flex");
+    };
+
+    const closeCartModal = () => document.getElementById("summaryModal").classList.add("hidden");
+
+    document.getElementById("btnMobileCartFAB").addEventListener("click", openCartModal);
+    document.querySelectorAll(".btnOpenSummaryModal").forEach(btn => btn.addEventListener("click", openCartModal));
+    document.getElementById("btnCloseModal").addEventListener("click", closeCartModal);
+
+    // Confirmation Pop-up Logic
+    document.getElementById("btnSubmitRequisition").addEventListener("click", () => {
+      if (cart.size === 0) return;
+      document.getElementById("confirmConfirmModal").classList.remove("hidden");
+      document.getElementById("confirmConfirmModal").classList.add("flex");
     });
 
-    const closeModal = () => document.getElementById("summaryModal").classList.add("hidden");
-    document.getElementById("btnCloseModal").addEventListener("click", closeModal);
-    document.getElementById("btnCancelSubmit").addEventListener("click", closeModal);
+    document.getElementById("btnCancelFinalConfirm").addEventListener("click", () => {
+      document.getElementById("confirmConfirmModal").classList.add("hidden");
+    });
 
-    document.getElementById("btnConfirmRequisition").addEventListener("click", async () => {
+    document.getElementById("btnExecuteRequisition").addEventListener("click", async () => {
       try {
         const user = auth.currentUser;
         const items = [];
@@ -362,20 +454,24 @@
           });
         });
 
+        const noteText = document.getElementById("modalRequisitionNote").value.trim();
+
         await addDoc(collection(db, "requisitions"), {
           userId: user ? user.uid : "unknown",
           userName: user ? (user.displayName || user.email) : "ผู้ใช้งาน",
           items: items,
-          note: document.getElementById("requisitionNote").value.trim(),
+          note: noteText,
           status: "pending",
           createdAt: serverTimestamp()
         });
 
-        alert("ส่งคำขอเบิกสินค้าเรียบร้อยแล้ว!");
+        document.getElementById("confirmConfirmModal").classList.add("hidden");
+        closeCartModal();
         cart.clear();
-        document.getElementById("requisitionNote").value = "";
-        closeModal();
+        noteInputs.forEach(i => i.value = "");
         renderCart();
+
+        alert("🚀 ส่งคำขอเบิกสินค้าเรียบร้อยแล้ว!");
       } catch (err) {
         alert("เกิดข้อผิดพลาด: " + err.message);
       }

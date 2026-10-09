@@ -8,53 +8,79 @@
 </head>
 <body class="bg-slate-100 min-h-screen font-sans text-slate-800">
 
-  <!-- Navbar -->
   <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
+        
         <a href="index.html" class="flex items-center space-x-3">
           <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
           <span class="font-bold text-lg tracking-tight">StockMaster</span>
         </a>
 
+        <!-- Desktop Nav -->
         <div class="hidden md:flex items-center space-x-1">
-          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก/สต็อก</a>
-          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
-          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
-          <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">⏳ อนุมัติคำขอ</a>
-          <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
-          <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
+          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
+          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
+          
+          <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
+          <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
+          <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white transition">👥 จัดการผู้ใช้</a>
         </div>
 
-        <div class="flex items-center space-x-3">
-          <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">Loading...</span>
-          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1">ออกจากระบบ</button>
+        <div class="hidden md:flex items-center space-x-3">
+          <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
+          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
         </div>
+
+        <!-- Hamburger Mobile -->
+        <div class="flex md:hidden items-center">
+          <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+
       </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
+      <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
+        <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
+        <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
+      </div>
+      <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก/สต็อก</a>
+      <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+      <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
+      <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">⏳ อนุมัติคำขอ</a>
+      <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+      <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight">👥 จัดการผู้ใช้งาน & อนุมัติสิทธิ์การเข้าใช้งาน</h1>
-        <p class="text-xs text-slate-500 mt-1">อนุมัติสมาชิกใหม่ ปรับเปลี่ยนสิทธิ์ (User / Manager / Admin) หรือระงับการเข้าใช้งานระบบ</p>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">👥 จัดการผู้ใช้งาน & อนุมัติสิทธิ์การเข้าใช้งาน</h1>
+        <p class="text-xs text-slate-500 mt-1">อนุมัติสมาชิกใหม่ ปรับเปลี่ยนสิทธิ์ หรือระงับการเข้าใช้งานระบบ</p>
       </div>
-      <button id="btnRefresh" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรชข้อมูล</button>
+      <button id="btnRefresh" class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรชข้อมูล</button>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-600">
-          <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100">
+        <table class="w-full text-left text-xs text-slate-600 min-w-[550px]">
+          <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
             <tr>
-              <th class="p-4">ผู้ใช้งาน / อีเมล</th>
-              <th class="p-4">วันที่สมัคร</th>
-              <th class="p-4 text-center">สถานะการอนุมัติ</th>
-              <th class="p-4 text-center">สิทธิ์บทบาท (Role)</th>
-              <th class="p-4 text-center">จัดการ</th>
+              <th class="p-3 sm:p-4">ผู้ใช้งาน / อีเมล</th>
+              <th class="p-3 sm:p-4">วันที่สมัคร</th>
+              <th class="p-3 sm:p-4 text-center">สถานะ</th>
+              <th class="p-3 sm:p-4 text-center">สิทธิ์บทบาท</th>
+              <th class="p-3 sm:p-4 text-center">จัดการ</th>
             </tr>
           </thead>
           <tbody id="userTableBody" class="divide-y divide-slate-100">
@@ -73,7 +99,6 @@
     import { checkUserAuth } from "./js/auth.js";
     import { collection, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // เข้าหน้านี้ได้เฉพาะ Admin เท่านั้น
     checkUserAuth(['admin']);
 
     async function loadUsers() {
@@ -106,33 +131,33 @@
           tr.className = "hover:bg-slate-50 transition";
 
           tr.innerHTML = `
-            <td class="p-4">
-              <div class="font-bold text-slate-800 text-sm">${u.name || 'ไม่ระบุชื่อ'}</div>
-              <div class="text-slate-400 font-mono text-[11px]">${u.email || userId}</div>
+            <td class="p-3 sm:p-4">
+              <div class="font-bold text-slate-800 text-xs sm:text-sm">${u.name || 'ไม่ระบุชื่อ'}</div>
+              <div class="text-slate-400 font-mono text-[10px] sm:text-[11px]">${u.email || userId}</div>
             </td>
-            <td class="p-4 text-slate-500 font-mono">${dateStr}</td>
-            <td class="p-4 text-center">
+            <td class="p-3 sm:p-4 text-slate-500 font-mono text-[11px] whitespace-nowrap">${dateStr}</td>
+            <td class="p-3 sm:p-4 text-center whitespace-nowrap">
               ${isApproved 
-                ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2.5 py-1 rounded-full font-bold">✅ อนุมัติแล้ว (Active)</span>'
+                ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2.5 py-1 rounded-full font-bold">✅ Active</span>'
                 : (isPending 
-                    ? '<span class="bg-amber-100 text-amber-800 text-[10px] px-2.5 py-1 rounded-full font-bold">⏳ รออนุมัติ (Pending)</span>'
-                    : '<span class="bg-rose-100 text-rose-800 text-[10px] px-2.5 py-1 rounded-full font-bold">🚫 ระงับใช้งาน (Disabled)</span>')
+                    ? '<span class="bg-amber-100 text-amber-800 text-[10px] px-2.5 py-1 rounded-full font-bold">⏳ Pending</span>'
+                    : '<span class="bg-rose-100 text-rose-800 text-[10px] px-2.5 py-1 rounded-full font-bold">🚫 Disabled</span>')
               }
             </td>
-            <td class="p-4 text-center">
-              <select onchange="changeRole('${userId}', this.value)" class="p-1.5 border rounded-lg text-xs font-bold ${roleBadgeClass}">
-                <option value="user" ${role === 'user' ? 'selected' : ''}>User (ผู้ใช้ทั่วไป)</option>
-                <option value="manager" ${role === 'manager' ? 'selected' : ''}>Manager (ผู้จัดการ)</option>
-                <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin (ผู้ดูแลระบบ)</option>
+            <td class="p-3 sm:p-4 text-center whitespace-nowrap">
+              <select onchange="changeRole('${userId}', this.value)" class="p-1 border rounded-lg text-[11px] font-bold ${roleBadgeClass}">
+                <option value="user" ${role === 'user' ? 'selected' : ''}>User</option>
+                <option value="manager" ${role === 'manager' ? 'selected' : ''}>Manager</option>
+                <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin</option>
               </select>
             </td>
-            <td class="p-4 text-center space-x-1">
+            <td class="p-3 sm:p-4 text-center space-x-1 whitespace-nowrap">
               ${isPending 
-                ? `<button onclick="updateUserStatus('${userId}', 'active')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition">✅ อนุมัติสิทธิ์</button>
-                   <button onclick="updateUserStatus('${userId}', 'rejected')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">❌ ปฏิเสธ</button>`
+                ? `<button onclick="updateUserStatus('${userId}', 'active')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg shadow-xs transition">✅ อนุมัติ</button>
+                   <button onclick="updateUserStatus('${userId}', 'rejected')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold rounded-lg transition">❌ ปฏิเสธ</button>`
                 : (isApproved 
-                    ? `<button onclick="updateUserStatus('${userId}', 'disabled')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">🚫 ระงับใช้งาน</button>`
-                    : `<button onclick="updateUserStatus('${userId}', 'active')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl transition">🔓 ปลดระงับ</button>`)
+                    ? `<button onclick="updateUserStatus('${userId}', 'disabled')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold rounded-lg transition">🚫 ระงับ</button>`
+                    : `<button onclick="updateUserStatus('${userId}', 'active')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg transition">🔓 ปลดระงับ</button>`)
               }
             </td>
           `;

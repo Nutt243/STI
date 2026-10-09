@@ -17,37 +17,57 @@
         <span class="font-bold text-lg tracking-tight">StockMaster</span>
       </a>
 
-      <!-- เมนูหลักตามสิทธิ์ -->
+      <!-- Desktop Nav -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
         <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
         <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
         
-        <!-- สำหรับ Manager และ Admin -->
-        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
+        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
         <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
-        
-        <!-- สำหรับ Admin เท่านั้น -->
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
-      <div class="flex items-center space-x-3">
+      <div class="hidden md:flex items-center space-x-3">
         <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
         <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
 
+      <!-- Hamburger Mobile -->
+      <div class="flex md:hidden items-center">
+        <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
     </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
+    <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
+      <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
+      <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
+    </div>
+    <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก/สต็อก</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+    <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
+    <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 bg-slate-800">⏳ อนุมัติคำขอ</a>
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+    <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
   </div>
 </nav>
 
   <!-- Main Content -->
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight">⏳ รายการอนุมัติคำขอเบิกสินค้า</h1>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">⏳ รายการอนุมัติคำขอเบิกสินค้า</h1>
         <p class="text-xs text-slate-500 mt-1">เรียงตามลำดับคิวค้างเบิก (เก่าสุด ไป ใหม่สุด)</p>
       </div>
-      <button id="btnRefresh" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรช</button>
+      <button id="btnRefresh" class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรช</button>
     </div>
 
     <div id="approvalList" class="space-y-4">
@@ -56,44 +76,44 @@
   </main>
 
   <!-- Modal สแกนตรวจสินค้าก่อนจ่าย -->
-  <div id="scanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-40">
-    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+  <div id="scanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-40 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3 flex-shrink-0">
         <div>
-          <h3 class="font-black text-slate-800 text-lg">🔍 สแกนและตรวจสอบสินค้าจ่ายออก</h3>
+          <h3 class="font-black text-slate-800 text-base sm:text-lg">🔍 สแกนและตรวจสอบสินค้าจ่ายออก</h3>
           <p class="text-xs text-slate-500">ผู้ขอเบิก: <span id="modalUserName" class="font-bold text-slate-700">-</span></p>
         </div>
         <button id="btnCloseScanModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
       </div>
 
-      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 flex-shrink-0">
-        <label class="block text-xs font-bold text-slate-700">ยิงสแกนบาร์โค้ดสินค้าที่นี่ (ระบบจะติ๊กเลือกให้อัตโนมัติ):</label>
+      <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-2 flex-shrink-0">
+        <label class="block text-xs font-bold text-slate-700">ยิงสแกนบาร์โค้ดสินค้าที่นี่:</label>
         <div class="flex gap-2">
           <input type="text" id="barcodeInput" placeholder="สแกนบาร์โค้ดเพื่อตรวจสอบ..." autofocus 
                  class="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500">
-          <button id="btnCheckBarcode" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition whitespace-nowrap">สแกน</button>
+          <button id="btnCheckBarcode" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition whitespace-nowrap">สแกน</button>
         </div>
       </div>
 
-      <div class="border border-slate-200 rounded-xl overflow-y-auto flex-1">
-        <table class="w-full text-left text-xs">
+      <div class="border border-slate-200 rounded-xl overflow-x-auto flex-1">
+        <table class="w-full text-left text-xs min-w-[500px]">
           <thead class="bg-slate-100 font-bold text-slate-600 border-b border-slate-200 sticky top-0">
             <tr>
-              <th class="p-3 text-center w-12">ตรวจ</th>
-              <th class="p-3">SKU / รายการ</th>
-              <th class="p-3 text-center w-24">ขอเบิก</th>
-              <th class="p-3 text-center w-32">อนุมัติจ่ายจริง</th>
-              <th class="p-3">หมายเหตุปรับลดจำนวน</th>
+              <th class="p-2.5 text-center w-10">ตรวจ</th>
+              <th class="p-2.5">SKU / รายการ</th>
+              <th class="p-2.5 text-center w-16">ขอเบิก</th>
+              <th class="p-2.5 text-center w-24">จ่ายจริง</th>
+              <th class="p-2.5">หมายเหตุปรับลด</th>
             </tr>
           </thead>
           <tbody id="scanTableBody" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
 
-      <div class="flex justify-end gap-3 pt-2 flex-shrink-0 border-t border-slate-100">
-        <button id="btnCancelModal" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
-        <button id="btnConfirmApprove" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md text-xs transition">
-          ✅ ยืนยันอนุมัติจ่ายสินค้า
+      <div class="flex justify-end gap-2 sm:gap-3 pt-2 flex-shrink-0 border-t border-slate-100">
+        <button id="btnCancelModal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
+        <button id="btnConfirmApprove" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md text-xs transition">
+          ✅ ยืนยันอนุมัติจ่าย
         </button>
       </div>
     </div>
@@ -101,10 +121,10 @@
 
   <!-- Modal Pop-up ปฏิเสธคำขอเบิก -->
   <div id="rejectModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
         <div class="flex items-center space-x-2">
-          <span class="text-rose-500 bg-rose-100 p-2 rounded-xl">❌</span>
+          <span class="text-rose-500 bg-rose-100 p-1.5 rounded-xl text-sm">❌</span>
           <h3 class="font-black text-slate-800 text-base">ปฏิเสธคำขอเบิกสินค้า</h3>
         </div>
         <button id="btnCloseRejectModal" class="text-slate-400 hover:text-slate-600 font-bold text-xl leading-none">&times;</button>
@@ -112,7 +132,7 @@
 
       <div class="space-y-2">
         <label class="block text-xs font-bold text-slate-700">ระบุเหตุผลการไม่อนุมัติ <span class="text-rose-500">*</span></label>
-        <textarea id="rejectReasonInput" rows="3" placeholder="ตัวอย่าง: สินค้าหมดสต็อกชั่วคราว, เอกสารไม่สมบูรณ์, ข้อมูลเบิกไม่ถูกต้อง..." 
+        <textarea id="rejectReasonInput" rows="3" placeholder="ตัวอย่าง: สินค้าหมดสต็อกชั่วคราว, เอกสารไม่สมบูรณ์..." 
                   class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:bg-white resize-none"></textarea>
       </div>
 
@@ -127,10 +147,10 @@
 
   <!-- Modal Pop-up แจ้งเตือนสินค้าไม่พอในสต็อก -->
   <div id="stockWarnModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
         <div class="flex items-center space-x-2">
-          <span class="text-amber-600 bg-amber-100 p-2 rounded-xl">⚠️</span>
+          <span class="text-amber-600 bg-amber-100 p-1.5 rounded-xl text-sm">⚠️</span>
           <h3 class="font-black text-slate-800 text-base">จำนวนสินค้าในสต็อกไม่พอ!</h3>
         </div>
         <button id="btnCloseWarnModal" class="text-slate-400 hover:text-slate-600 font-bold text-xl leading-none">&times;</button>
@@ -150,7 +170,7 @@
       <div class="flex justify-end gap-2 pt-2">
         <button id="btnWarnDismiss" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">แก้ไขเอง</button>
         <button id="btnWarnAutoAdjust" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md text-xs transition">
-          ⚡ ปรับลดจำนวนเท่าที่มี
+          ⚡ ปรับลดจำนวน
         </button>
       </div>
     </div>
@@ -188,7 +208,7 @@
           const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
           
           const card = document.createElement("div");
-          card.className = "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4";
+          card.className = "bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4";
 
           const itemsRows = (req.items || []).map(i => {
             const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
@@ -202,32 +222,32 @@
           }).join("");
 
           card.innerHTML = `
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-3">
               <div>
                 <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">⏳ คิวที่ ${pendingCount}</span>
                 <span class="text-xs text-slate-400 ml-2">เวลาขอเบิก: ${dateStr}</span>
                 <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${req.userName || 'ไม่ระบุชื่อ'}</p>
               </div>
-              <div class="flex gap-2">
-                <button onclick="openRejectModal('${d.id}')" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl transition">❌ ปฏิเสธคำขอ</button>
-                <button onclick="openScanModal('${d.id}')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition">🔍 ตรวจสอบ & สแกนจ่ายสินค้า</button>
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="openRejectModal('${d.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl transition">❌ ปฏิเสธ</button>
+                <button onclick="openScanModal('${d.id}')" class="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition">🔍 ตรวจสอบ & จ่าย</button>
               </div>
             </div>
 
-            <div>
-              <table class="w-full text-left text-xs">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs min-w-[320px]">
                 <thead class="text-slate-400 font-bold uppercase border-b border-slate-100">
                   <tr>
                     <th class="pb-2">SKU / รายการ</th>
                     <th class="pb-2">คุณลักษณะ</th>
-                    <th class="pb-2 text-center">จำนวนที่ขอ</th>
+                    <th class="pb-2 text-center">จำนวน</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">${itemsRows}</tbody>
               </table>
             </div>
 
-            ${req.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">💬 <span class="font-bold">หมายเหตุผู้ขอเบิก:</span> ${req.note}</p>` : ''}
+            ${req.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">💬 <span class="font-bold">หมายเหตุ:</span> ${req.note}</p>` : ''}
           `;
 
           container.appendChild(card);
@@ -242,7 +262,6 @@
       }
     }
 
-    // Modal สแกน
     window.openScanModal = async (reqId) => {
       activeReqId = reqId;
 
@@ -279,26 +298,26 @@
         tr.className = item.checked ? "bg-emerald-50/50" : "hover:bg-slate-50";
 
         tr.innerHTML = `
-          <td class="p-3 text-center">
+          <td class="p-2.5 text-center">
             <input type="checkbox" id="chk_${item.index}" ${item.checked ? 'checked' : ''} 
                    onchange="toggleCheck(${item.index}, this.checked)"
                    class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
           </td>
-          <td class="p-3">
+          <td class="p-2.5">
             <div class="font-bold text-slate-800">${item.sku_name}</div>
             <div class="text-[10px] text-slate-400">${attrStr}</div>
           </td>
-          <td class="p-3 text-center font-bold text-slate-600">${item.quantity} ${item.unit || 'ชิ้น'}</td>
-          <td class="p-3 text-center">
+          <td class="p-2.5 text-center font-bold text-slate-600">${item.quantity} ${item.unit || 'ชิ้น'}</td>
+          <td class="p-2.5 text-center">
             <input type="number" min="0" max="${item.quantity}" value="${item.approvedQty}" 
                    onchange="updateApprovedQty(${item.index}, this.value)"
-                   class="w-20 p-1.5 border border-slate-300 rounded-lg text-center font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 text-xs">
+                   class="w-16 p-1 border border-slate-300 rounded-lg text-center font-bold text-blue-600 text-xs">
           </td>
-          <td class="p-3">
-            <input type="text" placeholder="${item.approvedQty < item.quantity ? 'ระบุเหตุผลที่เบิกไม่ครบ' : 'หมายเหตุเพิ่มเติม (ถ้ามี)'}" 
+          <td class="p-2.5">
+            <input type="text" placeholder="${item.approvedQty < item.quantity ? 'ระบุเหตุผลที่จ่ายไม่ครบ' : 'หมายเหตุ'}" 
                    value="${item.adjustNote}" 
                    onchange="updateAdjustNote(${item.index}, this.value)"
-                   class="w-full p-1.5 border ${item.approvedQty < item.quantity ? 'border-amber-400 bg-amber-50' : 'border-slate-200'} rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
+                   class="w-full p-1 border ${item.approvedQty < item.quantity ? 'border-amber-400 bg-amber-50' : 'border-slate-200'} rounded-lg text-xs">
           </td>
         `;
         tbody.appendChild(tr);
@@ -345,7 +364,6 @@
       document.getElementById("barcodeInput").focus();
     }
 
-    // --- Pop-up เตือนสินค้าไม่พอ ---
     function showStockWarnModal(itemIdx, title, reqQty, stockQty) {
       pendingWarnItemIndex = itemIdx;
       pendingWarnStockAvailable = stockQty;
@@ -355,9 +373,9 @@
       document.getElementById("warnStockQty").innerText = stockQty;
 
       if (stockQty <= 0) {
-        document.getElementById("warnMessageText").innerText = "สินค้าชิ้นนี้ในสต็อกหมดแล้ว (เหลือ 0) ต้องการปรับจำนวนอนุมัติเป็น 0 ชิ้นเพื่อยกเลิกจ่ายเฉพาะรายการนี้หรือไม่?";
+        document.getElementById("warnMessageText").innerText = "สินค้าชิ้นนี้ในสต็อกหมดแล้ว ต้องการปรับจำนวนอนุมัติเป็น 0 ชิ้นหรือไม่?";
       } else {
-        document.getElementById("warnMessageText").innerText = `สินค้ามีไม่พอจ่าย! ต้องการปรับลดจำนวนอนุมัติลงเหลือ ${stockQty} ชิ้น (เท่าที่มีอยู่ในสต็อก) หรือไม่?`;
+        document.getElementById("warnMessageText").innerText = `สินค้ามีไม่พอจ่าย! ต้องการปรับลดจำนวนอนุมัติลงเหลือ ${stockQty} ชิ้น หรือไม่?`;
       }
 
       document.getElementById("stockWarnModal").classList.remove("hidden");
@@ -382,7 +400,6 @@
       closeStockWarnModal();
     });
 
-    // ยืนยันอนุมัติ
     document.getElementById("btnConfirmApprove").addEventListener("click", async () => {
       const uncheckedItems = activeReqItems.filter(i => !i.checked);
       if (uncheckedItems.length > 0) {
@@ -457,7 +474,6 @@
     document.getElementById("btnCloseScanModal").addEventListener("click", () => document.getElementById("scanModal").classList.add("hidden"));
     document.getElementById("btnCancelModal").addEventListener("click", () => document.getElementById("scanModal").classList.add("hidden"));
 
-    // --- Modal ปฏิเสธคำขอ (Reject Modal) ---
     window.openRejectModal = (reqId) => {
       rejectTargetReqId = reqId;
       document.getElementById("rejectReasonInput").value = "";

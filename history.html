@@ -17,36 +17,54 @@
         <span class="font-bold text-lg tracking-tight">StockMaster</span>
       </a>
 
-      <!-- เมนูหลักตามสิทธิ์ -->
+      <!-- Desktop Nav -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก/สต็อก</a>
         <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
-        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
+        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">ประวัติการเบิก</a>
         
-        <!-- สำหรับ Manager และ Admin -->
         <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
         <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
-        
-        <!-- สำหรับ Admin เท่านั้น -->
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
-      <div class="flex items-center space-x-3">
+      <div class="hidden md:flex items-center space-x-3">
         <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
         <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
 
+      <!-- Hamburger Mobile -->
+      <div class="flex md:hidden items-center">
+        <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
     </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
+    <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
+      <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
+      <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
+    </div>
+    <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก/สต็อก</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+    <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">ประวัติการเบิก</a>
+    <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">⏳ อนุมัติคำขอ</a>
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+    <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
   </div>
 </nav>
 
   <!-- Main Content -->
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight">📜 ประวัติการขอเบิกสินค้า</h1>
-        <p class="text-xs text-slate-500 mt-1">ติดตามสถานะรายการเบิก รายละเอียดจำนวนที่ขอ vs จำนวนที่ได้รับจริง</p>
-      </div>
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📜 ประวัติการขอเบิกสินค้า</h1>
+      <p class="text-xs text-slate-500 mt-1">ติดตามสถานะรายการเบิก รายละเอียดจำนวนที่ขอ vs จำนวนที่ได้รับจริง</p>
     </div>
 
     <div id="historyList" class="space-y-4">
@@ -80,14 +98,13 @@
           let statusBadge = "";
           let isPartial = false;
 
-          // ตรวจสอบว่าอนุมัติแล้วได้ของครบทุกรายการหรือไม่
           if (req.status === "approved") {
             isPartial = (req.items || []).some(i => (i.approvedQty !== undefined && i.approvedQty < i.quantity));
             
             if (isPartial) {
-              statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">⚠️ อนุมัติ (จ่ายบางส่วน *)</span>`;
+              statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">⚠️ จ่ายบางส่วน</span>`;
             } else {
-              statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">✅ อนุมัติ (จ่ายครบ)</span>`;
+              statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">✅ จ่ายครบ</span>`;
             }
           } else if (req.status === "rejected") {
             statusBadge = `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-bold">❌ ไม่อนุมัติ</span>`;
@@ -95,7 +112,6 @@
             statusBadge = `<span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-bold">⏳ รออนุมัติ</span>`;
           }
 
-          // แสดงรายการสินค้าแบบเปรียบเทียบ จำนวนที่ขอ vs จำนวนที่ได้
           const itemsRows = (req.items || []).map(i => {
             const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
             const reqQty = i.quantity;
@@ -120,32 +136,32 @@
           }).join("");
 
           const card = document.createElement("div");
-          card.className = `bg-white p-6 rounded-2xl border ${isPartial ? 'border-amber-200' : 'border-slate-200'} shadow-sm space-y-3`;
+          card.className = `bg-white p-4 sm:p-6 rounded-2xl border ${isPartial ? 'border-amber-200' : 'border-slate-200'} shadow-sm space-y-3`;
           
           card.innerHTML = `
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
               <div>
                 ${statusBadge}
-                <span class="text-xs text-slate-400 ml-2">วันที่ขอเบิก: ${dateStr}</span>
+                <span class="text-xs text-slate-400 ml-2">วันที่เบิก: ${dateStr}</span>
                 <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${req.userName || 'ไม่ระบุชื่อ'}</p>
               </div>
             </div>
 
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs">
+              <table class="w-full text-left text-xs min-w-[400px]">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-200">
                   <tr>
                     <th class="py-2 px-3">SKU / รายการ</th>
-                    <th class="py-2 px-3 text-center w-24">จำนวนที่ขอ</th>
-                    <th class="py-2 px-3 text-center w-24">จำนวนที่ได้</th>
-                    <th class="py-2 px-3">เหตุผล / หมายเหตุปรับลด</th>
+                    <th class="py-2 px-3 text-center w-20">ขอเบิก</th>
+                    <th class="py-2 px-3 text-center w-20">ได้รับ</th>
+                    <th class="py-2 px-3">หมายเหตุ</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">${itemsRows}</tbody>
               </table>
             </div>
 
-            ${req.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">💬 <span class="font-bold">หมายเหตุผู้ขอเบิก:</span> ${req.note}</p>` : ''}
+            ${req.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">💬 <span class="font-bold">หมายเหตุ:</span> ${req.note}</p>` : ''}
             ${req.status === "rejected" ? `<p class="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100">❌ <span class="font-bold">เหตุผลที่ไม่อนุมัติ:</span> ${req.rejectReason || 'ไม่ระบุเหตุผล'}</p>` : ''}
           `;
 
