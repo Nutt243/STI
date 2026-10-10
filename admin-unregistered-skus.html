@@ -85,11 +85,20 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
         <div>
           <h2 class="text-base sm:text-lg font-black text-slate-800">📋 รายการรอรับเข้าคลัง (Pending Batch)</h2>
-          <p class="text-xs text-slate-400">กำหนด SKU หลักและ Specific Attributes โดยแยกเก็บตาม Barcode ตรงๆ</p>
+          <p class="text-xs text-slate-400">กำหนด SKU หลักและ Specific Attributes หรือส่งออกไปกรอกใน Google Sheets</p>
         </div>
-        <button id="btnApproveAllReady" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
-          ✅ อนุมัติรายการที่พร้อมรับเข้าทั้งหมด
-        </button>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button id="btnExportCSV" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1">
+            📥 ส่งออก CSV (Sheets)
+          </button>
+          <label class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1">
+            📤 นำเข้าจาก CSV
+            <input type="file" id="importCsvInput" accept=".csv" class="hidden">
+          </label>
+          <button id="btnApproveAllReady" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
+            ✅ อนุมัติที่พร้อมรับเข้าทั้งหมด
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -132,28 +141,30 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หมวดหมู่</label>
-              <select id="modalCategory" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm">
-                <option value="เครื่องเขียน">เครื่องเขียน</option>
-                <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
-                <option value="อุปกรณ์คอมพิวเตอร์">อุปกรณ์คอมพิวเตอร์</option>
+              <select id="modalCategory" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-bold text-blue-700">
                 <option value="ทั่วไป">ทั่วไป</option>
+                <option value="เครื่องเขียน">เครื่องเขียน</option>
+                <option value="อุปกรณ์คอมพิวเตอร์">อุปกรณ์คอมพิวเตอร์</option>
+                <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
               </select>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หน่วยนับ</label>
-              <input type="text" id="modalUnit" value="ด้าม" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm">
+              <input type="text" id="modalUnit" value="ชิ้น" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm">
             </div>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ</label>
-          <p class="text-[11px] text-slate-400">เช่น Color: น้ำเงิน</p>
+          <div class="flex justify-between items-center">
+            <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ (Specific Attributes)</label>
+            <span class="text-[10px] bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-md">Template อัตโนมัติ</span>
+          </div>
           <div id="attrContainer" class="space-y-2"></div>
-          <button type="button" id="btnAddAttrRow" class="text-xs font-bold text-blue-600 hover:underline">+ เพิ่มคุณลักษณะ (เช่น Color, Size)</button>
+          <button type="button" id="btnAddAttrRow" class="text-xs font-bold text-blue-600 hover:underline">+ เพิ่มคุณลักษณะพิเศษ</button>
         </div>
 
-        <div class="flex gap-3 pt-2">
+        <div class="flex gap-3 pt-2 border-t border-slate-100">
           <button type="button" id="btnCancelModal" class="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition">ยกเลิก</button>
           <button type="submit" class="w-1/2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition text-xs sm:text-sm">💾 บันทึกรายละเอียด</button>
         </div>
@@ -186,6 +197,13 @@
     let lastScannedText = "";
     let lastScannedTime = 0;
 
+    const categoryPresets = {
+      "อุปกรณ์คอมพิวเตอร์": ["แบรนด์", "รุ่น", "S/N"],
+      "เครื่องเขียน": ["ยี่ห้อ", "สี", "ขนาด/เบอร์"],
+      "เครื่องใช้ไฟฟ้า": ["แบรนด์", "รุ่น", "กำลังไฟ(W)", "S/N"],
+      "ทั่วไป": ["ยี่ห้อ", "รุ่น", "สี"]
+    };
+
     async function initData() {
       const skuSnap = await getDocs(collection(db, "skus"));
       skusMap.clear();
@@ -209,6 +227,8 @@
             sku: matchedSku,
             sku_id: data.sku_id || (matchedSku ? matchedSku.id : null),
             sku_name: data.sku_name || (matchedSku ? matchedSku.sku_name : ""),
+            category: data.category || (matchedSku ? matchedSku.category : "ทั่วไป"),
+            unit: data.unit || (matchedSku ? matchedSku.unit : "ชิ้น"),
             attributes: data.attributes || {}
           });
         });
@@ -267,7 +287,6 @@
       }
     }
 
-    // 🚀 ระบบประมวลผลบาร์โค้ดแบบ Auto-submit แม่นยำสูง (สแกนแล้วเพิ่มเข้าตารางทันทีไม่ต้องกด Enter)
     const scanInput = document.getElementById("scanInput");
     let scanTimeout = null;
 
@@ -338,7 +357,7 @@
 
         const isReady = !!(item.sku || item.sku_name);
         const displayName = item.sku ? item.sku.sku_name : (item.sku_name || "");
-        const categoryName = item.sku ? (item.sku.category || "ทั่วไป") : "ทั่วไป";
+        const categoryName = item.category || (item.sku ? (item.sku.category || "ทั่วไป") : "ทั่วไป");
         const attrSummary = Object.entries(item.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "(ไม่มีคุณลักษณะเฉพาะ)";
 
         tr.innerHTML = `
@@ -387,28 +406,42 @@
       document.getElementById("modalBarcode").value = barcode;
       document.getElementById("modalSkuName").value = item.sku ? item.sku.sku_name : (item.sku_name || "");
       
-      if (item.sku && item.sku.category) {
-        document.getElementById("modalCategory").value = item.sku.category;
-      }
-      if (item.sku && item.sku.unit) {
-        document.getElementById("modalUnit").value = item.sku.unit;
-      }
+      const currentCategory = item.category || (item.sku ? item.sku.category : "ทั่วไป");
+      document.getElementById("modalCategory").value = currentCategory;
+      document.getElementById("modalUnit").value = item.unit || (item.sku ? item.sku.unit : "ชิ้น");
 
-      const container = document.getElementById("attrContainer");
-      container.innerHTML = "";
-      Object.entries(item.attributes).forEach(([k, v]) => addAttrRow(k, v));
+      applyCategoryPreset(currentCategory, item.attributes || {});
 
       document.getElementById("detailModal").classList.remove("hidden");
       document.getElementById("detailModal").classList.add("flex");
     };
 
+    function applyCategoryPreset(categoryName, existingAttrs = {}) {
+      const container = document.getElementById("attrContainer");
+      container.innerHTML = "";
+
+      const presetKeys = categoryPresets[categoryName] || categoryPresets["ทั่วไป"] || [];
+      const allKeys = Array.from(new Set([...presetKeys, ...Object.keys(existingAttrs)]));
+
+      allKeys.forEach(key => {
+        const val = existingAttrs[key] || "";
+        addAttrRow(key, val);
+      });
+    }
+
+    document.getElementById("modalCategory").addEventListener("change", (e) => {
+      const selectedCategory = e.target.value;
+      const currentAttrs = collectAttrs();
+      applyCategoryPreset(selectedCategory, currentAttrs);
+    });
+
     function addAttrRow(k = "", v = "") {
       const div = document.createElement("div");
       div.className = "flex gap-2 items-center attr-row-item";
       div.innerHTML = `
-        <input type="text" placeholder="คุณลักษณะ (เช่น Color)" value="${k}" class="attr-k w-1/2 p-2 border border-slate-200 rounded-lg text-xs">
-        <input type="text" placeholder="ค่า (เช่น น้ำเงิน)" value="${v}" class="attr-v w-1/2 p-2 border border-slate-200 rounded-lg text-xs">
-        <button type="button" class="btn-remove-attr text-rose-500 font-bold px-1">&times;</button>
+        <input type="text" placeholder="คุณลักษณะ (เช่น แบรนด์, สี)" value="${k}" class="attr-k w-1/2 p-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-slate-50/50">
+        <input type="text" placeholder="ค่า (เช่น Dell, น้ำเงิน)" value="${v}" class="attr-v w-1/2 p-2 border border-slate-200 rounded-lg text-xs font-semibold">
+        <button type="button" class="btn-remove-attr text-rose-500 font-bold px-1 hover:bg-rose-50 rounded">&times;</button>
       `;
       div.querySelector(".btn-remove-attr").addEventListener("click", () => div.remove());
       document.getElementById("attrContainer").appendChild(div);
@@ -428,7 +461,7 @@
       if (!skuName) return alert("โปรดระบุชื่อ SKU หลัก");
 
       const category = document.getElementById("modalCategory").value;
-      const unit = document.getElementById("modalUnit").value;
+      const unit = document.getElementById("modalUnit").value.trim() || "ชิ้น";
 
       let skuObj = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === skuName.toLowerCase());
       let skuId = skuObj ? skuObj.id : null;
@@ -457,6 +490,8 @@
       await setDoc(doc(db, "unregistered_skus", barcode), {
         sku_id: skuId,
         sku_name: skuName,
+        category: category,
+        unit: unit,
         attributes: attrs,
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -476,9 +511,10 @@
       return attrs;
     }
 
-    window.approveSingle = async (barcode) => {
+    // ⚡ ฟังก์ชันอนุมัติรายชิ้น (รองรับ silentMode เพื่อไม่ให้ Alert รบกวนเวลาอนุมัติทั้งหมด)
+    window.approveSingle = async (barcode, silent = false) => {
       const item = pendingMap.get(barcode);
-      if (!item || (!item.sku && !item.sku_id)) return;
+      if (!item || (!item.sku && !item.sku_id)) return false;
 
       const finalSkuId = item.sku ? item.sku.id : item.sku_id;
 
@@ -506,23 +542,175 @@
         }
 
         await deleteDoc(doc(db, "unregistered_skus", barcode));
-        alert(`รับเข้าคลังสำเร็จ! บันทึกรหัสบาร์โค้ด "${barcode}" เรียบร้อยแล้ว`);
+
+        if (!silent) {
+          alert(`รับเข้าคลังสำเร็จ! บันทึกรหัสบาร์โค้ด "${barcode}" เรียบร้อยแล้ว`);
+        }
+        return true;
       } catch (err) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
+        if (!silent) {
+          alert("เกิดข้อผิดพลาด: " + err.message);
+        }
+        return false;
       }
     };
 
+    // ⚡ ปุ่มอนุมัติทั้งหมดที่พร้อมรับเข้า (เด้ง Alert สรุปเพียงครั้งเดียว)
     document.getElementById("btnApproveAllReady").addEventListener("click", async () => {
-      let count = 0;
-      for (const barcode of Array.from(pendingMap.keys())) {
-        const item = pendingMap.get(barcode);
-        if (item && (item.sku || item.sku_id)) {
-          await window.approveSingle(barcode);
-          count++;
-        }
+      const readyItems = Array.from(pendingMap.values()).filter(item => item && (item.sku || item.sku_id));
+
+      if (readyItems.length === 0) {
+        return alert("⚠️ ไม่มีรายการที่พร้อมอนุมัติ (กรุณากำหนด SKU หลักให้เรียบร้อยก่อน)");
       }
+
+      if (!confirm(`คุณต้องการอนุมัติรับเข้าคลังทั้งหมด ${readyItems.length} รายการใช่หรือไม่?`)) {
+        return;
+      }
+
+      const btn = document.getElementById("btnApproveAllReady");
+      btn.disabled = true;
+      btn.innerText = "⏳ กำลังบันทึก...";
+
+      let successCount = 0;
+      for (const item of readyItems) {
+        const isSuccess = await window.approveSingle(item.barcode, true); // สั่งเงียบ alert รายทาง
+        if (isSuccess) successCount++;
+      }
+
+      btn.disabled = false;
+      btn.innerText = "✅ อนุมัติที่พร้อมรับเข้าทั้งหมด";
+
+      alert(`🎉 อนุมัติรับเข้าคลังสำเร็จทั้งหมด ${successCount} รายการ!`);
     });
 
+    // 📊 1. ส่งออก CSV (ใส่ ' บังคับเป็น Text เพื่อป้องกัน Excel แปลงบาร์โค้ดเป็น E+12)
+    document.getElementById("btnExportCSV").addEventListener("click", () => {
+      if (pendingMap.size === 0) return alert("ไม่มีรายการในตารางรอรับเข้าที่สามารถส่งออกได้");
+
+      let csvContent = "\uFEFFBarcode,SKU Name,Category,Quantity,Unit,Attr 1 Key,Attr 1 Value,Attr 2 Key,Attr 2 Value,Attr 3 Key,Attr 3 Value\n";
+
+      pendingMap.forEach((item, barcode) => {
+        const safeBarcode = `'${barcode}`;
+        const skuName = (item.sku ? item.sku.sku_name : item.sku_name || "").replace(/"/g, '""');
+        const category = (item.category || (item.sku ? item.sku.category : "ทั่วไป")).replace(/"/g, '""');
+        const unit = (item.unit || (item.sku ? item.sku.unit : "ชิ้น")).replace(/"/g, '""');
+        
+        let rowStr = `"${safeBarcode}","${skuName}","${category}",${item.qty},"${unit}"`;
+
+        const entries = Object.entries(item.attributes || {});
+        for (let i = 0; i < 3; i++) {
+          if (entries[i]) {
+            const k = entries[i][0].replace(/"/g, '""');
+            const v = String(entries[i][1]).replace(/"/g, '""');
+            rowStr += `,"${k}","${v}"`;
+          } else {
+            rowStr += `,"",""`;
+          }
+        }
+        csvContent += rowStr + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `pending_skus_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // 🛠️ ฟังก์ชันคลีนบาร์โค้ด (ตัด ' ออก และแปลง E+ Notation กลับเป็นตัวเลขปกติ)
+    function cleanBarcodeString(rawBarcode) {
+      if (!rawBarcode) return "";
+      let str = rawBarcode.replace(/^'|\t/g, '').trim();
+      
+      if (str.includes("E+") || str.includes("e+")) {
+        try {
+          str = Number(str).toLocaleString('fullwide', { useGrouping: false });
+        } catch (e) {
+          console.warn("Cannot convert scientific notation:", str);
+        }
+      }
+      return str;
+    }
+
+// 📊 2. นำเข้าข้อมูลจาก CSV (บวกจำนวนเพิ่มเข้าของเดิมอัตโนมัติ ไม่เขียนทับ)
+    document.getElementById("importCsvInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const text = evt.target.result;
+        const lines = text.split("\n");
+        let successCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const cols = line.split(",").map(c => c.replace(/^"|"$/g, '').trim());
+          if (cols.length < 1) continue;
+
+          const rawBarcode = cols[0];
+          const barcode = cleanBarcodeString(rawBarcode);
+          if (!barcode) continue;
+
+          const skuName = cols[1] ? cols[1].trim() : "ไม่ระบุ SKU";
+          const category = cols[2] || "ทั่วไป";
+          const importedQty = parseInt(cols[3]) || 1; // จำนวนที่ระบุมาในไฟล์ CSV
+          const unit = cols[4] || "ชิ้น";
+
+          const attrs = {};
+          for (let colIdx = 5; colIdx < cols.length; colIdx += 2) {
+            const key = cols[colIdx];
+            const val = cols[colIdx + 1];
+            if (key && val) {
+              attrs[key] = val;
+            }
+          }
+
+          let skuObj = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === skuName.toLowerCase());
+          let skuId = skuObj ? skuObj.id : null;
+
+          if (skuName !== "ไม่ระบุ SKU" && !skuId) {
+            skuId = "SKU-" + Date.now() + "-" + Math.floor(Math.random()*1000);
+            await setDoc(doc(db, "skus", skuId), {
+              sku_name: skuName,
+              category: category,
+              unit: unit,
+              createdAt: serverTimestamp()
+            });
+            skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit });
+          }
+
+          // 🔍 ตรวจสอบว่าในระบบ (pendingMap) มีบาร์โค้ดนี้ค้างอยู่เดิมหรือไม่
+          const existingItem = pendingMap.get(barcode);
+          const finalQty = existingItem ? (existingItem.qty + importedQty) : importedQty;
+
+          // 💾 บันทึกโดยใช้จำนวนรวมใหม่ (เอาของเดิมมาบวกเพิ่ม)
+          await setDoc(doc(db, "unregistered_skus", barcode), {
+            barcode: barcode,
+            sku_id: skuId,
+            sku_name: skuName,
+            category: category,
+            unit: unit,
+            qty: finalQty, // ใช้ผลรวม
+            attributes: attrs,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          successCount++;
+        }
+
+        alert(`🎉 นำเข้าและบวกเพิ่มจำนวนจาก CSV เรียบร้อยแล้ว ทั้งหมด ${successCount} รายการ`);
+        e.target.value = "";
+      };
+      
+      reader.readAsText(file, "UTF-8");
+    });
+    
     initData();
   </script>
 </body>

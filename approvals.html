@@ -130,6 +130,22 @@
     </div>
   </div>
 
+  <!-- Popup ยืนยันการอนุมัติจ่าย (เพิ่มเข้ามาใหม่) -->
+  <div id="confirmApproveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl text-2xl mb-1">
+        📦
+      </div>
+      <h3 class="font-black text-slate-800 text-lg">ยืนยันการอนุมัติจ่ายสินค้า?</h3>
+      <p class="text-xs text-slate-500">ระบบจะทำการตัดสต็อกสินค้าในคลังตามจำนวนที่ตรวจสอบและอนุมัติทันที</p>
+      
+      <div class="flex gap-2 pt-2">
+        <button id="btnCancelApproveModal" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">กลับไปตรวจสอบ</button>
+        <button id="btnExecuteApproveModal" class="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md text-xs transition">ยืนยันอนุมัติ</button>
+      </div>
+    </div>
+  </div>
+
   <div id="rejectModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -316,7 +332,6 @@
           ...exactMatchingBarcodes
         ])).filter(Boolean);
 
-        // 🌟 เริ่มต้นนับจำนวนสแกนที่ 0 ชิ้น เพื่อให้การสแกนตัดนับทีละชิ้น
         return {
           ...item,
           index: idx,
@@ -369,7 +384,6 @@
         const attrStr = Object.entries(item.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
         const tr = document.createElement("tr");
         
-        // 🎨 เปลี่ยนสีแถวตามสถานะการสแกน
         if (item.checked) {
           tr.className = "bg-emerald-50/70 border-b border-emerald-100";
         } else if (item.approvedQty > 0) {
@@ -409,14 +423,11 @@
       });
     }
 
-    // 🔘 เมื่อสลับติ๊กถูกแบบ Manual
     window.toggleCheck = (index, isChecked) => {
       activeReqItems[index].checked = isChecked;
       if (isChecked) {
-        // หากติ๊กถูกให้ปรับจำนวนจ่ายจริง = จำนวนที่ขอเบิกอัตโนมัติ
         activeReqItems[index].approvedQty = activeReqItems[index].quantity;
       } else {
-        // หากเอาติ๊กถูกออก ให้รีเซ็ตจำนวนจ่ายจริงกลับเป็น 0
         activeReqItems[index].approvedQty = 0;
       }
       renderScanTable();
@@ -426,8 +437,6 @@
       const qty = parseInt(val) || 0;
       const targetItem = activeReqItems[index];
       targetItem.approvedQty = qty;
-      
-      // อัปเดตสถานะการติ๊กถูกอัตโนมัติเมื่อจำนวนสแกนครบ
       targetItem.checked = (targetItem.approvedQty >= targetItem.quantity);
       renderScanTable();
     };
@@ -438,12 +447,10 @@
 
     document.getElementById("btnCheckBarcode").addEventListener("click", checkBarcode);
 
-    // ⚡ ระบบสแกนและตัดจำนวนทีละชิ้น (+1 Per Scan)
     function checkBarcode() {
       const input = document.getElementById("barcodeInput").value.trim();
       if (!input) return;
 
-      // ค้นหารายการสินค้าที่ยังสแกนไม่ครบตามจำนวน
       let matchedItem = activeReqItems.find(i => 
         i.approvedQty < i.quantity && (
           i.product_id === input || 
@@ -453,16 +460,12 @@
       );
 
       if (matchedItem) {
-        // เพิ่มจำนวนสแกนจ่ายจริงทีละ 1 ชิ้น
         matchedItem.approvedQty += 1;
-        
-        // หากสแกนจนครบจำนวนขอเบิกแล้ว ให้ทำการติ๊กถูกอัตโนมัติ
         if (matchedItem.approvedQty >= matchedItem.quantity) {
           matchedItem.checked = true;
         }
         renderScanTable();
       } else {
-        // ตรวจสอบว่าสินค้าสแกนครบไปก่อนหน้านี้แล้วหรือบาร์โค้ดไม่ตรง
         const alreadyFullItem = activeReqItems.find(i => 
           i.product_id === input || 
           i.barcode === input || 
@@ -508,9 +511,8 @@
       });
     }
 
-    // 🔄 ปุ่มล้างค่านับสแกนใหม่
     document.getElementById("btnResetScannedCount").addEventListener("click", () => {
-      if (confirm("คุณต้องการล้างจำนวนสแกนทั้งหมดกลับเป็น 0 ชิ้น ใช่หรือไม่?")) {
+      if (confirm("คุณต้องการลบจำนวนสแกนทั้งหมดกลับเป็น 0 ชิ้น ใช่หรือไม่?")) {
         activeReqItems.forEach(i => {
           i.approvedQty = 0;
           i.checked = false;
@@ -557,8 +559,8 @@
       closeStockWarnModal();
     });
 
+    // เมื่อคลิกปุ่ม "ยืนยันอนุมัติจ่าย" ให้เปิด Popup ยืนยันก่อน
     document.getElementById("btnConfirmApprove").addEventListener("click", async () => {
-      // ตรวจสอบว่าสแกนหรือระบุข้อมูลครบทุกรายการหรือไม่
       const uncheckedItems = activeReqItems.filter(i => !i.checked && i.approvedQty === 0);
       if (uncheckedItems.length > 0) {
         if (!confirm(`⚠️ ยังมีรายการที่ยังไม่ได้สแกน/ระบุจำนวนอีก ${uncheckedItems.length} รายการ คุณต้องการบันทึกการอนุมัติเท่าที่สแกนใช่หรือไม่?`)) {
@@ -573,6 +575,7 @@
         }
       }
 
+      // ตรวจสอบสต็อกในระบบเบื้องต้นก่อนเปิด Popup
       try {
         for (let idx = 0; idx < activeReqItems.length; idx++) {
           const item = activeReqItems[idx];
@@ -594,6 +597,25 @@
           }
         }
 
+        // ผ่านการตรวจสอบทั้งหมดแล้ว เปิด Popup ยืนยันการอนุมัติ
+        document.getElementById("confirmApproveModal").classList.remove("hidden");
+        document.getElementById("confirmApproveModal").classList.add("flex");
+
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดระหว่างตรวจสอบสต็อก: " + err.message);
+      }
+    });
+
+    // ปุ่มยกเลิกใน Popup ยืนยัน
+    document.getElementById("btnCancelApproveModal").addEventListener("click", () => {
+      document.getElementById("confirmApproveModal").classList.add("hidden");
+    });
+
+    // ปุ่มกด "ยืนยันอนุมัติ" จริงๆ ใน Popup
+    document.getElementById("btnExecuteApproveModal").addEventListener("click", async () => {
+      document.getElementById("confirmApproveModal").classList.add("hidden");
+
+      try {
         for (const item of activeReqItems) {
           if (item.approvedQty <= 0) continue;
 

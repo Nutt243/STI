@@ -272,7 +272,12 @@
 
           <div id="${accordionId}" class="hidden border-t border-slate-100 bg-slate-50 p-2.5 sm:p-3 space-y-2">
             ${variants.map((v) => {
-              const attrSummary = Object.entries(v.attributes).map(([k,val]) => `${k}:${val}`).join(", ") || "ไม่มีคุณลักษณะเฉพาะ";
+              // 🌟 จัดเรียง Attributes ตามตัวอักษรให้แสดงผลเรียงสวยงามเหมือนกันทุกรายการ
+              const attrSummary = Object.entries(v.attributes || {})
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([k,val]) => `${k}:${val}`)
+                .join(", ") || "ไม่มีคุณลักษณะเฉพาะ";
+
               const isOutOfStock = v.quantity <= 0;
 
               return `
@@ -373,7 +378,11 @@
       btnOpens.forEach(btn => btn.disabled = false);
 
       cart.forEach((val, cartKey) => {
-        const attrStr = Object.entries(val.attributes).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+        // 🌟 จัดเรียง Attributes ตามตัวอักษรในตะกร้าด้วย
+        const attrStr = Object.entries(val.attributes || {})
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([k,v]) => `${k}:${v}`)
+          .join(", ") || "ทั่วไป";
         
         const desktopDiv = document.createElement("div");
         desktopDiv.className = "pt-2 flex justify-between items-center text-xs gap-2";
