@@ -123,6 +123,32 @@
 
   </main>
 
+  <!-- Modal แจ้งเตือนสแกนสำเร็จ (สไตล์หน้า Approvals) -->
+  <div id="cameraScanAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl text-2xl mb-1">
+        📷✨
+      </div>
+      <h3 class="font-black text-slate-800 text-base">สแกนรับสินค้าสำเร็จ!</h3>
+      <div id="camAlertContent" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1">
+      </div>
+
+      <div class="space-y-1 text-left">
+        <label class="block text-[11px] font-bold text-slate-600">จำนวนที่จะเพิ่มเข้ารายการ:</label>
+        <div class="flex items-center justify-center gap-3">
+          <button type="button" id="btnCamMinus" class="w-10 h-10 bg-slate-200 hover:bg-slate-300 font-black text-slate-700 rounded-xl text-lg transition">-</button>
+          <input type="number" id="camAddQtyInput" min="1" value="1" class="w-20 p-2 border border-slate-300 rounded-xl text-center font-black text-blue-600 text-base">
+          <button type="button" id="btnCamPlus" class="w-10 h-10 bg-slate-200 hover:bg-slate-300 font-black text-slate-700 rounded-xl text-lg transition">+</button>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="btnCamCancel" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
+        <button id="btnCamConfirm" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md text-xs transition">ตกลง & เพิ่ม</button>
+      </div>
+    </div>
+  </div>
+
   <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -138,7 +164,6 @@
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">SKU หลัก (เช่น ปากกา, รองเท้า)</label>
             <input type="text" id="modalSkuName" placeholder="เช่น ปากกา" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500">
           </div>
-          <!-- 💡 เพิ่มช่องโลเคชั่นรวมไว้กับหมวดหมู่และหน่วยนับ -->
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หมวดหมู่</label>
@@ -201,6 +226,7 @@
     let html5QrCode = null;
     let lastScannedText = "";
     let lastScannedTime = 0;
+    let pendingScannedBarcode = null;
 
     const categoryPresets = {
       "อุปกรณ์คอมพิวเตอร์": ["แบรนด์", "รุ่น", "S/N"],
@@ -297,6 +323,47 @@
       }
     }
 
+    function triggerScanAlert(barcode) {
+      pendingScannedBarcode = barcode;
+      const item = pendingMap.get(barcode);
+      const skuNameDisplay = item && item.sku_name ? item.sku_name : "ยังไม่ได้กำหนด SKU";
+      const locationDisplay = item && item.location ? item.location : "-";
+
+      document.getElementById("camAlertContent").innerHTML = `
+        <p><span class="font-bold text-slate-700">บาร์โค้ด:</span> <span class="font-mono text-blue-600">${barcode}</span></p>
+        <p><span class="font-bold text-slate-700">SKU หลัก:</span> ${skuNameDisplay}</p>
+        <p><span class="font-bold text-slate-700">โลเคชั่น:</span> <span class="text-purple-700 font-bold">📍 ${locationDisplay}</span></p>
+      `;
+      document.getElementById("camAddQtyInput").value = 1;
+
+      document.getElementById("cameraScanAlertModal").classList.remove("hidden");
+      document.getElementById("cameraScanAlertModal").classList.add("flex");
+    }
+
+    document.getElementById("btnCamPlus").addEventListener("click", () => {
+      const input = document.getElementById("camAddQtyInput");
+      input.value = parseInt(input.value || 0) + 1;
+    });
+    document.getElementById("btnCamMinus").addEventListener("click", () => {
+      const input = document.getElementById("camAddQtyInput");
+      const val = parseInt(input.value || 1);
+      if (val > 1) input.value = val - 1;
+    });
+
+    document.getElementById("btnCamCancel").addEventListener("click", () => {
+      document.getElementById("cameraScanAlertModal").classList.add("hidden");
+      pendingScannedBarcode = null;
+    });
+
+    document.getElementById("btnCamConfirm").addEventListener("click", () => {
+      if (!pendingScannedBarcode) return;
+      const addQty = parseInt(document.getElementById("camAddQtyInput").value) || 1;
+      addToBatch(pendingScannedBarcode, addQty);
+
+      document.getElementById("cameraScanAlertModal").classList.add("hidden");
+      pendingScannedBarcode = null;
+    });
+
     const scanInput = document.getElementById("scanInput");
     let scanTimeout = null;
 
@@ -305,7 +372,7 @@
       if (!barcode) return;
 
       scanInput.value = "";
-      addToBatch(barcode, 1);
+      triggerScanAlert(barcode);
     }
 
     if (scanInput) {
@@ -345,7 +412,7 @@
             
             lastScannedText = decodedText;
             lastScannedTime = now;
-            addToBatch(decodedText, 1);
+            triggerScanAlert(decodedText);
           },
           () => {}
         ).catch(err => alert("ไม่สามารถเปิดกล้องได้: " + err));

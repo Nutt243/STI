@@ -6,6 +6,14 @@
   <title>StockMaster - อนุมัติคำขอเบิก</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    @media print {
+      body * { visibility: hidden !important; }
+      #printArea, #printArea * { visibility: visible !important; }
+      #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+      .page-break { page-break-after: always; break-after: page; }
+    }
+  </style>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
 
@@ -64,13 +72,34 @@
         <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">⏳ รายการอนุมัติคำขอเบิกสินค้า</h1>
         <p class="text-xs text-slate-500 mt-1">เรียงตามลำดับคิวค้างเบิก (เก่าสุด ไป ใหม่สุด)</p>
       </div>
-      <button id="btnRefresh" class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรช</button>
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+        <button id="btnTogglePrintMode" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5">
+          🖨️ เลือกรายการเพื่อพิมพ์ PDF
+        </button>
+        <button id="btnRefresh" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">🔄 รีเฟรช</button>
+      </div>
+    </div>
+
+    <div id="printToolbar" class="hidden bg-indigo-900 text-white p-4 rounded-2xl shadow-md flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold">
+          <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+          <span>เลือกทั้งหมด</span>
+        </label>
+        <span id="selectedCountText" class="text-xs bg-indigo-800 px-2.5 py-1 rounded-full font-mono">เลือกแล้ว 0 รายการ</span>
+      </div>
+      <button id="btnPrintSelected" class="w-full sm:w-auto px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition">
+        📄 ปริ้น PDF รายการที่เลือก
+      </button>
     </div>
 
     <div id="approvalList" class="space-y-4">
       <div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดรายการ...</div>
     </div>
   </main>
+
+  <!-- Hidden Print Container สำหรับสั่งพิมพ์ PDF -->
+  <div id="printArea" style="display: none;"></div>
 
   <div id="scanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-40 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
@@ -243,6 +272,9 @@
     let lastScannedTime = 0;
     let pendingCameraScannedItem = null;
 
+    let isPrintMode = false;
+    let loadedRequisitionsMap = new Map();
+
     async function loadApprovals() {
       const container = document.getElementById("approvalList");
       container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดรายการ...</div>`;
@@ -254,7 +286,6 @@
           usersMap.set(uDoc.id, uDoc.data());
         });
 
-        // ดึงข้อมูล products มาเก็บไว้เทียบโลเคชั่นล่าสุดแบบเรียลไทม์ (ถ้ามีอัปเดต)
         const prodSnap = await getDocs(collection(db, "products"));
         const prodLocationMap = new Map();
         prodSnap.forEach(pDoc => {
@@ -267,11 +298,14 @@
         const snap = await getDocs(q);
         
         container.innerHTML = "";
+        loadedRequisitionsMap.clear();
         let pendingCount = 0;
 
         snap.forEach(d => {
           const req = d.data();
           if (req.status !== "pending") return;
+
+          loadedRequisitionsMap.set(d.id, { id: d.id, ...req, usersMap, prodLocationMap });
 
           pendingCount++;
           const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
@@ -313,12 +347,16 @@
 
           card.innerHTML = `
             <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">⏳ คิวที่ ${pendingCount}</span>
-                <span class="text-xs text-slate-400 ml-2">เวลาขอเบิก: ${dateStr}</span>
-                <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${displayNameStr}</p>
+              <div class="flex items-center gap-3">
+                <input type="checkbox" data-req-id="${d.id}" class="print-item-checkbox w-5 h-5 text-indigo-600 rounded border-slate-300 ${isPrintMode ? '' : 'hidden'}">
+                <div>
+                  <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">⏳ คิวที่ ${pendingCount}</span>
+                  <span class="text-xs text-slate-400 ml-2">เวลาขอเบิก: ${dateStr}</span>
+                  <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${displayNameStr}</p>
+                </div>
               </div>
               <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="printSingleRequisition('${d.id}')" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition">🖨️ ปริ้น</button>
                 <button onclick="openRejectModal('${d.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl transition">❌ ปฏิเสธ</button>
                 <button onclick="openScanModal('${d.id}')" class="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition">🔍 ตรวจสอบ & จ่าย</button>
               </div>
@@ -346,9 +384,157 @@
           container.innerHTML = `<div class="bg-white p-12 rounded-2xl text-center text-slate-400 font-bold">ไม่มีรายการคำขอเบิกที่ค้างอยู่</div>`;
         }
 
+        setupPrintCheckboxes();
+
       } catch (err) {
         container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl text-center text-rose-600 text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</div>`;
       }
+    }
+
+    document.getElementById("btnTogglePrintMode").addEventListener("click", () => {
+      isPrintMode = !isPrintMode;
+      const toolbar = document.getElementById("printToolbar");
+      const btnToggle = document.getElementById("btnTogglePrintMode");
+
+      if (isPrintMode) {
+        toolbar.classList.remove("hidden");
+        btnToggle.className = "px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow";
+        btnToggle.innerText = "❌ ปิดโหมดเลือกพิมพ์";
+      } else {
+        toolbar.classList.add("hidden");
+        btnToggle.className = "px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5";
+        btnToggle.innerText = "🖨️ เลือกรายการเพื่อพิมพ์ PDF";
+      }
+      loadApprovals();
+    });
+
+    function setupPrintCheckboxes() {
+      const checkboxes = document.querySelectorAll(".print-item-checkbox");
+      const selectAll = document.getElementById("selectAllCheckbox");
+      const countText = document.getElementById("selectedCountText");
+
+      function updateCount() {
+        const checked = document.querySelectorAll(".print-item-checkbox:checked");
+        countText.innerText = `เลือกแล้ว ${checked.length} รายการ`;
+      }
+
+      checkboxes.forEach(chk => {
+        chk.addEventListener("change", updateCount);
+      });
+
+      if (selectAll) {
+        selectAll.addEventListener("change", (e) => {
+          checkboxes.forEach(chk => {
+            chk.checked = e.target.checked;
+          });
+          updateCount();
+        });
+      }
+    }
+
+    window.printSingleRequisition = (reqId) => {
+      const req = loadedRequisitionsMap.get(reqId);
+      if (!req) return;
+      generatePrintHTML([req]);
+    };
+
+    document.getElementById("btnPrintSelected").addEventListener("click", () => {
+      const checkedBoxes = document.querySelectorAll(".print-item-checkbox:checked");
+      if (checkedBoxes.length === 0) {
+        alert("⚠️ กรุณาเลือกรายการที่ต้องการพิมพ์อย่างน้อย 1 รายการครับ");
+        return;
+      }
+
+      const selectedReqs = [];
+      checkedBoxes.forEach(chk => {
+        const reqId = chk.getAttribute("data-req-id");
+        if (loadedRequisitionsMap.has(reqId)) {
+          selectedReqs.push(loadedRequisitionsMap.get(reqId));
+        }
+      });
+
+      generatePrintHTML(selectedReqs);
+    });
+
+    function generatePrintHTML(reqs) {
+      const printArea = document.getElementById("printArea");
+      let htmlContent = "";
+
+      reqs.forEach((req, index) => {
+        const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
+        const userInfo = req.usersMap.get(req.userId) || {};
+        const realName = userInfo.name || (req.userName && !req.userName.includes("@") ? req.userName : null);
+        const userEmail = userInfo.email || (req.userName && req.userName.includes("@") ? req.userName : null);
+        const displayName = realName ? `${realName} (${userEmail || ''})` : (userEmail || req.userName || "ไม่ระบุชื่อ");
+
+        const itemsRows = (req.items || []).map((i, idx) => {
+          const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+          const itemLoc = i.location || req.prodLocationMap.get(i.barcode) || req.prodLocationMap.get(i.product_id) || "-";
+          return `
+            <tr style="border-bottom: 1px solid #cbd5e1;">
+              <td style="padding: 8px; text-align: center;">${idx + 1}</td>
+              <td style="padding: 8px;">
+                <div style="font-weight: bold;">${i.sku_name}</div>
+                <div style="font-size: 11px; color: #64748b;">บาร์โค้ด: ${i.barcode || '-'} | คุณลักษณะ: ${attrStr}</div>
+              </td>
+              <td style="padding: 8px; font-weight: bold; color: #2563eb; text-align: center;">${i.quantity} ${i.unit || 'ชิ้น'}</td>
+              <td style="padding: 8px; text-align: center; font-size: 12px; font-weight: bold; color: #7e22ce;">📍 ${itemLoc}</td>
+            </tr>
+          `;
+        }).join("");
+
+        const isLast = index === reqs.length - 1;
+        htmlContent += `
+          <div style="font-family: 'Sarabun', sans-serif; padding: 30px; max-width: 800px; margin: 0 auto; color: #1e293b;" class="${isLast ? '' : 'page-break'}">
+            <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px;">
+              <h2 style="font-size: 20px; font-weight: bold; margin: 0;">ใบขอเบิกสินค้าและพัสดุ (StockMaster)</h2>
+              <p style="font-size: 12px; color: #64748b; margin: 5px 0 0 0;">รหัสคำขอ: ${req.id}</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+              <div>
+                <p style="margin: 0 0 5px 0;"><strong>ผู้ขอเบิก:</strong> ${displayName}</p>
+                <p style="margin: 0;"><strong>วันที่ขอเบิก:</strong> ${dateStr}</p>
+              </div>
+              <div style="text-align: right;">
+                <p style="margin: 0 0 5px 0;"><strong>สถานะ:</strong> รออนุมัติจ่ายสินค้า</p>
+              </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                  <th style="padding: 8px; text-align: center; width: 40px;">ลำดับ</th>
+                  <th style="padding: 8px; text-align: left;">รายการพัสดุ / รายละเอียด</th>
+                  <th style="padding: 8px; text-align: center; width: 80px;">จำนวนเบิก</th>
+                  <th style="padding: 8px; text-align: center; width: 120px;">โลเคชั่น</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsRows}
+              </tbody>
+            </table>
+
+            ${req.note ? `<div style="font-size: 12px; background: #fffbeb; border: 1px solid #fde68a; padding: 10px; border-radius: 6px; margin-bottom: 30px;"><strong>หมายเหตุ / วัตถุประสงค์การเบิก:</strong> ${req.note}</div>` : ''}
+
+            <div style="display: flex; justify-content: space-between; margin-top: 50px; font-size: 13px; text-align: center;">
+              <div style="width: 45%;">
+                <div style="border-bottom: 1px dotted #94a3b8; height: 40px; margin-bottom: 5px;"></div>
+                <p style="margin: 0;">(......................................................)</p>
+                <p style="margin: 5px 0 0 0; color: #64748b;">ผู้ขอเบิก</p>
+              </div>
+              <div style="width: 45%;">
+                <div style="border-bottom: 1px dotted #94a3b8; height: 40px; margin-bottom: 5px;"></div>
+                <p style="margin: 0;">(......................................................)</p>
+                <p style="margin: 5px 0 0 0; color: #64748b;">ผู้ออนุมัติจ่ายพัสดุ</p>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      printArea.innerHTML = htmlContent;
+      window.print();
     }
 
     window.openScanModal = async (reqId) => {
@@ -364,7 +550,6 @@
       const modalBarcodeInput = document.getElementById("barcodeInput");
       if (modalBarcodeInput) modalBarcodeInput.value = "";
 
-      // โหลดข้อมูลโลเคชั่นล่าสุดจาก products เผื่อมีการอัปเดต
       const prodSnap = await getDocs(collection(db, "products"));
       const prodMap = new Map();
       prodSnap.forEach(pDoc => prodMap.set(pDoc.id, pDoc.data()));
@@ -398,24 +583,13 @@
         area.classList.remove("hidden");
         if (!modalQrCode) modalQrCode = new Html5Qrcode("modalReader");
         
-        const config = { 
-          fps: 25, 
-          qrbox: function(viewfinderWidth, viewfinderHeight) {
-            return {
-              width: Math.floor(viewfinderWidth * 0.8),
-              height: Math.floor(viewfinderHeight * 0.5)
-            };
-          },
-          aspectRatio: 1.333334
-        };
-
         try {
           await modalQrCode.start(
-            { facingMode: "environment", advanced: [{ zoom: 1.5 }, { focusMode: "continuous" }] },
-            config,
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
             (decodedText) => {
               const now = Date.now();
-              if (decodedText === lastScannedText && (now - lastScannedTime) < 800) return;
+              if (decodedText === lastScannedText && (now - lastScannedTime) < 1500) return;
               lastScannedText = decodedText;
               lastScannedTime = now;
               handleCameraScannedCode(decodedText);
@@ -423,18 +597,7 @@
             () => {}
           );
         } catch (err) {
-          modalQrCode.start(
-            { facingMode: "environment" },
-            { fps: 25, qrbox: { width: 320, height: 200 } },
-            (decodedText) => {
-              const now = Date.now();
-              if (decodedText === lastScannedText && (now - lastScannedTime) < 800) return;
-              lastScannedText = decodedText;
-              lastScannedTime = now;
-              handleCameraScannedCode(decodedText);
-            },
-            () => {}
-          ).catch(e => alert("ไม่สามารถเปิดกล้องได้: " + e));
+          alert("ไม่สามารถเปิดกล้องได้: " + err);
         }
       }
     });

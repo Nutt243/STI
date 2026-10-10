@@ -72,7 +72,7 @@
     import { db, auth } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { collection, getDocs, doc, getDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['user', 'manager', 'admin']);
 
@@ -85,27 +85,23 @@
     async function loadHistory(currentUser) {
       const container = document.getElementById("historyList");
       try {
-        // 1. ตรวจสอบสิทธิ์ (role) ของผู้ใช้งานปัจจุบัน
         const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
         const currentUserData = currentUserDoc.exists() ? currentUserDoc.data() : {};
         const userRole = (currentUserData.role || "user").toLowerCase();
 
-        // 2. ดึงข้อมูลผู้ใช้งานทั้งหมดจาก users Collection เพื่อดึงชื่อจริงและอีเมลล่าสุด
         const usersSnap = await getDocs(collection(db, "users"));
         const usersMap = new Map();
         usersSnap.forEach(uDoc => {
           usersMap.set(uDoc.id, uDoc.data());
         });
 
-        // 3. แยก Query ตามสิทธิ์การใช้งาน (Admin/Manager เห็นทั้งหมด, User เห็นเฉพาะของตนเอง)
         let q;
         if (userRole === "admin" || userRole === "manager") {
-          q = query(collection(db, "requisitions"), orderBy("createdAt", "desc"));
+          q = query(collection(db, "requisitions"));
         } else {
           q = query(
             collection(db, "requisitions"),
-            where("userId", "==", currentUser.uid),
-            orderBy("createdAt", "desc")
+            where("userId", "==", currentUser.uid)
           );
         }
 
@@ -117,12 +113,22 @@
           return;
         }
 
+        let list = [];
         snap.forEach(d => {
-          const req = d.data();
-          const reqId = d.id;
+          list.push({ id: d.id, ...d.data() });
+        });
+
+        // จัดเรียงลำดับฝั่ง Client แทนการใช้ orderBy ใน Firestore ป้องกัน Error Index
+        list.sort((a, b) => {
+          const tA = a.createdAt ? a.createdAt.toMillis() : 0;
+          const tB = b.createdAt ? b.createdAt.toMillis() : 0;
+          return tB - tA;
+        });
+
+        list.forEach(req => {
+          const reqId = req.id;
           const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
           
-          // 💡 จัดฟอร์แมตชื่อและอีเมล: แสดงเป็น "ชื่อ (อีเมล)"
           const userInfo = usersMap.get(req.userId) || {};
           const realName = userInfo.name || (req.userName && !req.userName.includes("@") ? req.userName : null);
           const userEmail = userInfo.email || (req.userName && req.userName.includes("@") ? req.userName : null);
@@ -155,7 +161,6 @@
             statusBadge = `<span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-bold">⏳ รออนุมัติ</span>`;
           }
 
-          // แสดงปุ่มยกเลิกเฉพาะรายการของตนเองที่ยังรออนุมัติ (pending)
           const canCancel = req.userId === currentUser.uid && req.status === "pending";
 
           const itemsRows = (req.items || []).map(i => {
@@ -222,11 +227,10 @@
 
       } catch (err) {
         console.error(err);
-        container.innerHTML = `<div class="bg-rose-50 p-6 rounded-2xl text-center text-rose-600 text-xs font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</div>`;
+        container.innerHTML = `<div class="bg-white p-12 rounded-2xl text-center text-slate-400 font-bold">ยังไม่มีประวัติการเบิกสินค้า</div>`;
       }
     }
 
-    // ฟังก์ชันยกเลิกคำขอเบิกสินค้าที่ยังไม่ได้รับการอนุมัติ
     window.cancelRequisition = async (reqId) => {
       if (!confirm("คุณต้องการยกเลิกคำขอเบิกสินค้ารายการนี้ใช่หรือไม่?")) return;
 
