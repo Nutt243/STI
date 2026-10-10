@@ -63,10 +63,10 @@
       <div class="lg:col-span-2 space-y-4">
         <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">📦 เลือกรายการเบิกสินค้า (แยกตาม SKU)</h1>
-            <p class="text-xs text-slate-500">กดขยาย SKU หลักเพื่อเลือกรายการย่อยลงตะกร้า</p>
+            <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">📦 เลือกรายการเบิกสินค้า (แยกตามบาร์โค้ด)</h1>
+            <p class="text-xs text-slate-500">กดขยาย SKU หลักเพื่อเลือกรายการบาร์โค้ดที่ต้องการเบิก</p>
           </div>
-          <input type="text" id="searchInput" placeholder="🔍 ค้นหา SKU..." class="w-full sm:w-48 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+          <input type="text" id="searchInput" placeholder="🔍 ค้นหา SKU หรือบาร์โค้ด..." class="w-full sm:w-56 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
         </div>
 
         <div id="skuAccordionList" class="space-y-3">
@@ -125,11 +125,11 @@
         </div>
 
         <div class="border border-slate-200 rounded-xl overflow-hidden overflow-x-auto">
-          <table class="w-full text-left text-xs min-w-[280px]">
+          <table class="w-full text-left text-xs min-w-[320px]">
             <thead class="bg-slate-100 font-bold text-slate-600 border-b border-slate-200">
               <tr>
                 <th class="p-2.5">SKU / รายการ</th>
-                <th class="p-2.5">คุณลักษณะ</th>
+                <th class="p-2.5">บาร์โค้ด / คุณลักษณะ</th>
                 <th class="p-2.5 text-center">จำนวน</th>
                 <th class="p-2.5 text-center w-10">จัดการ</th>
               </tr>
@@ -146,7 +146,7 @@
 
       <div class="flex gap-2.5 pt-2 border-t border-slate-100">
         <button id="btnClearCartModal" class="w-1/3 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-xs transition">ล้างตะกร้า</button>
-        <button id="btnSubmitRequisition" class="w-2/3 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5 disabled:bg-slate-300 disabled:cursor-not-allowed">
+        <button id="btnSubmitRequisition" class="w-2/3 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5 disabled:bg-slate-300 disabled:cursor-not-allowed" disabled>
           <span>🚀 ยืนยันส่งคำขอเบิก</span>
         </button>
       </div>
@@ -176,7 +176,8 @@
     checkUserAuth(['user', 'manager', 'admin']);
 
     let cart = new Map(); 
-    let groupedInventory = new Map(); 
+    let allProductsList = [];
+    let skusMap = new Map();
 
     const noteInputs = document.querySelectorAll(".requisitionNoteInput");
     noteInputs.forEach(input => {
@@ -185,74 +186,62 @@
       });
     });
 
-    function normalizeAttrs(attrs = {}) {
-      if (!attrs || Object.keys(attrs).length === 0) return "DEFAULT_NO_ATTR";
-      return Object.keys(attrs)
-        .sort()
-        .map(k => `${k.trim().toLowerCase()}:${String(attrs[k]).trim().toLowerCase()}`)
-        .join("|");
-    }
-
     async function loadInventory() {
       const skuSnap = await getDocs(collection(db, "skus"));
-      const skus = new Map();
-      skuSnap.forEach(d => skus.set(d.id, { id: d.id, ...d.data() }));
+      skusMap.clear();
+      skuSnap.forEach(d => skusMap.set(d.id, { id: d.id, ...d.data() }));
 
       const prodSnap = await getDocs(collection(db, "products"));
-      groupedInventory.clear();
+      allProductsList = [];
 
       prodSnap.forEach(d => {
-        const p = { id: d.id, ...d.data() };
-        const skuId = p.sku_id;
-        const sku = skus.get(skuId) || { sku_name: "ทั่วไป / ไม่ระบุ SKU", category: "ทั่วไป", unit: "ชิ้น" };
-
-        if (!groupedInventory.has(skuId)) {
-          groupedInventory.set(skuId, {
-            sku: sku,
-            totalQty: 0,
-            variantMap: new Map()
-          });
-        }
-
-        const group = groupedInventory.get(skuId);
-        group.totalQty += (p.quantity || 0);
-
-        const normKey = normalizeAttrs(p.specific_attributes);
-
-        if (group.variantMap.has(normKey)) {
-          const variant = group.variantMap.get(normKey);
-          variant.quantity += (p.quantity || 0);
-          variant.productIds.push(p.id);
-          if (p.barcode) variant.barcodes.push(p.barcode);
-        } else {
-          group.variantMap.set(normKey, {
-            variantKey: normKey,
-            attributes: p.specific_attributes || {},
-            quantity: p.quantity || 0,
-            productIds: [p.id],
-            barcodes: p.barcode ? [p.barcode] : []
-          });
-        }
+        allProductsList.push({ id: d.id, ...d.data() });
       });
 
       renderAccordion();
     }
     
-    function renderAccordion() {
+    function renderAccordion(filterText = "") {
       const container = document.getElementById("skuAccordionList");
       container.innerHTML = "";
 
-      if (groupedInventory.size === 0) {
+      if (allProductsList.length === 0) {
         container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400">ไม่มีสินค้าในคลัง</div>`;
         return;
       }
 
-      groupedInventory.forEach((group, skuId) => {
+      const grouped = new Map();
+      allProductsList.forEach(p => {
+        const skuId = p.sku_id || "unknown";
+        const sku = skusMap.get(skuId) || { sku_name: "ทั่วไป / ไม่ระบุ SKU", category: "ทั่วไป", unit: "ชิ้น" };
+
+        if (!grouped.has(skuId)) {
+          grouped.set(skuId, { sku, products: [], totalQty: 0 });
+        }
+        const g = grouped.get(skuId);
+        g.products.push(p);
+        g.totalQty += (p.quantity || 0);
+      });
+
+      let hasMatch = false;
+
+      grouped.forEach((group, skuId) => {
+        const keyword = filterText.toLowerCase();
+        const matchesSku = group.sku.sku_name.toLowerCase().includes(keyword) || (group.sku.category || "").toLowerCase().includes(keyword);
+        
+        const filteredProducts = group.products.filter(p => {
+          if (matchesSku) return true;
+          const barcode = (p.barcode || "").toLowerCase();
+          const attrStr = Object.entries(p.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(" ").toLowerCase();
+          return barcode.includes(keyword) || attrStr.includes(keyword);
+        });
+
+        if (filteredProducts.length === 0) return;
+        hasMatch = true;
+
         const accordionId = `acc-${skuId}`;
         const div = document.createElement("div");
         div.className = "bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs transition";
-
-        const variants = Array.from(group.variantMap.values());
 
         div.innerHTML = `
           <button onclick="toggleAccordion('${accordionId}')" class="w-full p-3.5 sm:p-4 flex justify-between items-center hover:bg-slate-50 text-left transition gap-2">
@@ -260,7 +249,7 @@
               <span id="icon-${accordionId}" class="text-slate-400 font-bold transition-transform transform shrink-0">▶</span>
               <div class="min-w-0">
                 <h3 class="font-black text-slate-800 text-sm sm:text-base truncate">${group.sku.sku_name}</h3>
-                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: <span class="text-slate-600 font-bold">${group.sku.category || 'ทั่วไป'}</span> | ${variants.length} รายการย่อย</p>
+                <p class="text-[11px] sm:text-xs text-slate-400 truncate">หมวดหมู่: <span class="text-slate-600 font-bold">${group.sku.category || 'ทั่วไป'}</span> | ${filteredProducts.length} บาร์โค้ด</p>
               </div>
             </div>
             <div class="text-right shrink-0">
@@ -271,23 +260,24 @@
           </button>
 
           <div id="${accordionId}" class="hidden border-t border-slate-100 bg-slate-50 p-2.5 sm:p-3 space-y-2">
-            ${variants.map((v) => {
-              // 🌟 จัดเรียง Attributes ตามตัวอักษรให้แสดงผลเรียงสวยงามเหมือนกันทุกรายการ
-              const attrSummary = Object.entries(v.attributes || {})
+            ${filteredProducts.map((p) => {
+              const attrSummary = Object.entries(p.specific_attributes || {})
                 .sort((a, b) => a[0].localeCompare(b[0]))
                 .map(([k,val]) => `${k}:${val}`)
                 .join(", ") || "ไม่มีคุณลักษณะเฉพาะ";
 
-              const isOutOfStock = v.quantity <= 0;
+              const isOutOfStock = (p.quantity || 0) <= 0;
+              const barcodeStr = p.barcode ? `บาร์โค้ด: ${p.barcode}` : `ID: ${p.id.substring(0,8)}`;
 
               return `
                 <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
-                  <div>
-                    <p class="font-bold text-slate-800">${attrSummary}</p>
-                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-600">${v.quantity}</span>${group.sku.unit || 'ชิ้น'}</p>
+                  <div class="min-w-0">
+                    <p class="font-bold text-slate-800 font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded inline-block mb-1">${barcodeStr}</p>
+                    <p class="text-slate-600 font-medium">${attrSummary}</p>
+                    <p class="text-[11px] text-slate-400">คงเหลือ: <span class="font-bold text-slate-700">${p.quantity || 0}</span>${group.sku.unit || 'ชิ้น'}</p>
                   </div>
-                  <button onclick="addToCart('${skuId}', '${encodeURIComponent(v.variantKey)}')" 
-                          class="w-full sm:w-auto px-3 py-1.5 font-bold rounded-lg transition text-center ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
+                  <button onclick="addToCart('${p.id}')" 
+                          class="w-full sm:w-auto px-3 py-1.5 font-bold rounded-lg transition text-center shrink-0 ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
                           ${isOutOfStock ? 'disabled' : ''}>
                     ${isOutOfStock ? 'สินค้าหมด' : '+ ใส่ตะกร้า'}
                   </button>
@@ -298,7 +288,15 @@
         `;
         container.appendChild(div);
       });
+
+      if (!hasMatch) {
+        container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400">ไม่พบสินค้าที่ค้นหา</div>`;
+      }
     }
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      renderAccordion(e.target.value.trim());
+    });
 
     window.toggleAccordion = (id) => {
       const el = document.getElementById(id);
@@ -312,39 +310,34 @@
       }
     };
 
-    window.addToCart = (skuId, encodedVariantKey) => {
-      const variantKey = decodeURIComponent(encodedVariantKey);
-      const group = groupedInventory.get(skuId);
-      if (!group) return;
+    window.addToCart = (productId) => {
+      const product = allProductsList.find(p => p.id === productId);
+      if (!product) return;
 
-      const variant = group.variantMap.get(variantKey);
-      if (!variant) return;
-
-      if (variant.quantity <= 0) {
+      if ((product.quantity || 0) <= 0) {
         alert("⚠️ สินค้ารายการนี้หมดแล้วในสต็อก!");
         return;
       }
 
-      const cartKey = `${skuId}___${variantKey}`;
+      const sku = skusMap.get(product.sku_id) || { sku_name: "ทั่วไป", unit: "ชิ้น" };
+      const cartKey = product.id;
 
       if (cart.has(cartKey)) {
         const item = cart.get(cartKey);
-        if (item.qty < variant.quantity) {
+        if (item.qty < product.quantity) {
           item.qty++;
         } else {
-          alert(`⚠️ ไม่สามารถเพิ่มได้อีก! คุณเลือกครบตามจำนวนคงเหลือในสต็อกแล้ว (${variant.quantity} ${group.sku.unit || 'ชิ้น'})`);
+          alert(`⚠️ ไม่สามารถเพิ่มได้อีก! คุณเลือกครบตามจำนวนคงเหลือในสต็อกแล้ว (${product.quantity} ${sku.unit})`);
           return;
         }
       } else {
         cart.set(cartKey, {
-          cartKey: cartKey,
-          skuId: skuId,
-          skuName: group.sku.sku_name,
-          unit: group.sku.unit || 'ชิ้น',
-          attributes: variant.attributes,
-          productIds: variant.productIds,
-          barcodes: variant.barcodes || [],
-          maxQty: variant.quantity,
+          productId: product.id,
+          skuName: sku.sku_name,
+          unit: sku.unit || 'ชิ้น',
+          barcode: product.barcode || "",
+          attributes: product.specific_attributes || {},
+          maxQty: product.quantity || 0,
           qty: 1
         });
       }
@@ -352,9 +345,13 @@
     };
 
     function renderCart() {
-      const cartSize = cart.size;
-      document.getElementById("desktopCartBadge").innerText = cartSize;
-      document.getElementById("mobileCartBadge").innerText = cartSize;
+      let totalItemsCount = 0;
+      cart.forEach((val) => {
+        totalItemsCount += val.qty;
+      });
+
+      document.getElementById("desktopCartBadge").innerText = totalItemsCount;
+      document.getElementById("mobileCartBadge").innerText = totalItemsCount;
 
       const desktopContainer = document.getElementById("desktopCartItems");
       const summaryTbody = document.getElementById("summaryTableBody");
@@ -365,7 +362,7 @@
       const btnSubmit = document.getElementById("btnSubmitRequisition");
       const btnOpens = document.querySelectorAll(".btnOpenSummaryModal");
 
-      if (cartSize === 0) {
+      if (cart.size === 0) {
         desktopContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">ยังไม่มีรายการในตะกร้า<br>กด + เลือกสินค้าจากรายการซ้ายมือ</p>`;
         summaryTbody.innerHTML = `<tr><td colspan="4" class="text-xs text-slate-400 text-center py-8">ยังไม่มีรายการในตะกร้า</td></tr>`;
         
@@ -378,23 +375,24 @@
       btnOpens.forEach(btn => btn.disabled = false);
 
       cart.forEach((val, cartKey) => {
-        // 🌟 จัดเรียง Attributes ตามตัวอักษรในตะกร้าด้วย
         const attrStr = Object.entries(val.attributes || {})
           .sort((a, b) => a[0].localeCompare(b[0]))
           .map(([k,v]) => `${k}:${v}`)
           .join(", ") || "ทั่วไป";
         
+        const barcodeDisplay = val.barcode ? `<span class="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${val.barcode}</span>` : "";
+
         const desktopDiv = document.createElement("div");
         desktopDiv.className = "pt-2 flex justify-between items-center text-xs gap-2";
         desktopDiv.innerHTML = `
           <div class="pr-1 min-w-0 flex-1">
             <p class="font-bold text-slate-800 truncate">${val.skuName}</p>
-            <p class="text-[10px] text-slate-500 truncate">${attrStr}</p>
+            <div class="flex items-center gap-1">${barcodeDisplay} <span class="text-[10px] text-slate-500 truncate">${attrStr}</span></div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${encodeURIComponent(cartKey)}', this.value)"
+            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${cartKey}', this.value)"
                    class="w-14 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600">
-            <button onclick="removeFromCart('${encodeURIComponent(cartKey)}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
+            <button onclick="removeFromCart('${cartKey}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
           </div>
         `;
         desktopContainer.appendChild(desktopDiv);
@@ -402,21 +400,23 @@
         const summaryTr = document.createElement("tr");
         summaryTr.innerHTML = `
           <td class="p-2.5 font-bold text-slate-800">${val.skuName}</td>
-          <td class="p-2.5 text-slate-500">${attrStr}</td>
+          <td class="p-2.5">
+            ${val.barcode ? `<div class="font-mono text-[10px] text-blue-600">${val.barcode}</div>` : ''}
+            <div class="text-[10px] text-slate-500">${attrStr}</div>
+          </td>
           <td class="p-2.5 text-center">
-            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${encodeURIComponent(cartKey)}', this.value)"
+            <input type="number" min="1" max="${val.maxQty}" value="${val.qty}" onchange="updateCartQty('${cartKey}', this.value)"
                    class="w-12 p-1 border border-slate-200 rounded-lg text-center font-bold text-blue-600">
           </td>
           <td class="p-2.5 text-center">
-            <button onclick="removeFromCart('${encodeURIComponent(cartKey)}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
+            <button onclick="removeFromCart('${cartKey}')" class="text-rose-500 font-bold px-1.5 py-0.5 hover:bg-rose-50 rounded">&times;</button>
           </td>
         `;
         summaryTbody.appendChild(summaryTr);
       });
     }
 
-    window.updateCartQty = (encodedCartKey, val) => {
-      const cartKey = decodeURIComponent(encodedCartKey);
+    window.updateCartQty = (cartKey, val) => {
       if (cart.has(cartKey)) {
         const item = cart.get(cartKey);
         const q = parseInt(val) || 1;
@@ -432,8 +432,7 @@
       }
     };
 
-    window.removeFromCart = (encodedCartKey) => {
-      const cartKey = decodeURIComponent(encodedCartKey);
+    window.removeFromCart = (cartKey) => {
       cart.delete(cartKey);
       renderCart();
     };
@@ -475,12 +474,12 @@
         const items = [];
         cart.forEach((val) => {
           items.push({
-            product_id: val.productIds[0] || "",
+            product_id: val.productId,
             sku_name: val.skuName,
+            barcode: val.barcode,
             attributes: val.attributes,
             quantity: val.qty,
-            unit: val.unit,
-            barcodes: val.barcodes || []
+            unit: val.unit
           });
         });
 

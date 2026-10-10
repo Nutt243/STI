@@ -84,13 +84,13 @@
 
       <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-2 flex-shrink-0">
         <div class="flex justify-between items-center">
-          <label class="block text-xs font-bold text-slate-700">สแกนบาร์โค้ดสินค้าที่นี่ (ยิงบาร์โค้ด 1 ครั้ง = +1 ชิ้น):</label>
+          <label class="block text-xs font-bold text-slate-700">สแกนบาร์โค้ดสินค้าที่นี่ (หรือใช้กล้องสแกน):</label>
           <button id="btnModalToggleCamera" class="text-xs bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg shadow-xs hover:bg-blue-700 transition">
             📷 เปิด/ปิด กล้องสแกน
           </button>
         </div>
 
-        <div id="modalCameraArea" class="hidden bg-slate-900 rounded-xl overflow-hidden border-2 border-blue-400 my-2">
+        <div id="modalCameraArea" class="hidden bg-slate-900 rounded-xl overflow-hidden border-2 border-blue-400 my-2 relative">
           <div id="modalReader" class="w-full"></div>
         </div>
 
@@ -106,7 +106,7 @@
           <thead class="bg-slate-100 font-bold text-slate-600 border-b border-slate-200 sticky top-0">
             <tr>
               <th class="p-2.5 text-center w-12">สถานะ</th>
-              <th class="p-2.5">SKU / รายการ</th>
+              <th class="p-2.5">SKU / บาร์โค้ด / รายการ / โลเคชั่น</th>
               <th class="p-2.5 text-center w-16">ขอเบิก</th>
               <th class="p-2.5 text-center w-28">สแกน/จ่ายจริง</th>
               <th class="p-2.5">หมายเหตุปรับลด</th>
@@ -130,14 +130,38 @@
     </div>
   </div>
 
-  <!-- Popup ยืนยันการอนุมัติจ่าย (เพิ่มเข้ามาใหม่) -->
+  <div id="cameraScanAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl text-2xl mb-1">
+        📷✨
+      </div>
+      <h3 class="font-black text-slate-800 text-base">สแกนสินค้าสำเร็จ!</h3>
+      <div id="camAlertContent" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1">
+      </div>
+
+      <div class="space-y-1 text-left">
+        <label class="block text-[11px] font-bold text-slate-600">จำนวนที่จะเพิ่มเข้ารายการ:</label>
+        <div class="flex items-center justify-center gap-3">
+          <button type="button" id="btnCamMinus" class="w-10 h-10 bg-slate-200 hover:bg-slate-300 font-black text-slate-700 rounded-xl text-lg transition">-</button>
+          <input type="number" id="camAddQtyInput" min="1" value="1" class="w-20 p-2 border border-slate-300 rounded-xl text-center font-black text-blue-600 text-base">
+          <button type="button" id="btnCamPlus" class="w-10 h-10 bg-slate-200 hover:bg-slate-300 font-black text-slate-700 rounded-xl text-lg transition">+</button>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="btnCamCancel" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
+        <button id="btnCamConfirm" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md text-xs transition">ตกลง & ไปต่อ</button>
+      </div>
+    </div>
+  </div>
+
   <div id="confirmApproveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
       <div class="inline-flex items-center justify-center w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl text-2xl mb-1">
         📦
       </div>
       <h3 class="font-black text-slate-800 text-lg">ยืนยันการอนุมัติจ่ายสินค้า?</h3>
-      <p class="text-xs text-slate-500">ระบบจะทำการตัดสต็อกสินค้าในคลังตามจำนวนที่ตรวจสอบและอนุมัติทันที</p>
+      <p class="text-xs text-slate-500">ระบบจะทำการตัดสต็อกสินค้าในคลังตามบาร์โค้ดที่ถูกต้องทันที</p>
       
       <div class="flex gap-2 pt-2">
         <button id="btnCancelApproveModal" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">กลับไปตรวจสอบ</button>
@@ -217,12 +241,28 @@
     let modalQrCode = null;
     let lastScannedText = "";
     let lastScannedTime = 0;
+    let pendingCameraScannedItem = null;
 
     async function loadApprovals() {
       const container = document.getElementById("approvalList");
       container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดรายการ...</div>`;
 
       try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const usersMap = new Map();
+        usersSnap.forEach(uDoc => {
+          usersMap.set(uDoc.id, uDoc.data());
+        });
+
+        // ดึงข้อมูล products มาเก็บไว้เทียบโลเคชั่นล่าสุดแบบเรียลไทม์ (ถ้ามีอัปเดต)
+        const prodSnap = await getDocs(collection(db, "products"));
+        const prodLocationMap = new Map();
+        prodSnap.forEach(pDoc => {
+          const pData = pDoc.data();
+          if (pData.barcode) prodLocationMap.set(pData.barcode, pData.location || "");
+          prodLocationMap.set(pDoc.id, pData.location || "");
+        });
+
         const q = query(collection(db, "requisitions"), orderBy("createdAt", "asc"));
         const snap = await getDocs(q);
         
@@ -236,15 +276,36 @@
           pendingCount++;
           const dateStr = req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString('th-TH') : "-";
           
+          const userInfo = usersMap.get(req.userId) || {};
+          const realName = userInfo.name || (req.userName && !req.userName.includes("@") ? req.userName : null);
+          const userEmail = userInfo.email || (req.userName && req.userName.includes("@") ? req.userName : null);
+
+          let displayNameStr = "";
+          if (realName && userEmail) {
+            displayNameStr = `${realName} <span class="text-xs text-slate-400 font-normal">(${userEmail})</span>`;
+          } else if (realName) {
+            displayNameStr = realName;
+          } else if (userEmail) {
+            displayNameStr = userEmail;
+          } else {
+            displayNameStr = req.userName || "ไม่ระบุชื่อ";
+          }
+
           const card = document.createElement("div");
           card.className = "bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4";
 
           const itemsRows = (req.items || []).map(i => {
             const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+            const barcodeStr = i.barcode ? `<span class="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${i.barcode}</span>` : "";
+            const itemLoc = i.location || prodLocationMap.get(i.barcode) || prodLocationMap.get(i.product_id) || "-";
+            const locBadge = `<span class="text-[10px] text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded font-bold ml-1">📍 ${itemLoc}</span>`;
+
             return `
               <tr class="border-b border-slate-100">
-                <td class="py-2.5 font-bold text-slate-800">${i.sku_name}</td>
-                <td class="py-2.5 text-slate-500">${attrStr}</td>
+                <td class="py-2.5">
+                  <div class="font-bold text-slate-800">${i.sku_name} ${locBadge}</div>
+                  <div class="flex items-center gap-1">${barcodeStr} <span class="text-[10px] text-slate-400">${attrStr}</span></div>
+                </td>
                 <td class="py-2.5 text-center font-bold text-blue-600">${i.quantity} ${i.unit || 'ชิ้น'}</td>
               </tr>
             `;
@@ -255,7 +316,7 @@
               <div>
                 <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">⏳ คิวที่ ${pendingCount}</span>
                 <span class="text-xs text-slate-400 ml-2">เวลาขอเบิก: ${dateStr}</span>
-                <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${req.userName || 'ไม่ระบุชื่อ'}</p>
+                <p class="text-sm font-bold text-slate-800 mt-1">ผู้ขอเบิก: ${displayNameStr}</p>
               </div>
               <div class="flex gap-2 w-full sm:w-auto">
                 <button onclick="openRejectModal('${d.id}')" class="flex-1 sm:flex-none px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl transition">❌ ปฏิเสธ</button>
@@ -267,8 +328,7 @@
               <table class="w-full text-left text-xs min-w-[320px]">
                 <thead class="text-slate-400 font-bold uppercase border-b border-slate-100">
                   <tr>
-                    <th class="pb-2">SKU / รายการ</th>
-                    <th class="pb-2">คุณลักษณะ</th>
+                    <th class="pb-2">SKU / บาร์โค้ด / รายการ / โลเคชั่น</th>
                     <th class="pb-2 text-center">จำนวน</th>
                   </tr>
                 </thead>
@@ -304,42 +364,22 @@
       const modalBarcodeInput = document.getElementById("barcodeInput");
       if (modalBarcodeInput) modalBarcodeInput.value = "";
 
+      // โหลดข้อมูลโลเคชั่นล่าสุดจาก products เผื่อมีการอัปเดต
       const prodSnap = await getDocs(collection(db, "products"));
       const prodMap = new Map();
-      prodSnap.forEach(pDoc => {
-        prodMap.set(pDoc.id, { id: pDoc.id, ...pDoc.data() });
-      });
-
-      const isAttrEqual = (attr1 = {}, attr2 = {}) => {
-        const keys1 = Object.keys(attr1);
-        const keys2 = Object.keys(attr2);
-        if (keys1.length !== keys2.length) return false;
-        return keys1.every(k => String(attr1[k]).trim().toLowerCase() === String(attr2[k]).trim().toLowerCase());
-      };
+      prodSnap.forEach(pDoc => prodMap.set(pDoc.id, pDoc.data()));
 
       activeReqItems = (reqData.items || []).map((item, idx) => {
-        const prodInfo = prodMap.get(item.product_id);
-        const resolvedBarcode = item.barcode || (prodInfo ? prodInfo.barcode : "");
-
-        const exactMatchingBarcodes = Array.from(prodMap.values())
-          .filter(p => isAttrEqual(p.specific_attributes, item.attributes))
-          .map(p => p.barcode)
-          .filter(Boolean);
-
-        const validBarcodes = Array.from(new Set([
-          resolvedBarcode, 
-          ...(item.barcodes || []), 
-          ...exactMatchingBarcodes
-        ])).filter(Boolean);
-
+        const pInfo = prodMap.get(item.product_id);
+        const resolvedLoc = item.location || (pInfo ? pInfo.location : "") || "-";
         return {
           ...item,
           index: idx,
           checked: false,
           approvedQty: 0, 
           adjustNote: "",
-          barcode: resolvedBarcode,
-          validBarcodes: validBarcodes
+          product_id: item.product_id || "",
+          location: resolvedLoc
         };
       });
 
@@ -350,7 +390,7 @@
       if (modalBarcodeInput) modalBarcodeInput.focus();
     };
 
-    document.getElementById("btnModalToggleCamera").addEventListener("click", () => {
+    document.getElementById("btnModalToggleCamera").addEventListener("click", async () => {
       const area = document.getElementById("modalCameraArea");
       if (modalQrCode && modalQrCode.isScanning) {
         modalQrCode.stop().then(() => area.classList.add("hidden"));
@@ -358,22 +398,106 @@
         area.classList.remove("hidden");
         if (!modalQrCode) modalQrCode = new Html5Qrcode("modalReader");
         
-        modalQrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 220, height: 140 } },
-          (decodedText) => {
-            const now = Date.now();
-            if (decodedText === lastScannedText && (now - lastScannedTime) < 1200) return;
-            
-            lastScannedText = decodedText;
-            lastScannedTime = now;
-            
-            document.getElementById("barcodeInput").value = decodedText;
-            checkBarcode();
+        const config = { 
+          fps: 25, 
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            return {
+              width: Math.floor(viewfinderWidth * 0.8),
+              height: Math.floor(viewfinderHeight * 0.5)
+            };
           },
-          () => {}
-        ).catch(err => alert("ไม่สามารถเปิดกล้องได้: " + err));
+          aspectRatio: 1.333334
+        };
+
+        try {
+          await modalQrCode.start(
+            { facingMode: "environment", advanced: [{ zoom: 1.5 }, { focusMode: "continuous" }] },
+            config,
+            (decodedText) => {
+              const now = Date.now();
+              if (decodedText === lastScannedText && (now - lastScannedTime) < 800) return;
+              lastScannedText = decodedText;
+              lastScannedTime = now;
+              handleCameraScannedCode(decodedText);
+            },
+            () => {}
+          );
+        } catch (err) {
+          modalQrCode.start(
+            { facingMode: "environment" },
+            { fps: 25, qrbox: { width: 320, height: 200 } },
+            (decodedText) => {
+              const now = Date.now();
+              if (decodedText === lastScannedText && (now - lastScannedTime) < 800) return;
+              lastScannedText = decodedText;
+              lastScannedTime = now;
+              handleCameraScannedCode(decodedText);
+            },
+            () => {}
+          ).catch(e => alert("ไม่สามารถเปิดกล้องได้: " + e));
+        }
       }
+    });
+
+    function handleCameraScannedCode(barcode) {
+      let matchedItem = activeReqItems.find(i => 
+        i.approvedQty < i.quantity && (i.barcode === barcode || i.product_id === barcode)
+      );
+
+      if (!matchedItem) {
+        matchedItem = activeReqItems.find(i => i.barcode === barcode || i.product_id === barcode);
+      }
+
+      if (!matchedItem) {
+        alert(`❌ ไม่พบรายการบาร์โค้ด: "${barcode}" ที่ตรงกับคำขอเบิกนี้!`);
+        return;
+      }
+
+      pendingCameraScannedItem = matchedItem;
+
+      const attrStr = Object.entries(matchedItem.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+      document.getElementById("camAlertContent").innerHTML = `
+        <p><span class="font-bold text-slate-700">รายการ:</span> ${matchedItem.sku_name}</p>
+        <p><span class="font-bold text-slate-700">บาร์โค้ด:</span> <span class="font-mono text-blue-600">${matchedItem.barcode || '-'}</span></p>
+        <p><span class="font-bold text-slate-700">โลเคชั่น:</span> <span class="text-purple-700 font-bold">📍 ${matchedItem.location || '-'}</span></p>
+        <p><span class="font-bold text-slate-700">คุณลักษณะ:</span> ${attrStr}</p>
+        <p><span class="font-bold text-slate-700">ขอเบิกทั้งหมด:</span> ${matchedItem.quantity} ${matchedItem.unit || 'ชิ้น'}</p>
+      `;
+      document.getElementById("camAddQtyInput").value = 1;
+
+      document.getElementById("cameraScanAlertModal").classList.remove("hidden");
+      document.getElementById("cameraScanAlertModal").classList.add("flex");
+    }
+
+    document.getElementById("btnCamPlus").addEventListener("click", () => {
+      const input = document.getElementById("camAddQtyInput");
+      input.value = parseInt(input.value || 0) + 1;
+    });
+    document.getElementById("btnCamMinus").addEventListener("click", () => {
+      const input = document.getElementById("camAddQtyInput");
+      const val = parseInt(input.value || 1);
+      if (val > 1) input.value = val - 1;
+    });
+
+    document.getElementById("btnCamCancel").addEventListener("click", () => {
+      document.getElementById("cameraScanAlertModal").classList.add("hidden");
+      pendingCameraScannedItem = null;
+    });
+
+    document.getElementById("btnCamConfirm").addEventListener("click", () => {
+      if (!pendingCameraScannedItem) return;
+
+      const addQty = parseInt(document.getElementById("camAddQtyInput").value) || 1;
+      pendingCameraScannedItem.approvedQty += addQty;
+
+      if (pendingCameraScannedItem.approvedQty >= pendingCameraScannedItem.quantity) {
+        pendingCameraScannedItem.approvedQty = pendingCameraScannedItem.quantity;
+        pendingCameraScannedItem.checked = true;
+      }
+
+      renderScanTable();
+      document.getElementById("cameraScanAlertModal").classList.add("hidden");
+      pendingCameraScannedItem = null;
     });
 
     function renderScanTable() {
@@ -382,6 +506,9 @@
 
       activeReqItems.forEach(item => {
         const attrStr = Object.entries(item.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
+        const barcodeStr = item.barcode ? `<span class="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${item.barcode}</span>` : "";
+        const locBadge = `<span class="text-[10px] text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded font-bold ml-1">📍 ${item.location || '-'}</span>`;
+
         const tr = document.createElement("tr");
         
         if (item.checked) {
@@ -400,8 +527,8 @@
                    title="ติ๊กถูกหากต้องการเลือกเบิกครบจำนวนทันที">
           </td>
           <td class="p-2.5">
-            <div class="font-bold text-slate-800">${item.sku_name}</div>
-            <div class="text-[10px] text-slate-400">${attrStr}</div>
+            <div class="font-bold text-slate-800">${item.sku_name} ${locBadge}</div>
+            <div class="flex items-center gap-1">${barcodeStr} <span class="text-[10px] text-slate-400">${attrStr}</span></div>
           </td>
           <td class="p-2.5 text-center font-bold text-slate-600">${item.quantity} ${item.unit || 'ชิ้น'}</td>
           <td class="p-2.5 text-center">
@@ -452,11 +579,7 @@
       if (!input) return;
 
       let matchedItem = activeReqItems.find(i => 
-        i.approvedQty < i.quantity && (
-          i.product_id === input || 
-          i.barcode === input || 
-          (i.validBarcodes && i.validBarcodes.includes(input))
-        )
+        i.approvedQty < i.quantity && (i.barcode === input || i.product_id === input)
       );
 
       if (matchedItem) {
@@ -466,19 +589,10 @@
         }
         renderScanTable();
       } else {
-        const alreadyFullItem = activeReqItems.find(i => 
-          i.product_id === input || 
-          i.barcode === input || 
-          (i.validBarcodes && i.validBarcodes.includes(input))
-        );
+        const alreadyFullItem = activeReqItems.find(i => i.barcode === input || i.product_id === input);
 
         if (alreadyFullItem) {
-          const attrText = Object.entries(alreadyFullItem.attributes || {})
-            .map(([k, v]) => `${k}:${v}`)
-            .join(', ');
-          const fullDisplayName = attrText ? `${alreadyFullItem.sku_name} (${attrText})` : alreadyFullItem.sku_name;
-
-          alert(`⚠️ รายการ "${fullDisplayName}" สแกนครบตามจำนวนที่ขอเบิกแล้ว (${alreadyFullItem.quantity} ${alreadyFullItem.unit || 'ชิ้น'})`);
+          alert(`⚠️ รายการนี้สแกนครบตามจำนวนที่ขอเบิกแล้ว (${alreadyFullItem.quantity} ${alreadyFullItem.unit || 'ชิ้น'})`);
         } else {
           alert(`❌ ไม่พบรายการบาร์โค้ด: "${input}" ที่ตรงกับคำขอเบิกนี้!`);
         }
@@ -559,7 +673,6 @@
       closeStockWarnModal();
     });
 
-    // เมื่อคลิกปุ่ม "ยืนยันอนุมัติจ่าย" ให้เปิด Popup ยืนยันก่อน
     document.getElementById("btnConfirmApprove").addEventListener("click", async () => {
       const uncheckedItems = activeReqItems.filter(i => !i.checked && i.approvedQty === 0);
       if (uncheckedItems.length > 0) {
@@ -570,12 +683,11 @@
 
       for (const item of activeReqItems) {
         if (item.approvedQty < item.quantity && !item.adjustNote) {
-          alert(`⚠️ รายการ "${item.sku_name}" มีการจ่ายน้อยกว่าที่ขอเบิก (${item.approvedQty}/${item.quantity})\nกรุณาระบุหมายเหตุการจ่ายไม่ครบในช่องหมายเหตุด้วยครับ`);
+          alert(`⚠️ รายการ "${item.sku_name}" มีการจ่ายน้อยกว่าที่ขอเบิก (${item.approvedQty}/${item.quantity})\nกรุณาระบุหมายเหตุการจ่ายไม่ครบด้วยครับ`);
           return;
         }
       }
 
-      // ตรวจสอบสต็อกในระบบเบื้องต้นก่อนเปิด Popup
       try {
         for (let idx = 0; idx < activeReqItems.length; idx++) {
           const item = activeReqItems[idx];
@@ -585,7 +697,7 @@
           const prodSnap = await getDoc(prodRef);
 
           if (!prodSnap.exists()) {
-            alert(`❌ ไม่พบสินค้า "${item.sku_name}" ในระบบสต็อกแล้ว`);
+            alert(`❌ ไม่พบสินค้าบาร์โค้ดนี้ในระบบสต็อกแล้ว`);
             return;
           }
 
@@ -597,7 +709,6 @@
           }
         }
 
-        // ผ่านการตรวจสอบทั้งหมดแล้ว เปิด Popup ยืนยันการอนุมัติ
         document.getElementById("confirmApproveModal").classList.remove("hidden");
         document.getElementById("confirmApproveModal").classList.add("flex");
 
@@ -606,12 +717,10 @@
       }
     });
 
-    // ปุ่มยกเลิกใน Popup ยืนยัน
     document.getElementById("btnCancelApproveModal").addEventListener("click", () => {
       document.getElementById("confirmApproveModal").classList.add("hidden");
     });
 
-    // ปุ่มกด "ยืนยันอนุมัติ" จริงๆ ใน Popup
     document.getElementById("btnExecuteApproveModal").addEventListener("click", async () => {
       document.getElementById("confirmApproveModal").classList.add("hidden");
 
@@ -634,6 +743,8 @@
           items: activeReqItems.map(i => ({
             product_id: i.product_id,
             sku_name: i.sku_name,
+            barcode: i.barcode || "",
+            location: i.location || "",
             attributes: i.attributes || {},
             quantity: i.quantity,
             approvedQty: i.approvedQty,

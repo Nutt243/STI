@@ -138,7 +138,8 @@
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">SKU หลัก (เช่น ปากกา, รองเท้า)</label>
             <input type="text" id="modalSkuName" placeholder="เช่น ปากกา" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500">
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <!-- 💡 เพิ่มช่องโลเคชั่นรวมไว้กับหมวดหมู่และหน่วยนับ -->
+          <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หมวดหมู่</label>
               <select id="modalCategory" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-bold text-blue-700">
@@ -151,6 +152,10 @@
             <div>
               <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หน่วยนับ</label>
               <input type="text" id="modalUnit" value="ชิ้น" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">โลเคชั่น</label>
+              <input type="text" id="modalLocation" placeholder="เช่น ชั้น 2, โซน A" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm">
             </div>
           </div>
         </div>
@@ -229,6 +234,7 @@
             sku_name: data.sku_name || (matchedSku ? matchedSku.sku_name : ""),
             category: data.category || (matchedSku ? matchedSku.category : "ทั่วไป"),
             unit: data.unit || (matchedSku ? matchedSku.unit : "ชิ้น"),
+            location: data.location || (matchedSku ? matchedSku.location : ""),
             attributes: data.attributes || {}
           });
         });
@@ -243,6 +249,7 @@
 
       let autoSkuId = null;
       let autoSkuName = "";
+      let autoLocation = "";
       let autoAttributes = {};
 
       try {
@@ -252,6 +259,7 @@
         if (!prodSnap.empty) {
           const prodData = prodSnap.docs[0].data();
           autoSkuId = prodData.sku_id || null;
+          autoLocation = prodData.location || "";
           autoAttributes = prodData.specific_attributes || {};
 
           if (autoSkuId && skusMap.has(autoSkuId)) {
@@ -269,6 +277,7 @@
           qty: newQty,
           sku_id: existingInPending.sku_id || autoSkuId,
           sku_name: existingInPending.sku_name || autoSkuName,
+          location: existingInPending.location || autoLocation,
           attributes: (existingInPending.attributes && Object.keys(existingInPending.attributes).length > 0) 
             ? existingInPending.attributes 
             : autoAttributes,
@@ -280,6 +289,7 @@
           qty: qty,
           sku_id: autoSkuId,
           sku_name: autoSkuName,
+          location: autoLocation,
           attributes: autoAttributes,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -409,6 +419,7 @@
       const currentCategory = item.category || (item.sku ? item.sku.category : "ทั่วไป");
       document.getElementById("modalCategory").value = currentCategory;
       document.getElementById("modalUnit").value = item.unit || (item.sku ? item.sku.unit : "ชิ้น");
+      document.getElementById("modalLocation").value = item.location || (item.sku ? item.sku.location : "");
 
       applyCategoryPreset(currentCategory, item.attributes || {});
 
@@ -462,6 +473,7 @@
 
       const category = document.getElementById("modalCategory").value;
       const unit = document.getElementById("modalUnit").value.trim() || "ชิ้น";
+      const location = document.getElementById("modalLocation").value.trim();
 
       let skuObj = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === skuName.toLowerCase());
       let skuId = skuObj ? skuObj.id : null;
@@ -472,6 +484,7 @@
           sku_name: skuName,
           category: category,
           unit: unit,
+          location: location,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -479,11 +492,12 @@
         await updateDoc(doc(db, "skus", skuId), {
           category: category,
           unit: unit,
+          location: location,
           updatedAt: serverTimestamp()
         });
       }
 
-      skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit });
+      skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit, location });
 
       const attrs = collectAttrs();
 
@@ -492,6 +506,7 @@
         sku_name: skuName,
         category: category,
         unit: unit,
+        location: location,
         attributes: attrs,
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -511,12 +526,12 @@
       return attrs;
     }
 
-    // ⚡ ฟังก์ชันอนุมัติรายชิ้น (รองรับ silentMode เพื่อไม่ให้ Alert รบกวนเวลาอนุมัติทั้งหมด)
     window.approveSingle = async (barcode, silent = false) => {
       const item = pendingMap.get(barcode);
       if (!item || (!item.sku && !item.sku_id)) return false;
 
       const finalSkuId = item.sku ? item.sku.id : item.sku_id;
+      const finalLocation = item.location || (item.sku ? item.sku.location : "");
 
       try {
         const q = query(collection(db, "products"), where("barcode", "==", barcode));
@@ -528,6 +543,7 @@
 
           await updateDoc(doc(db, "products", existingDoc.id), {
             quantity: currentQty + item.qty,
+            location: finalLocation,
             specific_attributes: item.attributes,
             updatedAt: serverTimestamp()
           });
@@ -536,6 +552,7 @@
             sku_id: finalSkuId,
             barcode: barcode,
             quantity: item.qty,
+            location: finalLocation,
             specific_attributes: item.attributes,
             createdAt: serverTimestamp()
           });
@@ -555,7 +572,6 @@
       }
     };
 
-    // ⚡ ปุ่มอนุมัติทั้งหมดที่พร้อมรับเข้า (เด้ง Alert สรุปเพียงครั้งเดียว)
     document.getElementById("btnApproveAllReady").addEventListener("click", async () => {
       const readyItems = Array.from(pendingMap.values()).filter(item => item && (item.sku || item.sku_id));
 
@@ -573,7 +589,7 @@
 
       let successCount = 0;
       for (const item of readyItems) {
-        const isSuccess = await window.approveSingle(item.barcode, true); // สั่งเงียบ alert รายทาง
+        const isSuccess = await window.approveSingle(item.barcode, true);
         if (isSuccess) successCount++;
       }
 
@@ -583,19 +599,19 @@
       alert(`🎉 อนุมัติรับเข้าคลังสำเร็จทั้งหมด ${successCount} รายการ!`);
     });
 
-    // 📊 1. ส่งออก CSV (ใส่ ' บังคับเป็น Text เพื่อป้องกัน Excel แปลงบาร์โค้ดเป็น E+12)
     document.getElementById("btnExportCSV").addEventListener("click", () => {
       if (pendingMap.size === 0) return alert("ไม่มีรายการในตารางรอรับเข้าที่สามารถส่งออกได้");
 
-      let csvContent = "\uFEFFBarcode,SKU Name,Category,Quantity,Unit,Attr 1 Key,Attr 1 Value,Attr 2 Key,Attr 2 Value,Attr 3 Key,Attr 3 Value\n";
+      let csvContent = "\uFEFFBarcode,SKU Name,Category,Quantity,Unit,Location,Attr 1 Key,Attr 1 Value,Attr 2 Key,Attr 2 Value,Attr 3 Key,Attr 3 Value\n";
 
       pendingMap.forEach((item, barcode) => {
         const safeBarcode = `'${barcode}`;
         const skuName = (item.sku ? item.sku.sku_name : item.sku_name || "").replace(/"/g, '""');
         const category = (item.category || (item.sku ? item.sku.category : "ทั่วไป")).replace(/"/g, '""');
         const unit = (item.unit || (item.sku ? item.sku.unit : "ชิ้น")).replace(/"/g, '""');
+        const location = (item.location || (item.sku ? item.sku.location : "")).replace(/"/g, '""');
         
-        let rowStr = `"${safeBarcode}","${skuName}","${category}",${item.qty},"${unit}"`;
+        let rowStr = `"${safeBarcode}","${skuName}","${category}",${item.qty},"${unit}","${location}"`;
 
         const entries = Object.entries(item.attributes || {});
         for (let i = 0; i < 3; i++) {
@@ -620,7 +636,6 @@
       document.body.removeChild(link);
     });
 
-    // 🛠️ ฟังก์ชันคลีนบาร์โค้ด (ตัด ' ออก และแปลง E+ Notation กลับเป็นตัวเลขปกติ)
     function cleanBarcodeString(rawBarcode) {
       if (!rawBarcode) return "";
       let str = rawBarcode.replace(/^'|\t/g, '').trim();
@@ -635,7 +650,6 @@
       return str;
     }
 
-// 📊 2. นำเข้าข้อมูลจาก CSV (บวกจำนวนเพิ่มเข้าของเดิมอัตโนมัติ ไม่เขียนทับ)
     document.getElementById("importCsvInput").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -659,11 +673,12 @@
 
           const skuName = cols[1] ? cols[1].trim() : "ไม่ระบุ SKU";
           const category = cols[2] || "ทั่วไป";
-          const importedQty = parseInt(cols[3]) || 1; // จำนวนที่ระบุมาในไฟล์ CSV
+          const importedQty = parseInt(cols[3]) || 1;
           const unit = cols[4] || "ชิ้น";
+          const location = cols[5] || "";
 
           const attrs = {};
-          for (let colIdx = 5; colIdx < cols.length; colIdx += 2) {
+          for (let colIdx = 6; colIdx < cols.length; colIdx += 2) {
             const key = cols[colIdx];
             const val = cols[colIdx + 1];
             if (key && val) {
@@ -680,23 +695,23 @@
               sku_name: skuName,
               category: category,
               unit: unit,
+              location: location,
               createdAt: serverTimestamp()
             });
-            skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit });
+            skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit, location });
           }
 
-          // 🔍 ตรวจสอบว่าในระบบ (pendingMap) มีบาร์โค้ดนี้ค้างอยู่เดิมหรือไม่
           const existingItem = pendingMap.get(barcode);
           const finalQty = existingItem ? (existingItem.qty + importedQty) : importedQty;
 
-          // 💾 บันทึกโดยใช้จำนวนรวมใหม่ (เอาของเดิมมาบวกเพิ่ม)
           await setDoc(doc(db, "unregistered_skus", barcode), {
             barcode: barcode,
             sku_id: skuId,
             sku_name: skuName,
             category: category,
             unit: unit,
-            qty: finalQty, // ใช้ผลรวม
+            location: location,
+            qty: finalQty,
             attributes: attrs,
             updatedAt: serverTimestamp()
           }, { merge: true });
