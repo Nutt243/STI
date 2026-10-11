@@ -98,7 +98,6 @@
     </div>
   </main>
 
-  <!-- Hidden Print Container สำหรับสั่งพิมพ์ PDF -->
   <div id="printArea" style="display: none;"></div>
 
   <div id="scanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-40 overflow-y-auto">
@@ -155,6 +154,21 @@
             ✅ ยืนยันอนุมัติจ่าย
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal แจ้งเตือนข้อผิดพลาด/สแกนเกิน/ไม่พบรายการ -->
+  <div id="errorModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
+      <div id="errorModalIcon" class="inline-flex items-center justify-center w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl text-2xl mb-1">
+        ⚠️
+      </div>
+      <h3 id="errorModalTitle" class="font-black text-slate-800 text-base">แจ้งเตือน</h3>
+      <div id="errorModalContent" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 text-center space-y-1 font-medium">
+      </div>
+      <div class="pt-2">
+        <button id="btnErrorModalOk" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md text-xs transition">เข้าใจแล้ว</button>
       </div>
     </div>
   </div>
@@ -274,6 +288,29 @@
 
     let isPrintMode = false;
     let loadedRequisitionsMap = new Map();
+
+    function showCustomAlert(title, message, isWarning = true) {
+      document.getElementById("errorModalTitle").innerText = title;
+      document.getElementById("errorModalContent").innerHTML = message;
+      
+      const iconDiv = document.getElementById("errorModalIcon");
+      if (isWarning) {
+        iconDiv.className = "inline-flex items-center justify-center w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl text-2xl mb-1";
+        iconDiv.innerText = "⚠️";
+      } else {
+        iconDiv.className = "inline-flex items-center justify-center w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl text-2xl mb-1";
+        iconDiv.innerText = "❌";
+      }
+
+      document.getElementById("errorModal").classList.remove("hidden");
+      document.getElementById("errorModal").classList.add("flex");
+    }
+
+    document.getElementById("btnErrorModalOk").addEventListener("click", () => {
+      document.getElementById("errorModal").classList.add("hidden");
+      lastScannedText = "";
+      lastScannedTime = 0;
+    });
 
     async function loadApprovals() {
       const container = document.getElementById("approvalList");
@@ -441,7 +478,7 @@
     document.getElementById("btnPrintSelected").addEventListener("click", () => {
       const checkedBoxes = document.querySelectorAll(".print-item-checkbox:checked");
       if (checkedBoxes.length === 0) {
-        alert("⚠️ กรุณาเลือกรายการที่ต้องการพิมพ์อย่างน้อย 1 รายการครับ");
+        showCustomAlert("แจ้งเตือน", "⚠️ กรุณาเลือกรายการที่ต้องการพิมพ์อย่างน้อย 1 รายการครับ");
         return;
       }
 
@@ -597,22 +634,23 @@
             () => {}
           );
         } catch (err) {
-          alert("ไม่สามารถเปิดกล้องได้: " + err);
+          showCustomAlert("ข้อผิดพลาด", "ไม่สามารถเปิดกล้องได้: " + err, false);
         }
       }
     });
 
     function handleCameraScannedCode(barcode) {
       let matchedItem = activeReqItems.find(i => 
-        i.approvedQty < i.quantity && (i.barcode === barcode || i.product_id === barcode)
+        i.barcode === barcode || i.product_id === barcode
       );
 
       if (!matchedItem) {
-        matchedItem = activeReqItems.find(i => i.barcode === barcode || i.product_id === barcode);
+        showCustomAlert("ไม่พบรายการ", `❌ ไม่พบรายการบาร์โค้ด:<br><span class="font-mono font-bold text-blue-600">${barcode}</span><br>ที่ตรงกับคำขอเบิกนี้!`);
+        return;
       }
 
-      if (!matchedItem) {
-        alert(`❌ ไม่พบรายการบาร์โค้ด: "${barcode}" ที่ตรงกับคำขอเบิกนี้!`);
+      if (matchedItem.approvedQty >= matchedItem.quantity) {
+        showCustomAlert("สแกนครบแล้ว", `⚠️ รายการ <b>"${matchedItem.sku_name}"</b> นี้สแกนครบตามจำนวนที่ขอเบิกแล้ว (${matchedItem.quantity} ${matchedItem.unit || 'ชิ้น'}) ครับ`);
         return;
       }
 
@@ -625,6 +663,7 @@
         <p><span class="font-bold text-slate-700">โลเคชั่น:</span> <span class="text-purple-700 font-bold">📍 ${matchedItem.location || '-'}</span></p>
         <p><span class="font-bold text-slate-700">คุณลักษณะ:</span> ${attrStr}</p>
         <p><span class="font-bold text-slate-700">ขอเบิกทั้งหมด:</span> ${matchedItem.quantity} ${matchedItem.unit || 'ชิ้น'}</p>
+        <p><span class="font-bold text-slate-700">สแกนไปแล้ว:</span> <span class="text-blue-600 font-bold">${matchedItem.approvedQty} ชิ้น</span></p>
       `;
       document.getElementById("camAddQtyInput").value = 1;
 
@@ -645,12 +684,20 @@
     document.getElementById("btnCamCancel").addEventListener("click", () => {
       document.getElementById("cameraScanAlertModal").classList.add("hidden");
       pendingCameraScannedItem = null;
+      lastScannedText = "";
+      lastScannedTime = 0;
     });
 
     document.getElementById("btnCamConfirm").addEventListener("click", () => {
       if (!pendingCameraScannedItem) return;
 
       const addQty = parseInt(document.getElementById("camAddQtyInput").value) || 1;
+      
+      if (pendingCameraScannedItem.approvedQty + addQty > pendingCameraScannedItem.quantity) {
+        showCustomAlert("จำนวนเกิน", `⚠️ จำนวนรวมเกินกว่าที่ขอเบิก (${pendingCameraScannedItem.quantity} ${pendingCameraScannedItem.unit || 'ชิ้น'})`);
+        return;
+      }
+
       pendingCameraScannedItem.approvedQty += addQty;
 
       if (pendingCameraScannedItem.approvedQty >= pendingCameraScannedItem.quantity) {
@@ -661,6 +708,8 @@
       renderScanTable();
       document.getElementById("cameraScanAlertModal").classList.add("hidden");
       pendingCameraScannedItem = null;
+      lastScannedText = "";
+      lastScannedTime = 0;
     });
 
     function renderScanTable() {
@@ -726,6 +775,11 @@
     window.updateApprovedQty = (index, val) => {
       const qty = parseInt(val) || 0;
       const targetItem = activeReqItems[index];
+      if (qty > targetItem.quantity) {
+        showCustomAlert("แจ้งเตือน", `⚠️ ไม่สามารถระบุจำนวนเกินกว่าที่ขอเบิกได้ (${targetItem.quantity})`);
+        renderScanTable();
+        return;
+      }
       targetItem.approvedQty = qty;
       targetItem.checked = (targetItem.approvedQty >= targetItem.quantity);
       renderScanTable();
@@ -742,23 +796,22 @@
       if (!input) return;
 
       let matchedItem = activeReqItems.find(i => 
-        i.approvedQty < i.quantity && (i.barcode === input || i.product_id === input)
+        i.barcode === input || i.product_id === input
       );
 
       if (matchedItem) {
-        matchedItem.approvedQty += 1;
         if (matchedItem.approvedQty >= matchedItem.quantity) {
-          matchedItem.checked = true;
-        }
-        renderScanTable();
-      } else {
-        const alreadyFullItem = activeReqItems.find(i => i.barcode === input || i.product_id === input);
-
-        if (alreadyFullItem) {
-          alert(`⚠️ รายการนี้สแกนครบตามจำนวนที่ขอเบิกแล้ว (${alreadyFullItem.quantity} ${alreadyFullItem.unit || 'ชิ้น'})`);
+          showCustomAlert("สแกนครบแล้ว", `⚠️ รายการ <b>"${matchedItem.sku_name}"</b> นี้สแกนครบตามจำนวนที่ขอเบิกแล้ว (${matchedItem.quantity} ${matchedItem.unit || 'ชิ้น'}) ครับ`);
         } else {
-          alert(`❌ ไม่พบรายการบาร์โค้ด: "${input}" ที่ตรงกับคำขอเบิกนี้!`);
+          matchedItem.approvedQty += 1;
+          if (matchedItem.approvedQty >= matchedItem.quantity) {
+            matchedItem.approvedQty = matchedItem.quantity;
+            matchedItem.checked = true;
+          }
+          renderScanTable();
         }
+      } else {
+        showCustomAlert("ไม่พบรายการ", `❌ ไม่พบรายการบาร์โค้ด:<br><span class="font-mono font-bold text-blue-600">${input}</span><br>ที่ตรงกับคำขอเบิกนี้!`);
       }
 
       document.getElementById("barcodeInput").value = "";
@@ -846,7 +899,7 @@
 
       for (const item of activeReqItems) {
         if (item.approvedQty < item.quantity && !item.adjustNote) {
-          alert(`⚠️ รายการ "${item.sku_name}" มีการจ่ายน้อยกว่าที่ขอเบิก (${item.approvedQty}/${item.quantity})\nกรุณาระบุหมายเหตุการจ่ายไม่ครบด้วยครับ`);
+          showCustomAlert("แจ้งเตือน", `⚠️ รายการ "${item.sku_name}" มีการจ่ายน้อยกว่าที่ขอเบิก (${item.approvedQty}/${item.quantity})<br>กรุณาระบุหมายเหตุการจ่ายไม่ครบด้วยครับ`);
           return;
         }
       }
@@ -860,7 +913,7 @@
           const prodSnap = await getDoc(prodRef);
 
           if (!prodSnap.exists()) {
-            alert(`❌ ไม่พบสินค้าบาร์โค้ดนี้ในระบบสต็อกแล้ว`);
+            showCustomAlert("ข้อผิดพลาด", "❌ ไม่พบสินค้าบาร์โค้ดนี้ในระบบสต็อกแล้ว", false);
             return;
           }
 
@@ -876,7 +929,7 @@
         document.getElementById("confirmApproveModal").classList.add("flex");
 
       } catch (err) {
-        alert("เกิดข้อผิดพลาดระหว่างตรวจสอบสต็อก: " + err.message);
+        showCustomAlert("ข้อผิดพลาด", "เกิดข้อผิดพลาดระหว่างตรวจสอบสต็อก: " + err.message, false);
       }
     });
 
@@ -922,7 +975,7 @@
         loadApprovals();
 
       } catch (err) {
-        alert("เกิดข้อผิดพลาดระหว่างดำเนินการ: " + err.message);
+        showCustomAlert("ข้อผิดพลาด", "เกิดข้อผิดพลาดระหว่างดำเนินการ: " + err.message, false);
       }
     });
 
@@ -959,7 +1012,7 @@
     document.getElementById("btnConfirmReject").addEventListener("click", async () => {
       const reason = document.getElementById("rejectReasonInput").value.trim();
       if (!reason) {
-        alert("⚠️ กรุณาระบุเหตุผลการปฏิเสธคำขอก่อนครับ");
+        showCustomAlert("แจ้งเตือน", "⚠️ กรุณาระบุเหตุผลการปฏิเสธคำขอก่อนครับ");
         document.getElementById("rejectReasonInput").focus();
         return;
       }
@@ -974,7 +1027,7 @@
         closeRejectModal();
         loadApprovals();
       } catch (err) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
+        showCustomAlert("ข้อผิดพลาด", "เกิดข้อผิดพลาด: " + err.message, false);
       }
     });
 

@@ -123,7 +123,7 @@
 
   </main>
 
-  <!-- Modal แจ้งเตือนสแกนสำเร็จ (สไตล์หน้า Approvals) -->
+  <!-- Modal แจ้งเตือนสแกนสำเร็จ -->
   <div id="cameraScanAlertModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
       <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl text-2xl mb-1">
@@ -202,7 +202,7 @@
     </div>
   </div>
 
-  <script type="module">
+<script type="module">
     import { db } from "./js/firebase-config.js";
     import { checkUserAuth } from "./js/auth.js";
     import { 
@@ -260,7 +260,7 @@
             sku_name: data.sku_name || (matchedSku ? matchedSku.sku_name : ""),
             category: data.category || (matchedSku ? matchedSku.category : "ทั่วไป"),
             unit: data.unit || (matchedSku ? matchedSku.unit : "ชิ้น"),
-            location: data.location || (matchedSku ? matchedSku.location : ""),
+            location: data.location || (matchedSku ? matchedSku.location : "") || "",
             attributes: data.attributes || {}
           });
         });
@@ -273,27 +273,29 @@
 
       const existingInPending = pendingMap.get(barcode);
 
-      let autoSkuId = null;
-      let autoSkuName = "";
-      let autoLocation = "";
-      let autoAttributes = {};
+      let autoSkuId = existingInPending ? existingInPending.sku_id : null;
+      let autoSkuName = existingInPending ? existingInPending.sku_name : "";
+      let autoLocation = existingInPending ? existingInPending.location : "";
+      let autoAttributes = existingInPending ? existingInPending.attributes : {};
 
-      try {
-        const qProd = query(collection(db, "products"), where("barcode", "==", barcode));
-        const prodSnap = await getDocs(qProd);
+      if (!autoSkuName) {
+        try {
+          const qProd = query(collection(db, "products"), where("barcode", "==", barcode));
+          const prodSnap = await getDocs(qProd);
 
-        if (!prodSnap.empty) {
-          const prodData = prodSnap.docs[0].data();
-          autoSkuId = prodData.sku_id || null;
-          autoLocation = prodData.location || "";
-          autoAttributes = prodData.specific_attributes || {};
+          if (!prodSnap.empty) {
+            const prodData = prodSnap.docs[0].data();
+            autoSkuId = prodData.sku_id || null;
+            autoLocation = prodData.location || "";
+            autoAttributes = prodData.specific_attributes || {};
 
-          if (autoSkuId && skusMap.has(autoSkuId)) {
-            autoSkuName = skusMap.get(autoSkuId).sku_name;
+            if (autoSkuId && skusMap.has(autoSkuId)) {
+              autoSkuName = skusMap.get(autoSkuId).sku_name;
+            }
           }
+        } catch (err) {
+          console.error("Error fetching product by barcode:", err);
         }
-      } catch (err) {
-        console.error("Error fetching product by barcode:", err);
       }
 
       if (existingInPending) {
@@ -301,12 +303,10 @@
         await setDoc(doc(db, "unregistered_skus", barcode), {
           barcode: barcode,
           qty: newQty,
-          sku_id: existingInPending.sku_id || autoSkuId,
-          sku_name: existingInPending.sku_name || autoSkuName,
-          location: existingInPending.location || autoLocation,
-          attributes: (existingInPending.attributes && Object.keys(existingInPending.attributes).length > 0) 
-            ? existingInPending.attributes 
-            : autoAttributes,
+          sku_id: autoSkuId,
+          sku_name: autoSkuName,
+          location: autoLocation || "",
+          attributes: (autoAttributes && Object.keys(autoAttributes).length > 0) ? autoAttributes : existingInPending.attributes,
           updatedAt: serverTimestamp()
         }, { merge: true });
       } else {
@@ -315,7 +315,7 @@
           qty: qty,
           sku_id: autoSkuId,
           sku_name: autoSkuName,
-          location: autoLocation,
+          location: autoLocation || "",
           attributes: autoAttributes,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -323,16 +323,35 @@
       }
     }
 
-    function triggerScanAlert(barcode) {
+    async function triggerScanAlert(barcode) {
       pendingScannedBarcode = barcode;
-      const item = pendingMap.get(barcode);
-      const skuNameDisplay = item && item.sku_name ? item.sku_name : "ยังไม่ได้กำหนด SKU";
-      const locationDisplay = item && item.location ? item.location : "-";
+      
+      // ดึงข้อมูลล่าสุดจาก DB หรือ pendingMap ทันที
+      let item = pendingMap.get(barcode);
+      let skuNameDisplay = item && item.sku_name ? item.sku_name : null;
+      let locationDisplay = item && item.location ? item.location : null;
+
+      if (!skuNameDisplay) {
+        try {
+          const qProd = query(collection(db, "products"), where("barcode", "==", barcode));
+          const prodSnap = await getDocs(qProd);
+          if (!prodSnap.empty) {
+            const pData = prodSnap.docs[0].data();
+            locationDisplay = pData.location || "-";
+            if (pData.sku_id && skusMap.has(pData.sku_id)) {
+              skuNameDisplay = skusMap.get(pData.sku_id).sku_name;
+            }
+          }
+        } catch(e) {}
+      }
+
+      const finalSkuStr = skuNameDisplay ? skuNameDisplay : '<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนด SKU</span>';
+      const finalLocStr = locationDisplay && locationDisplay !== "-" ? locationDisplay : "-";
 
       document.getElementById("camAlertContent").innerHTML = `
         <p><span class="font-bold text-slate-700">บาร์โค้ด:</span> <span class="font-mono text-blue-600">${barcode}</span></p>
-        <p><span class="font-bold text-slate-700">SKU หลัก:</span> ${skuNameDisplay}</p>
-        <p><span class="font-bold text-slate-700">โลเคชั่น:</span> <span class="text-purple-700 font-bold">📍 ${locationDisplay}</span></p>
+        <p><span class="font-bold text-slate-700">SKU หลัก:</span> ${finalSkuStr}</p>
+        <p><span class="font-bold text-slate-700">โลเคชั่น:</span> <span class="text-purple-700 font-bold">📍 ${finalLocStr}</span></p>
       `;
       document.getElementById("camAddQtyInput").value = 1;
 
@@ -486,7 +505,7 @@
       const currentCategory = item.category || (item.sku ? item.sku.category : "ทั่วไป");
       document.getElementById("modalCategory").value = currentCategory;
       document.getElementById("modalUnit").value = item.unit || (item.sku ? item.sku.unit : "ชิ้น");
-      document.getElementById("modalLocation").value = item.location || (item.sku ? item.sku.location : "");
+      document.getElementById("modalLocation").value = item.location || (item.sku ? item.sku.location : "") || "";
 
       applyCategoryPreset(currentCategory, item.attributes || {});
 
@@ -540,7 +559,7 @@
 
       const category = document.getElementById("modalCategory").value;
       const unit = document.getElementById("modalUnit").value.trim() || "ชิ้น";
-      const location = document.getElementById("modalLocation").value.trim();
+      const location = document.getElementById("modalLocation").value.trim() || "";
 
       let skuObj = Array.from(skusMap.values()).find(s => s.sku_name.toLowerCase() === skuName.toLowerCase());
       let skuId = skuObj ? skuObj.id : null;
@@ -598,7 +617,7 @@
       if (!item || (!item.sku && !item.sku_id)) return false;
 
       const finalSkuId = item.sku ? item.sku.id : item.sku_id;
-      const finalLocation = item.location || (item.sku ? item.sku.location : "");
+      const finalLocation = item.location || (item.sku ? item.sku.location : "") || "";
 
       try {
         const q = query(collection(db, "products"), where("barcode", "==", barcode));
@@ -676,7 +695,7 @@
         const skuName = (item.sku ? item.sku.sku_name : item.sku_name || "").replace(/"/g, '""');
         const category = (item.category || (item.sku ? item.sku.category : "ทั่วไป")).replace(/"/g, '""');
         const unit = (item.unit || (item.sku ? item.sku.unit : "ชิ้น")).replace(/"/g, '""');
-        const location = (item.location || (item.sku ? item.sku.location : "")).replace(/"/g, '""');
+        const location = (item.location || (item.sku ? item.sku.location : "") || "").replace(/"/g, '""');
         
         let rowStr = `"${safeBarcode}","${skuName}","${category}",${item.qty},"${unit}","${location}"`;
 
@@ -762,10 +781,10 @@
               sku_name: skuName,
               category: category,
               unit: unit,
-              location: location,
+              location: location || "",
               createdAt: serverTimestamp()
             });
-            skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit, location });
+            skusMap.set(skuId, { id: skuId, sku_name: skuName, category, unit, location: location || "" });
           }
 
           const existingItem = pendingMap.get(barcode);
@@ -777,7 +796,7 @@
             sku_name: skuName,
             category: category,
             unit: unit,
-            location: location,
+            location: location || "",
             qty: finalQty,
             attributes: attrs,
             updatedAt: serverTimestamp()
