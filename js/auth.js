@@ -79,11 +79,11 @@ function setupPendingBadgeListener() {
 
     if (pendingCount > 0) {
       if (desktopBadge) {
-        desktopBadge.innerText = `(${pendingCount})`;
+        desktopBadge.innerText = pendingCount;
         desktopBadge.classList.remove("hidden");
       }
       if (mobileBadge) {
-        mobileBadge.innerText = `(${pendingCount})`;
+        mobileBadge.innerText = pendingCount;
         mobileBadge.classList.remove("hidden");
       }
     } else {
@@ -113,11 +113,11 @@ export function setupUserPendingBadge(currentUser) {
 
     if (count > 0) {
       if (navHistoryBadge) {
-        navHistoryBadge.innerText = `(${count})`;
+        navHistoryBadge.innerText = count;
         navHistoryBadge.classList.remove("hidden");
       }
       if (mobileNavHistoryBadge) {
-        mobileNavHistoryBadge.innerText = `(${count})`;
+        mobileNavHistoryBadge.innerText = count;
         mobileNavHistoryBadge.classList.remove("hidden");
       }
     } else {
