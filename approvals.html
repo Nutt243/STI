@@ -209,7 +209,6 @@
     </div>
   </div>
 
-  <!-- Modal แจ้งเตือนข้อผิดพลาด/สแกนเกิน/ไม่พบรายการ -->
   <div id="errorModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
       <div id="errorModalIcon" class="inline-flex items-center justify-center w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl text-2xl mb-1">
@@ -393,7 +392,6 @@
         snap.forEach(d => {
           const req = d.data();
           
-          // เก็บข้อมูลของ user ปัจจุบันไว้ส่งเข้าฟังก์ชันแจ้งเตือนกลาง
           if (auth.currentUser && req.userId === auth.currentUser.uid) {
             allMyReqsForNotif.push({ id: d.id, ...req });
           }
@@ -479,9 +477,7 @@
           container.innerHTML = `<div class="bg-white p-12 rounded-2xl text-center text-slate-400 font-bold">ไม่มีรายการคำขอเบิกที่ค้างอยู่</div>`;
         }
 
-        // เรียกใช้งานระบบแจ้งเตือนกลางจาก auth.js
         initNotifications(allMyReqsForNotif);
-
         setupPrintCheckboxes();
 
       } catch (err) {
@@ -1028,7 +1024,7 @@
             adjustNote: i.adjustNote || "",
             unit: i.unit || 'ชิ้น'
           })),
-          approvedAt: serverTimestamp()
+          approvedAt: serverTimestamp() // บันทึกวันที่และเวลาอนุมัติ/จ่ายบางส่วน
         });
 
         alert("🚀 ยืนยันการอนุมัติและตัดสต็อกสินค้าเรียบร้อยแล้ว!");
@@ -1082,7 +1078,7 @@
         await updateDoc(doc(db, "requisitions", rejectTargetReqId), {
           status: "rejected",
           rejectReason: reason,
-          rejectedAt: serverTimestamp()
+          rejectedAt: serverTimestamp() // บันทึกวันที่และเวลาปฏิเสธ
         });
         alert("❌ ปฏิเสธคำขอเรียบร้อยแล้ว รายการถูกย้ายไปที่หน้าประวัติการเบิก (History)");
         closeRejectModal();
