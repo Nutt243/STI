@@ -160,18 +160,18 @@ export function initNotifications(requisitionsList) {
 }
 
 function renderNotificationsGlobal() {
-  const notifContainer = document.getElementById("notifListContainer");
-  const badge = document.getElementById("notifBadge");
-  const mobileBadge = document.getElementById("mobileNotifBadge");
+  const notifContainers = document.querySelectorAll("#notifListContainer");
+  const badges = document.querySelectorAll("#notifBadge, #mobileNotifBadge");
 
-  if (!notifContainer) return;
+  if (notifContainers.length === 0) return;
 
   const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
 
   if (processedReqs.length === 0) {
-    notifContainer.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>`;
-    if (badge) badge.classList.add("hidden");
-    if (mobileBadge) mobileBadge.classList.add("hidden");
+    notifContainers.forEach(container => {
+      container.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>`;
+    });
+    badges.forEach(b => b.classList.add("hidden"));
     return;
   }
 
@@ -183,15 +183,12 @@ function renderNotificationsGlobal() {
   });
 
   if (hasUnread) {
-    if (badge) badge.classList.remove("hidden");
-    if (mobileBadge) mobileBadge.classList.remove("hidden");
+    badges.forEach(b => b.classList.remove("hidden"));
   } else {
-    if (badge) badge.classList.add("hidden");
-    if (mobileBadge) mobileBadge.classList.add("hidden");
+    badges.forEach(b => b.classList.add("hidden"));
   }
 
-  notifContainer.innerHTML = "";
-
+  let htmlContent = "";
   processedReqs.slice(0, 5).forEach(req => {
     const isApproved = req.status === "approved";
     const dateStr = req.approvedAt || req.rejectedAt 
@@ -199,70 +196,71 @@ function renderNotificationsGlobal() {
       : '-';
     const itemNames = (req.items || []).map(i => i.sku_name).join(", ");
 
-    const div = document.createElement("a");
-    div.href = "history.html";
-    div.className = "block p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 transition text-xs space-y-1";
-
-    div.innerHTML = `
-      <div class="flex justify-between items-center">
-        <span class="font-bold ${isApproved ? 'text-emerald-700' : 'text-rose-600'}">
-          ${isApproved ? '🎉 คำขอได้รับการอนุมัติแล้ว' : '❌ คำขอไม่ได้รับการอนุมัติ'}
-        </span>
-        <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
-      </div>
-      <p class="text-slate-700 font-medium truncate">${itemNames}</p>
-      ${!isApproved && req.rejectReason ? `<p class="text-[10px] text-rose-500 truncate">เหตุผล: ${req.rejectReason}</p>` : ''}
+    htmlContent += `
+      <a href="history.html" class="block p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 transition text-xs space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="font-bold ${isApproved ? 'text-emerald-700' : 'text-rose-600'}">
+            ${isApproved ? '🎉 คำขอได้รับการอนุมัติแล้ว' : '❌ คำขอไม่ได้รับการอนุมัติ'}
+          </span>
+          <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
+        </div>
+        <p class="text-slate-700 font-medium truncate">${itemNames}</p>
+        ${!isApproved && req.rejectReason ? `<p class="text-[10px] text-rose-500 truncate">เหตุผล: ${req.rejectReason}</p>` : ''}
+      </a>
     `;
+  });
 
-    notifContainer.appendChild(div);
+  notifContainers.forEach(container => {
+    container.innerHTML = htmlContent;
   });
 }
 
+window.addEventListener("storage", (e) => {
+  if (auth.currentUser && e.key === `lastReadNotif_${auth.currentUser.uid}`) {
+    renderNotificationsGlobal();
+  }
+});
+
 document.addEventListener("DOMContentLoaded", () => {
-  const btnBell = document.getElementById("btnNotifBell");
-  const btnMobileBell = document.getElementById("btnMobileNotifBell");
-  const dropdown = document.getElementById("notifDropdown");
-  const badge = document.getElementById("notifBadge");
-  const mobileBadge = document.getElementById("mobileNotifBadge");
+  const btnBells = document.querySelectorAll("#btnNotifBell, #btnMobileNotifBell");
+  const dropdowns = document.querySelectorAll("#notifDropdown");
+  const badges = document.querySelectorAll("#notifBadge, #mobileNotifBadge");
 
   function toggleDropdown() {
-    if (!dropdown) return;
-    const isHidden = dropdown.classList.contains("hidden");
+    if (dropdowns.length === 0) return;
+    
+    const isHidden = dropdowns[0].classList.contains("hidden");
 
     if (isHidden) {
-      if (badge) badge.classList.add("hidden");
-      if (mobileBadge) mobileBadge.classList.add("hidden");
+      badges.forEach(b => b.classList.add("hidden"));
 
       const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
       if (processedReqs.length > 0 && auth.currentUser) {
-        localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, Date.now());
+        const now = Date.now();
+        localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, now);
+        window.dispatchEvent(new Event("storage"));
       }
 
-      dropdown.classList.remove("hidden");
+      dropdowns.forEach(d => d.classList.remove("hidden"));
     } else {
-      dropdown.classList.add("hidden");
+      dropdowns.forEach(d => d.classList.add("hidden"));
     }
   }
 
-  if (btnBell) {
-    btnBell.addEventListener("click", (e) => {
+  btnBells.forEach(btn => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       toggleDropdown();
     });
-  }
-
-  if (btnMobileBell) {
-    btnMobileBell.addEventListener("click", (e) => {
-      e.stopPropagation();
-      toggleDropdown();
-    });
-  }
+  });
 
   document.addEventListener("click", (e) => {
-    if (dropdown && !dropdown.contains(e.target) && 
-        (!btnBell || !btnBell.contains(e.target)) && 
-        (!btnMobileBell || !btnMobileBell.contains(e.target))) {
-      dropdown.classList.add("hidden");
+    let clickedInside = false;
+    btnBells.forEach(btn => { if (btn.contains(e.target)) clickedInside = true; });
+    dropdowns.forEach(d => { if (d.contains(e.target)) clickedInside = true; });
+
+    if (!clickedInside) {
+      dropdowns.forEach(d => d.classList.add("hidden"));
     }
   });
 });
