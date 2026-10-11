@@ -165,6 +165,7 @@ function renderNotificationsGlobal() {
 
   if (notifContainers.length === 0) return;
 
+  // 1. กรองคำขอที่อนุมัติหรือไม่อนุมัติแล้ว
   const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
 
   if (processedReqs.length === 0) {
@@ -174,6 +175,13 @@ function renderNotificationsGlobal() {
     badges.forEach(b => b.classList.add("hidden"));
     return;
   }
+
+  // 2. [เพิ่มเข้ามาใหม่] เรียงลำดับจาก "ล่าสุด" ขึ้นมาไว้บนสุด
+  processedReqs.sort((a, b) => {
+    const timeA = a.approvedAt || a.rejectedAt ? (a.approvedAt || a.rejectedAt).toMillis() : 0;
+    const timeB = b.approvedAt || b.rejectedAt ? (b.approvedAt || b.rejectedAt).toMillis() : 0;
+    return timeB - timeA; // เรียงจากมากไปน้อย (ใหม่สุดอยู่บน)
+  });
 
   const lastReadTime = parseInt(localStorage.getItem(`lastReadNotif_${auth.currentUser?.uid}`) || "0");
 
