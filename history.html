@@ -51,7 +51,7 @@
       </div>
 
       <!-- Mobile Right Controls -->
-      <div class="flex md:hidden items-center space-x-2">
+      <div class="flex md:hidden items-center space-x-2 relative">
         <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -111,10 +111,10 @@
   <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📜 ประวัติการขอเบิกพัสดุทั้งหมดของคุณ</h1>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📜 ประวัติการขอเบิกพัสดุทั้งหมด</h1>
         <p class="text-xs text-slate-500 mt-1">ตรวจสอบสถานะรายการขอเบิกย้อนหลังทั้งหมดได้ที่นี่</p>
       </div>
-      <div class="flex items-center gap-2 w-full sm:w-auto">
+      <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
         <select id="statusFilter" class="w-full sm:w-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500">
           <option value="all">สถานะทั้งหมด</option>
           <option value="pending">รออนุมัติ</option>
@@ -122,6 +122,16 @@
           <option value="rejected">ไม่อนุมัติ</option>
         </select>
       </div>
+    </div>
+
+    <!-- แท็บสลับสำหรับ Admin / Manager (ซ่อนไว้สำหรับ User ทั่วไป) -->
+    <div id="adminTabContainer" class="hidden flex bg-slate-200 p-1 rounded-xl max-w-xs">
+      <button id="tabMyHistory" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow-sm transition">
+        ประวัติของฉัน
+      </button>
+      <button id="tabAllHistory" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition">
+        ประวัติทั้งหมด (ระบบ)
+      </button>
     </div>
 
     <div id="historyListContainer" class="space-y-4">
@@ -132,40 +142,64 @@
   <script type="module">
     import { db, auth } from "./js/firebase-config.js";
     import { checkUserAuth, initNotifications } from "./js/auth.js";
-    import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin', 'manager', 'user']);
 
-    let allMyRequisitions = [];
+    let allLoadedRequisitions = [];
+    let usersMap = new Map();
+    let currentViewMode = "my"; // "my" หรือ "all"
+    let currentUserRole = "user";
 
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
       if (user) {
-        loadHistory(user.uid);
+        // เช็ค Role ของผู้ใช้ปัจจุบัน
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          currentUserRole = (userDoc.data().role || "user").toLowerCase();
+        }
+
+        // โหลดรายชื่อผู้ใช้ทั้งหมดมาทำ Cache ไว้แสดงชื่อ/เมล
+        const usersSnap = await getDocs(collection(db, "users"));
+        usersMap.clear();
+        usersSnap.forEach(uDoc => {
+          usersMap.set(uDoc.id, uDoc.data());
+        });
+
+        // ถ้าเป็น admin หรือ manager ให้แสดงแท็บสลับ
+        if (currentUserRole === "admin" || currentUserRole === "manager") {
+          document.getElementById("adminTabContainer").classList.remove("hidden");
+        }
+
+        loadHistoryData(user.uid);
       }
     });
 
-    async function loadHistory(uid) {
+    async function loadHistoryData(uid) {
       const container = document.getElementById("historyListContainer");
       container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400">กำลังโหลดประวัติ...</div>`;
 
       try {
-        const q = query(
-          collection(db, "requisitions"),
-          where("userId", "==", uid),
-          orderBy("createdAt", "desc")
-        );
+        let q;
+        // ถ้าดูทั้งหมด (Admin/Manager) ให้ดึงทั้งหมด (เรียงตามเวลาสร้าง) หรือถ้าดูเฉพาะตัวเองให้ query เฉพาะ uid
+        if (currentViewMode === "all" && (currentUserRole === "admin" || currentUserRole === "manager")) {
+          q = query(collection(db, "requisitions"), orderBy("createdAt", "desc"));
+        } else {
+          q = query(collection(db, "requisitions"), where("userId", "==", uid), orderBy("createdAt", "desc"));
+        }
 
         const snapshot = await getDocs(q);
-        allMyRequisitions = [];
+        allLoadedRequisitions = [];
 
         snapshot.forEach(d => {
-          allMyRequisitions.push({ id: d.id, ...d.data() });
+          allLoadedRequisitions.push({ id: d.id, ...d.data() });
         });
 
-        renderHistoryList(allMyRequisitions);
+        renderHistoryList(allLoadedRequisitions);
         
-        // ส่งข้อมูลเข้าสู่ระบบแจ้งเตือนกลางจาก auth.js
-        initNotifications(allMyRequisitions);
+        // ส่งข้อมูลแจ้งเตือนไปยังระบบกลาง
+        const myReqs = allLoadedRequisitions.filter(r => r.userId === uid);
+        initNotifications(myReqs);
 
       } catch (err) {
         console.error(err);
@@ -185,13 +219,27 @@
       list.forEach(req => {
         const dateStr = req.createdAt ? new Date(req.createdAt.toDate()).toLocaleString('th-TH') : "-";
         
+        // ดึงข้อมูลผู้เบิกจาก usersMap หรือ req object
+        const userInfo = usersMap.get(req.userId) || {};
+        const realName = userInfo.name || (req.userName && !req.userName.includes("@") ? req.userName : null);
+        const userEmail = userInfo.email || (req.userName && req.userName.includes("@") ? req.userName : null);
+
+        let displayNameStr = "";
+        if (realName && userEmail) {
+          displayNameStr = `${realName} <span class="text-xs text-slate-400 font-normal">(${userEmail})</span>`;
+        } else if (realName) {
+          displayNameStr = realName;
+        } else if (userEmail) {
+          displayNameStr = userEmail;
+        } else {
+          displayNameStr = req.userName || "ไม่ระบุชื่อ";
+        }
+
         let statusBadge = `<span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">⏳ รออนุมัติ</span>`;
         if (req.status === 'approved') {
-          const approvedDateStr = req.approvedAt ? new Date(req.approvedAt.toDate()).toLocaleString('th-TH') : "";
-          statusBadge = `<span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold" title="${approvedDateStr}">✅ อนุมัติแล้ว</span>`;
+          statusBadge = `<span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">✅ อนุมัติแล้ว</span>`;
         } else if (req.status === 'rejected') {
-          const rejectedDateStr = req.rejectedAt ? new Date(req.rejectedAt.toDate()).toLocaleString('th-TH') : "";
-          statusBadge = `<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold" title="${rejectedDateStr}">❌ ไม่อนุมัติ</span>`;
+          statusBadge = `<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold">❌ ไม่อนุมัติ</span>`;
         }
 
         const itemsRows = (req.items || []).map(i => {
@@ -232,6 +280,7 @@
             <div>
               <span class="text-xs text-slate-400 font-mono">ID: ${req.id}</span>
               <p class="text-xs text-slate-500 mt-0.5">วันที่ทำรายการ: ${dateStr}</p>
+              <p class="text-xs font-bold text-slate-700 mt-1">ผู้ขอเบิก: ${displayNameStr}</p>
             </div>
             <div>${statusBadge}</div>
           </div>
@@ -256,12 +305,30 @@
       });
     }
 
+    // จัดการสลับแท็บ (ประวัติของฉัน vs ประวัติทั้งหมด)
+    const tabMyHistory = document.getElementById("tabMyHistory");
+    const tabAllHistory = document.getElementById("tabAllHistory");
+
+    tabMyHistory.addEventListener("click", () => {
+      currentViewMode = "my";
+      tabMyHistory.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow-sm transition";
+      tabAllHistory.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition";
+      loadHistoryData(auth.currentUser.uid);
+    });
+
+    tabAllHistory.addEventListener("click", () => {
+      currentViewMode = "all";
+      tabAllHistory.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow-sm transition";
+      tabMyHistory.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition";
+      loadHistoryData(auth.currentUser.uid);
+    });
+
     document.getElementById("statusFilter").addEventListener("change", (e) => {
       const status = e.target.value;
       if (status === "all") {
-        renderHistoryList(allMyRequisitions);
+        renderHistoryList(allLoadedRequisitions);
       } else {
-        const filtered = allMyRequisitions.filter(r => r.status === status);
+        const filtered = allLoadedRequisitions.filter(r => r.status === status);
         renderHistoryList(filtered);
       }
     });
