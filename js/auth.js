@@ -1,6 +1,9 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+let unsubscribePendingListener = null;
+let unsubscribeUserPendingListener = null; // เพิ่มตัวแปรเก็บ listener ของ user
 
 export function checkUserAuth(allowedRoles = []) {
   onAuthStateChanged(auth, async (user) => {
@@ -35,6 +38,7 @@ export function checkUserAuth(allowedRoles = []) {
 
       if (userRole === "admin" || userRole === "manager") {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.remove("hidden"));
+        setupPendingBadgeListener();
       } else {
         document.querySelectorAll(".manager-only").forEach(el => el.classList.add("hidden"));
       }
@@ -44,6 +48,9 @@ export function checkUserAuth(allowedRoles = []) {
       } else {
         document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
       }
+
+      // เรียกใช้งานฟังก์ชันผูกตัวเลขแจ้งเตือนค้างเบิกของผู้ใช้ทั่วไปในทุกหน้า
+      setupUserPendingBadge(user);
 
       if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
         alert(`⚠️ หน้านี้สำหรับสิทธิ์ ${allowedRoles.join(" / ").toUpperCase()} เท่านั้น`);
@@ -58,6 +65,69 @@ export function checkUserAuth(allowedRoles = []) {
       await signOut(auth);
       window.location.href = "login.html";
     }
+  });
+}
+
+function setupPendingBadgeListener() {
+  if (unsubscribePendingListener) return;
+
+  const qPending = query(collection(db, "requisitions"), where("status", "==", "pending"));
+  unsubscribePendingListener = onSnapshot(qPending, (snapshot) => {
+    const pendingCount = snapshot.size;
+
+    const desktopBadge = document.getElementById("navPendingCount");
+    const mobileBadge = document.getElementById("mobileNavPendingCount");
+
+    if (pendingCount > 0) {
+      if (desktopBadge) {
+        desktopBadge.innerText = `(${pendingCount})`;
+        desktopBadge.classList.remove("hidden");
+      }
+      if (mobileBadge) {
+        mobileBadge.innerText = `(${pendingCount})`;
+        mobileBadge.classList.remove("hidden");
+      }
+    } else {
+      if (desktopBadge) desktopBadge.classList.add("hidden");
+      if (mobileBadge) mobileBadge.classList.add("hidden");
+    }
+  }, (err) => {
+    console.error("Error listening to pending requisitions:", err);
+  });
+}
+
+// อัปเดตฟังก์ชันให้ทำงานแบบ Real-time ด้วย onSnapshot เพื่อให้ตัวเลขเปลี่ยนทันที
+export function setupUserPendingBadge(currentUser) {
+  if (!currentUser) return;
+  if (unsubscribeUserPendingListener) return;
+
+  const qMy = query(
+    collection(db, "requisitions"), 
+    where("userId", "==", currentUser.uid), 
+    where("status", "==", "pending")
+  );
+
+  unsubscribeUserPendingListener = onSnapshot(qMy, (snapshot) => {
+    const count = snapshot.size;
+
+    const navHistoryBadge = document.getElementById("navHistoryPendingCount");
+    const mobileNavHistoryBadge = document.getElementById("mobileNavHistoryPendingCount");
+
+    if (count > 0) {
+      if (navHistoryBadge) {
+        navHistoryBadge.innerText = `(${count})`;
+        navHistoryBadge.classList.remove("hidden");
+      }
+      if (mobileNavHistoryBadge) {
+        mobileNavHistoryBadge.innerText = `(${count})`;
+        mobileNavHistoryBadge.classList.remove("hidden");
+      }
+    } else {
+      if (navHistoryBadge) navHistoryBadge.classList.add("hidden");
+      if (mobileNavHistoryBadge) mobileNavHistoryBadge.classList.add("hidden");
+    }
+  }, (err) => {
+    console.error("Error listening to user pending badge:", err);
   });
 }
 

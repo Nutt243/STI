@@ -9,7 +9,7 @@
 <body class="bg-slate-100 min-h-screen flex flex-col font-sans text-slate-800" style="display: none;">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="max-w-full px-4 mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
       
       <a href="index.html" class="flex items-center space-x-3">
@@ -17,22 +17,63 @@
         <span class="font-bold text-lg tracking-tight">StockMaster</span>
       </a>
 
+      <!-- Desktop Menu -->
       <div class="hidden md:flex items-center space-x-1">
-        <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">หน้าหลัก/สต็อก</a>
+        <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">หน้าหลัก</a>
         <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
-        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">ประวัติการเบิก</a>
+
+        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1">
+          <span>ประวัติการเบิก</span>
+          <span id="navHistoryPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
+        </a>
         
-        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition">⏳ อนุมัติคำขอ</a>
+        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition items-center gap-1">
+          <span>⏳ อนุมัติคำขอ</span>
+          <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
+        </a>
+
         <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
+        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังสินค้า</a>
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
+      <!-- Right User Controls & Notification Bell -->
       <div class="hidden md:flex items-center space-x-3">
+        <div class="relative">
+          <button id="btnNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+            <span id="notifBadge" class="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+          </button>
+
+          <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 z-50 text-slate-800 space-y-2">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 class="font-black text-xs text-slate-800 flex items-center gap-1.5">🔔 แจ้งเตือนการอนุมัติคำขอ</h3>
+              <span class="text-[10px] text-slate-400">อัปเดตล่าสุด</span>
+            </div>
+            <div id="notifListContainer" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              <p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>
+            </div>
+            <div class="border-t border-slate-100 pt-2 text-center">
+              <a href="history.html" class="text-[11px] font-bold text-blue-600 hover:underline">ดูประวัติทั้งหมด &rarr;</a>
+            </div>
+          </div>
+        </div>
+
         <span id="userDisplayName" class="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 font-mono">Loading...</span>
         <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
       </div>
 
-      <div class="flex md:hidden items-center">
+      <!-- Mobile Right Controls -->
+      <div class="flex md:hidden items-center space-x-2">
+        <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span id="mobileNotifBadge" class="absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+
         <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -43,22 +84,34 @@
     </div>
   </div>
 
+  <!-- Mobile Dropdown Menu -->
   <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
     <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
       <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
       <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
     </div>
-    <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">หน้าหลัก/สต็อก</a>
+    <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">หน้าหลัก</a>
     <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
-    <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">ประวัติการเบิก</a>
-    <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800">⏳ อนุมัติคำขอ</a>
+    
+    <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex justify-between items-center">
+      <span>ประวัติการเบิก</span>
+      <span id="mobileNavHistoryPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+    </a>
+
+    <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 flex justify-between items-center">
+      <span>⏳ อนุมัติคำขอ</span>
+      <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+    </a>
+    
     <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังสินค้า</a>
     <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
   </div>
 </nav>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-grow space-y-6">
     
+    <!-- 1. Banner ต้อนรับ -->
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-slate-800">ยินดีต้อนรับสู่ระบบจัดการสต็อกพัสดุ</h1>
@@ -69,10 +122,11 @@
       </a>
     </div>
 
+    <!-- 2. ประวัติการเบิกล่าสุด (3 รายการพอ) -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center">
-        <h2 class="text-base sm:text-lg font-bold text-slate-800">ประวัติการเบิกของคุณ (ล่าสุด)</h2>
-        <a href="history.html" class="text-xs font-semibold text-blue-600 hover:text-blue-800">ดูทั้งหมด &rarr;</a>
+        <h2 class="text-base sm:text-lg font-bold text-slate-800">📜 ประวัติการขอเบิกล่าสุดของคุณ (3 รายการ)</h2>
+        <a href="history.html" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition">ดูทั้งหมด &rarr;</a>
       </div>
 
       <div class="overflow-x-auto">
@@ -92,6 +146,26 @@
       </div>
     </div>
 
+    <!-- 3. สรุปการเบิกสะสมตาม SKU ของคุณ -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">📊 สรุปยอดการเบิกพัสดุสะสมตาม SKU ของคุณ</h2>
+          <p class="text-xs text-slate-500">นับเฉพาะคำขอเบิกที่ได้รับการอนุมัติแล้วเท่านั้น (กดขยายเพื่อดูรายการย่อยที่เคยเบิกไป)</p>
+        </div>
+      </div>
+
+      <div id="skuSummaryAccordionList" class="space-y-3">
+        <div class="p-6 text-center text-slate-400 text-xs">กำลังคำนวณสรุปยอดเบิก...</div>
+      </div>
+
+      <div id="toggleSkuContainer" class="hidden text-center pt-2">
+        <button id="btnToggleAllSkus" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
+          ดูสรุป SKU ทั้งหมด
+        </button>
+      </div>
+    </div>
+
   </main>
 
   <script type="module">
@@ -102,14 +176,16 @@
 
     checkUserAuth(['admin', 'manager', 'user']);
 
+    let allUserRequisitions = [];
+    let showAllSkus = false;
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        loadUserRecentHistory(user.uid);
+        loadDashboardData(user.uid);
       }
     });
 
-    async function loadUserRecentHistory(uid) {
-      const tbody = document.getElementById("myHistoryTableBody");
+    async function loadDashboardData(uid) {
       try {
         const q = query(
           collection(db, "requisitions"),
@@ -118,52 +194,285 @@
 
         const snapshot = await getDocs(q);
 
-        if (snapshot.empty) {
-          tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">ยังไม่มีประวัติการขอเบิกพัสดุ</td></tr>`;
-          return;
-        }
-
-        let list = [];
+        allUserRequisitions = [];
         snapshot.forEach(docSnap => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
+          allUserRequisitions.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        list.sort((a, b) => {
+        allUserRequisitions.sort((a, b) => {
           const tA = a.createdAt ? a.createdAt.toMillis() : 0;
           const tB = b.createdAt ? b.createdAt.toMillis() : 0;
           return tB - tA;
         });
 
-        const recentList = list.slice(0, 5);
-
-        let html = "";
-        recentList.forEach(item => {
-          const dateStr = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString('th-TH') : '-';
-          
-          let statusBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-semibold">รออนุมัติ</span>`;
-          if (item.status === 'approved') {
-            statusBadge = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-semibold">อนุมัติแล้ว</span>`;
-          } else if (item.status === 'rejected') {
-            statusBadge = `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-[11px] font-semibold">ไม่อนุมัติ</span>`;
-          }
-
-          const itemSummary = (item.items || []).map(i => `${i.sku_name} (${i.quantity} ${i.unit || 'ชิ้น'})`).join(", ");
-
-          html += `
-            <tr class="hover:bg-slate-50 border-b border-slate-100">
-              <td class="p-3 sm:p-4 text-xs text-slate-500 whitespace-nowrap">${dateStr}</td>
-              <td class="p-3 sm:p-4 font-semibold text-slate-800">${itemSummary || '-'}</td>
-              <td class="p-3 sm:p-4 text-slate-600 text-xs">${item.note || '-'}</td>
-              <td class="p-3 sm:p-4 whitespace-nowrap">${statusBadge}</td>
-            </tr>
-          `;
-        });
-
-        tbody.innerHTML = html;
+        renderRecentHistoryTable();
+        renderSkuSummary();
+        renderNotifications();
 
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</td></tr>`;
+        console.error(err);
+        document.getElementById("myHistoryTableBody").innerHTML = `<tr><td colspan="4" class="p-8 text-center text-rose-500">เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}</td></tr>`;
+        document.getElementById("skuSummaryAccordionList").innerHTML = `<div class="p-6 text-center text-rose-500 text-xs">เกิดข้อผิดพลาดในการดึงข้อมูล</div>`;
       }
+    }
+
+    function renderRecentHistoryTable() {
+      const tbody = document.getElementById("myHistoryTableBody");
+
+      if (allUserRequisitions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">ยังไม่มีประวัติการขอเบิกพัสดุ</td></tr>`;
+        return;
+      }
+
+      const recentList = allUserRequisitions.slice(0, 3);
+
+      let html = "";
+      recentList.forEach(item => {
+        const dateStr = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString('th-TH') : '-';
+        
+        let statusBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-semibold">รออนุมัติ</span>`;
+        if (item.status === 'approved') {
+          statusBadge = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-semibold">อนุมัติแล้ว</span>`;
+        } else if (item.status === 'rejected') {
+          statusBadge = `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-[11px] font-semibold">ไม่อนุมัติ</span>`;
+        }
+
+        const itemSummary = (item.items || []).map(i => `${i.sku_name} (${i.quantity} ${i.unit || 'ชิ้น'})`).join(", ");
+
+        html += `
+          <tr class="hover:bg-slate-50 border-b border-slate-100">
+            <td class="p-3 sm:p-4 text-xs text-slate-500 whitespace-nowrap">${dateStr}</td>
+            <td class="p-3 sm:p-4 font-semibold text-slate-800">${itemSummary || '-'}</td>
+            <td class="p-3 sm:p-4 text-slate-600 text-xs">${item.note || '-'}</td>
+            <td class="p-3 sm:p-4 whitespace-nowrap">${statusBadge}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function renderSkuSummary() {
+      const container = document.getElementById("skuSummaryAccordionList");
+      const toggleContainer = document.getElementById("toggleSkuContainer");
+      const btnToggle = document.getElementById("btnToggleAllSkus");
+
+      const approvedReqs = allUserRequisitions.filter(r => r.status === "approved");
+
+      if (approvedReqs.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">ยังไม่มีประวัติรายการเบิกที่ได้รับการอนุมัติ</div>`;
+        toggleContainer.classList.add("hidden");
+        return;
+      }
+
+      const skuMap = new Map();
+
+      approvedReqs.forEach(req => {
+        (req.items || []).forEach(item => {
+          const skuKey = item.sku_name || "ไม่ระบุ SKU";
+          const qtyUsed = item.approvedQty !== undefined ? item.approvedQty : item.quantity;
+          if (qtyUsed <= 0) return;
+
+          if (!skuMap.has(skuKey)) {
+            skuMap.set(skuKey, {
+              skuName: skuKey,
+              totalQty: 0,
+              unit: item.unit || "ชิ้น",
+              subItemsMap: new Map()
+            });
+          }
+
+          const skuData = skuMap.get(skuKey);
+          skuData.totalQty += qtyUsed;
+
+          const attrStr = Object.entries(item.attributes || {})
+            .sort((a,b) => a[0].localeCompare(b[0]))
+            .map(([k,v]) => `${k}:${v}`)
+            .join(", ") || "ทั่วไป";
+          const subKey = `${item.barcode || 'NO_BARCODE'}_${attrStr}`;
+
+          if (!skuData.subItemsMap.has(subKey)) {
+            skuData.subItemsMap.set(subKey, {
+              barcode: item.barcode || "",
+              attributesStr: attrStr,
+              qty: 0,
+              unit: item.unit || "ชิ้น"
+            });
+          }
+
+          skuData.subItemsMap.get(subKey).qty += qtyUsed;
+        });
+      });
+
+      const skuList = Array.from(skuMap.values());
+
+      if (skuList.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">ยังไม่มีประวัติรายการเบิกที่ได้รับการอนุมัติ</div>`;
+        toggleContainer.classList.add("hidden");
+        return;
+      }
+
+      const visibleSkuList = showAllSkus ? skuList : skuList.slice(0, 3);
+
+      container.innerHTML = "";
+
+      visibleSkuList.forEach((sku, index) => {
+        const accordionId = `index-sku-acc-${index}`;
+        const subList = Array.from(sku.subItemsMap.values());
+
+        const div = document.createElement("div");
+        div.className = "bg-slate-50/70 rounded-xl border border-slate-200 overflow-hidden text-xs";
+
+        div.innerHTML = `
+          <button onclick="toggleIndexAccordion('${accordionId}')" class="w-full p-3 flex justify-between items-center hover:bg-slate-100 text-left transition gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span id="icon-${accordionId}" class="text-slate-400 font-bold transition-transform transform shrink-0">▶</span>
+              <div class="min-w-0">
+                <h3 class="font-bold text-slate-800 text-sm truncate">${sku.skuName}</h3>
+                <p class="text-[11px] text-slate-400 truncate">รวมรายการเบิกย่อย ${subList.length} รายการ</p>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+                เบิกสะสมแล้ว: ${sku.totalQty} ${sku.unit}
+              </span>
+            </div>
+          </button>
+
+          <div id="${accordionId}" class="hidden border-t border-slate-200 bg-white p-2.5 space-y-1.5">
+            ${subList.map(sub => {
+              const barcodeDisplay = sub.barcode ? `<span class="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${sub.barcode}</span>` : '<span class="text-slate-400">-</span>';
+              return `
+                <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <div class="min-w-0 pr-2">
+                    <div class="flex items-center gap-1.5">${barcodeDisplay} <span class="text-[11px] text-slate-600 font-medium">${sub.attributesStr}</span></div>
+                  </div>
+                  <div class="font-bold text-slate-700 whitespace-nowrap">
+                    ${sub.qty} ${sub.unit}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      if (skuList.length > 3) {
+        toggleContainer.classList.remove("hidden");
+        if (showAllSkus) {
+          btnToggle.innerText = "ย่อเหลือ 3 SKU";
+        } else {
+          btnToggle.innerText = `ดูสรุป SKU ทั้งหมด (+${skuList.length - 3} รายการ)`;
+        }
+      } else {
+        toggleContainer.classList.add("hidden");
+      }
+    }
+
+    // ฟังก์ชันสำหรับเรนเดอร์การแจ้งเตือนและจัดการระบบ Mark as Read
+    function renderNotifications() {
+      const notifContainer = document.getElementById("notifListContainer");
+      const badge = document.getElementById("notifBadge");
+      const mobileBadge = document.getElementById("mobileNotifBadge");
+
+      // กรองเฉพาะรายการที่ได้รับการอนุมัติหรือปฏิเสธแล้ว
+      const processedReqs = allUserRequisitions.filter(r => r.status === "approved" || r.status === "rejected");
+
+      if (processedReqs.length === 0) {
+        notifContainer.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>`;
+        badge.classList.add("hidden");
+        mobileBadge.classList.add("hidden");
+        return;
+      }
+
+      // ดึง timestamp ล่าสุดที่มีการเปลี่ยนแปลง
+      const latestReq = processedReqs[0];
+      const latestTime = latestReq.approvedAt || latestReq.rejectedAt ? (latestReq.approvedAt || latestReq.rejectedAt).toMillis() : 0;
+      
+      // ตรวจสอบจาก localStorage ว่าผู้ใช้เคยกดอ่านข้อความล่าสุดนี้หรือยัง
+      const lastReadTime = parseInt(localStorage.getItem(`lastReadNotif_${auth.currentUser.uid}`) || "0");
+      const hasUnread = latestTime > lastReadTime;
+
+      if (hasUnread) {
+        badge.innerText = processedReqs.length;
+        badge.classList.remove("hidden");
+        mobileBadge.innerText = processedReqs.length;
+        mobileBadge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+        mobileBadge.classList.add("hidden");
+      }
+
+      notifContainer.innerHTML = "";
+
+      processedReqs.slice(0, 5).forEach(req => {
+        const isApproved = req.status === "approved";
+        const dateStr = req.approvedAt || req.rejectedAt ? new Date((req.approvedAt || req.rejectedAt).toDate()).toLocaleDateString('th-TH') : '-';
+        const itemNames = (req.items || []).map(i => i.sku_name).join(", ");
+
+        const div = document.createElement("a");
+        div.href = "history.html";
+        div.className = "block p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 transition text-xs space-y-1";
+
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-bold ${isApproved ? 'text-emerald-700' : 'text-rose-600'}">
+              ${isApproved ? '🎉 คำขอได้รับการอนุมัติแล้ว' : '❌ คำขอไม่ได้รับการอนุมัติ'}
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
+          </div>
+          <p class="text-slate-700 font-medium truncate">${itemNames}</p>
+          ${!isApproved && req.rejectReason ? `<p class="text-[10px] text-rose-500 truncate">เหตุผล: ${req.rejectReason}</p>` : ''}
+        `;
+
+        notifContainer.appendChild(div);
+      });
+    }
+
+    // จัดการเหตุการณ์เมื่อคลิกที่ปุ่มกระดิ่ง เพื่อทำการ Mark as Read ทันที
+    const btnBell = document.getElementById("btnNotifBell");
+    const dropdown = document.getElementById("notifDropdown");
+    const btnMobileBell = document.getElementById("btnMobileNotifBell");
+    const badge = document.getElementById("notifBadge");
+    const mobileBadge = document.getElementById("mobileNotifBadge");
+
+    function markNotificationsAsRead() {
+      if (dropdown.classList.contains("hidden")) {
+        // กำลังจะเปิดเมนู ให้ซ่อน Badge และบันทึกเวลาที่อ่านลง localStorage
+        badge.classList.add("hidden");
+        mobileBadge.classList.add("hidden");
+        
+        const processedReqs = allUserRequisitions.filter(r => r.status === "approved" || r.status === "rejected");
+        if (processedReqs.length > 0) {
+          const latestReq = processedReqs[0];
+          const latestTime = latestReq.approvedAt || latestReq.rejectedAt ? (latestReq.approvedAt || latestReq.rejectedAt).toMillis() : Date.now();
+          if (auth.currentUser) {
+            localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, latestTime);
+          }
+        }
+      }
+      dropdown.classList.toggle("hidden");
+    }
+
+    if (btnBell && dropdown) {
+      btnBell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        markNotificationsAsRead();
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!dropdown.contains(e.target) && e.target !== btnBell) {
+          dropdown.classList.add("hidden");
+        }
+      });
+    }
+
+    if (btnMobileBell && dropdown) {
+      btnMobileBell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        markNotificationsAsRead();
+      });
     }
   </script>
 </body>
