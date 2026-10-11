@@ -41,11 +41,12 @@
       <div class="hidden md:flex items-center space-x-3">
         <div class="relative">
           <button id="btnNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-            </svg>
-            <span id="notifBadge" class="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
-          </button>
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+  </svg>
+  <!-- เปลี่ยนเป็นตุ่มแดงกลมๆ แบบนี้ -->
+  <span id="notifBadge" class="absolute top-1.5 right-1.5 bg-rose-500 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 hidden"></span>
+</button>
 
           <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 z-50 text-slate-800 space-y-2">
             <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -67,12 +68,13 @@
 
       <!-- Mobile Right Controls -->
       <div class="flex md:hidden items-center space-x-2">
-        <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-          </svg>
-          <span id="mobileNotifBadge" class="absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
-        </button>
+       <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+  </svg>
+  <!-- เปลี่ยนเป็นตุ่มแดงกลมๆ แบบนี้ -->
+  <span id="mobileNotifBadge" class="absolute top-1.5 right-1.5 bg-rose-500 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 hidden"></span>
+</button>
 
         <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

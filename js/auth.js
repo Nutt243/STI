@@ -1,9 +1,9 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { doc, getDoc, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 let unsubscribePendingListener = null;
-let unsubscribeUserPendingListener = null; // เพิ่มตัวแปรเก็บ listener ของ user
+let unsubscribeUserPendingListener = null; 
 
 export function checkUserAuth(allowedRoles = []) {
   onAuthStateChanged(auth, async (user) => {
@@ -49,7 +49,6 @@ export function checkUserAuth(allowedRoles = []) {
         document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
       }
 
-      // เรียกใช้งานฟังก์ชันผูกตัวเลขแจ้งเตือนค้างเบิกของผู้ใช้ทั่วไปในทุกหน้า
       setupUserPendingBadge(user);
 
       if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
@@ -96,7 +95,6 @@ function setupPendingBadgeListener() {
   });
 }
 
-// อัปเดตฟังก์ชันให้ทำงานแบบ Real-time ด้วย onSnapshot เพื่อให้ตัวเลขเปลี่ยนทันที
 export function setupUserPendingBadge(currentUser) {
   if (!currentUser) return;
   if (unsubscribeUserPendingListener) return;
@@ -155,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// ระบบแจ้งเตือนกลาง (Centralized Notifications)
+// ระบบแจ้งเตือนกลาง (เปลี่ยนเป็นตุ่มแดงสถานะ เปิด/ปิด)
 // ==========================================
 let allUserRequisitionsCache = [];
 
@@ -169,32 +167,32 @@ function renderNotificationsGlobal() {
   const badge = document.getElementById("notifBadge");
   const mobileBadge = document.getElementById("mobileNotifBadge");
 
-  if (!notifContainer || !badge || !mobileBadge) return;
+  if (!notifContainer) return;
 
   const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
 
   if (processedReqs.length === 0) {
     notifContainer.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>`;
-    badge.classList.add("hidden");
-    mobileBadge.classList.add("hidden");
+    if (badge) badge.classList.add("hidden");
+    if (mobileBadge) mobileBadge.classList.add("hidden");
     return;
   }
 
   const lastReadTime = parseInt(localStorage.getItem(`lastReadNotif_${auth.currentUser?.uid}`) || "0");
 
-  const unreadReqs = processedReqs.filter(req => {
+  // เช็คว่ามีรายการไหนที่เวลาอนุมัติ/ไม่อนุมัติ ใหม่กว่าเวลาที่กดอ่านล่าสุดหรือไม่
+  const hasUnread = processedReqs.some(req => {
     const reqTime = req.approvedAt || req.rejectedAt ? (req.approvedAt || req.rejectedAt).toMillis() : 0;
     return reqTime > lastReadTime;
   });
 
-  if (unreadReqs.length > 0) {
-    badge.innerText = unreadReqs.length;
-    badge.classList.remove("hidden");
-    mobileBadge.innerText = unreadReqs.length;
-    mobileBadge.classList.remove("hidden");
+  // ควบคุมการแสดงผลตุ่มแดง (เปิด/ปิด)
+  if (hasUnread) {
+    if (badge) badge.classList.remove("hidden");
+    if (mobileBadge) mobileBadge.classList.remove("hidden");
   } else {
-    badge.classList.add("hidden");
-    mobileBadge.classList.add("hidden");
+    if (badge) badge.classList.add("hidden");
+    if (mobileBadge) mobileBadge.classList.add("hidden");
   }
 
   notifContainer.innerHTML = "";
@@ -225,7 +223,6 @@ function renderNotificationsGlobal() {
   });
 }
 
-// ผูกอีเวนต์คลิกปุ่มกระดิ่งกลางและการเปิด-ปิด Dropdown อัตโนมัติทุกหน้า
 document.addEventListener("DOMContentLoaded", () => {
   const btnBell = document.getElementById("btnNotifBell");
   const dropdown = document.getElementById("notifDropdown");
@@ -235,18 +232,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function markNotificationsAsRead() {
     if (dropdown && dropdown.classList.contains("hidden")) {
+      // ซ่อนตุ่มแดงทันทีเมื่อกดเปิดดู
       if (badge) badge.classList.add("hidden");
       if (mobileBadge) mobileBadge.classList.add("hidden");
       
       const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
       if (processedReqs.length > 0) {
-        const latestReq = processedReqs[0];
-        const latestTime = latestReq.approvedAt || latestReq.rejectedAt 
-          ? (latestReq.approvedAt || latestReq.rejectedAt).toMillis() 
-          : Date.now();
-          
+        // ใช้เวลาปัจจุบันบันทึกว่าอ่านแล้ว เพื่อให้ตุ่มแดงหายไปทุกหน้าพร้อมกัน
+        const currentTime = Date.now();
         if (auth.currentUser) {
-          localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, latestTime);
+          localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, currentTime);
         }
       }
     }
