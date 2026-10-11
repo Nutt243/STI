@@ -152,9 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ==========================================
-// ระบบแจ้งเตือนกลาง (เปลี่ยนเป็นตุ่มแดงสถานะ เปิด/ปิด)
-// ==========================================
 let allUserRequisitionsCache = [];
 
 export function initNotifications(requisitionsList) {
@@ -180,13 +177,11 @@ function renderNotificationsGlobal() {
 
   const lastReadTime = parseInt(localStorage.getItem(`lastReadNotif_${auth.currentUser?.uid}`) || "0");
 
-  // เช็คว่ามีรายการไหนที่เวลาอนุมัติ/ไม่อนุมัติ ใหม่กว่าเวลาที่กดอ่านล่าสุดหรือไม่
   const hasUnread = processedReqs.some(req => {
     const reqTime = req.approvedAt || req.rejectedAt ? (req.approvedAt || req.rejectedAt).toMillis() : 0;
     return reqTime > lastReadTime;
   });
 
-  // ควบคุมการแสดงผลตุ่มแดง (เปิด/ปิด)
   if (hasUnread) {
     if (badge) badge.classList.remove("hidden");
     if (mobileBadge) mobileBadge.classList.remove("hidden");
@@ -225,46 +220,49 @@ function renderNotificationsGlobal() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const btnBell = document.getElementById("btnNotifBell");
-  const dropdown = document.getElementById("notifDropdown");
   const btnMobileBell = document.getElementById("btnMobileNotifBell");
+  const dropdown = document.getElementById("notifDropdown");
   const badge = document.getElementById("notifBadge");
   const mobileBadge = document.getElementById("mobileNotifBadge");
 
-  function markNotificationsAsRead() {
-    if (dropdown && dropdown.classList.contains("hidden")) {
-      // ซ่อนตุ่มแดงทันทีเมื่อกดเปิดดู
+  function toggleDropdown() {
+    if (!dropdown) return;
+    const isHidden = dropdown.classList.contains("hidden");
+
+    if (isHidden) {
       if (badge) badge.classList.add("hidden");
       if (mobileBadge) mobileBadge.classList.add("hidden");
-      
+
       const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
-      if (processedReqs.length > 0) {
-        // ใช้เวลาปัจจุบันบันทึกว่าอ่านแล้ว เพื่อให้ตุ่มแดงหายไปทุกหน้าพร้อมกัน
-        const currentTime = Date.now();
-        if (auth.currentUser) {
-          localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, currentTime);
-        }
+      if (processedReqs.length > 0 && auth.currentUser) {
+        localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, Date.now());
       }
+
+      dropdown.classList.remove("hidden");
+    } else {
+      dropdown.classList.add("hidden");
     }
-    if (dropdown) dropdown.classList.toggle("hidden");
   }
 
-  if (btnBell && dropdown) {
+  if (btnBell) {
     btnBell.addEventListener("click", (e) => {
       e.stopPropagation();
-      markNotificationsAsRead();
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!dropdown.contains(e.target) && e.target !== btnBell) {
-        dropdown.classList.add("hidden");
-      }
+      toggleDropdown();
     });
   }
 
-  if (btnMobileBell && dropdown) {
+  if (btnMobileBell) {
     btnMobileBell.addEventListener("click", (e) => {
       e.stopPropagation();
-      markNotificationsAsRead();
+      toggleDropdown();
     });
   }
+
+  document.addEventListener("click", (e) => {
+    if (dropdown && !dropdown.contains(e.target) && 
+        (!btnBell || !btnBell.contains(e.target)) && 
+        (!btnMobileBell || !btnMobileBell.contains(e.target))) {
+      dropdown.classList.add("hidden");
+    }
+  });
 });
