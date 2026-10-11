@@ -9,7 +9,7 @@
 <body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
-  <div class="max-w-full px-4 mx-auto sm:px-6 lg:px-8">
+  <div class="max-w-full px-4 mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
       
       <a href="index.html" class="flex items-center space-x-3">
@@ -51,7 +51,7 @@
       </div>
 
       <!-- Mobile Right Controls -->
-      <div class="flex md:hidden items-center space-x-2">
+      <div class="flex md:hidden items-center space-x-2 relative">
         <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -114,7 +114,7 @@
         <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📦 คลังสินค้าและพัสดุ (ภาพรวมระบบ)</h1>
         <p class="text-xs text-slate-500 mt-1">รายการพัสดุและบาร์โค้ดทั้งหมดแยกตาม SKU สามารถตรวจสอบและปรับปรุงสต็อกได้ที่นี่</p>
       </div>
-      <input type="text" id="inventorySearch" placeholder="🔍 ค้นหาบาร์โค้ด, ชื่อ SKU..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+      <input type="text" id="inventorySearch" placeholder="🔍 ค้นหาบาร์โค้ด, ชื่อ SKU, โลเคชั่น..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -124,6 +124,7 @@
             <tr>
               <th class="p-3.5">บาร์โค้ด / รหัส</th>
               <th class="p-3.5">SKU / ชื่อพัสดุ</th>
+              <th class="p-3.5">โลเคชั่น</th>
               <th class="p-3.5">คุณลักษณะเฉพาะ (Attributes)</th>
               <th class="p-3.5 text-center">คงเหลือ</th>
               <th class="p-3.5 text-center">หน่วยนับ</th>
@@ -131,7 +132,7 @@
             </tr>
           </thead>
           <tbody id="inventoryTableBody" class="divide-y divide-slate-100">
-            <tr><td colspan="6" class="p-8 text-center text-slate-400 font-bold">กำลังโหลดรายการพัสดุ...</td></tr>
+            <tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">กำลังโหลดรายการพัสดุ...</td></tr>
           </tbody>
         </table>
       </div>
@@ -159,6 +160,8 @@
             <label class="block font-bold text-slate-700 mb-1">ชื่อ SKU หลัก:</label>
             <input type="text" id="editModalSkuName" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-800">
           </div>
+          
+          <!-- แถวหมวดหมู่ / หน่วยนับ / โลเคชั่น -->
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="block font-bold text-slate-700 mb-1">หมวดหมู่</label>
@@ -174,9 +177,14 @@
               <input type="text" id="editModalUnit" value="ชิ้น" class="w-full p-2 bg-white border border-slate-300 rounded-lg">
             </div>
             <div>
-              <label class="block font-bold text-slate-700 mb-1">จำนวนคงเหลือ</label>
-              <input type="number" id="editModalQuantity" min="0" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-blue-600 text-center">
+              <label class="block font-bold text-slate-700 mb-1">โลเคชั่น</label>
+              <input type="text" id="editModalLocation" placeholder="เช่น ชั้น 2, โซน A" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-purple-700">
             </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">จำนวนคงเหลือ</label>
+            <input type="number" id="editModalQuantity" min="0" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-blue-600 text-center text-sm">
           </div>
         </div>
 
@@ -226,7 +234,7 @@
         }
       } catch (err) {
         console.error(err);
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-500 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</td></tr>`;
       }
     }
 
@@ -248,15 +256,18 @@
       tbody.innerHTML = "";
 
       if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-bold">ไม่พบรายการพัสดุในระบบ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">ไม่พบรายการพัสดุในระบบ</td></tr>`;
         return;
       }
 
       let html = "";
       products.forEach((item) => {
-        const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", unit: "ชิ้น", category: "ทั่วไป" };
+        const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", unit: "ชิ้น", category: "ทั่วไป", location: "" };
         const attrSummary = Object.entries(item.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "-";
         const barcodeStr = item.barcode || item.id;
+        
+        // โลเคชั่นสามารถมาจากทั้งระดับสินค้า (product) หรือ SKU หลัก
+        const itemLocation = item.location || skuInfo.location || "-";
 
         html += `
           <tr class="hover:bg-slate-50 transition">
@@ -265,6 +276,7 @@
               <div class="font-bold text-slate-800">${skuInfo.sku_name}</div>
               <div class="text-[10px] text-blue-600 font-semibold">${skuInfo.category || 'ทั่วไป'}</div>
             </td>
+            <td class="p-3.5 font-bold text-purple-700">📍 ${itemLocation}</td>
             <td class="p-3.5 text-slate-600 text-xs">${attrSummary}</td>
             <td class="p-3.5 text-center font-bold text-blue-600">${item.quantity || 0}</td>
             <td class="p-3.5 text-center text-slate-500">${skuInfo.unit || 'ชิ้น'}</td>
@@ -281,11 +293,13 @@
     document.getElementById("inventorySearch").addEventListener("input", (e) => {
       const keyword = e.target.value.toLowerCase().trim();
       const filtered = allProducts.filter(p => {
-        const skuInfo = skusMap.get(p.sku_id) || { sku_name: "" };
+        const skuInfo = skusMap.get(p.sku_id) || { sku_name: "", location: "" };
         const barcode = (p.barcode || "").toLowerCase();
         const skuName = skuInfo.sku_name.toLowerCase();
+        const location = (p.location || skuInfo.location || "").toLowerCase();
         const attrStr = JSON.stringify(p.specific_attributes || {}).toLowerCase();
-        return barcode.includes(keyword) || skuName.includes(keyword) || attrStr.includes(keyword);
+        
+        return barcode.includes(keyword) || skuName.includes(keyword) || location.includes(keyword) || attrStr.includes(keyword);
       });
       renderTable(filtered);
     });
@@ -293,7 +307,7 @@
     window.openEditModal = (id) => {
       const item = allProducts.find(p => p.id === id);
       if (!item) return;
-      const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", category: "ทั่วไป", unit: "ชิ้น" };
+      const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", category: "ทั่วไป", unit: "ชิ้น", location: "" };
 
       document.getElementById("editProductId").value = item.id;
       document.getElementById("editSkuId").value = item.sku_id || "";
@@ -301,6 +315,7 @@
       document.getElementById("editModalSkuName").value = skuInfo.sku_name;
       document.getElementById("editModalCategory").value = skuInfo.category || "ทั่วไป";
       document.getElementById("editModalUnit").value = skuInfo.unit || "ชิ้น";
+      document.getElementById("editModalLocation").value = item.location || skuInfo.location || "";
       document.getElementById("editModalQuantity").value = item.quantity || 0;
 
       const attrContainer = document.getElementById("editAttrContainer");
@@ -345,6 +360,7 @@
       const newSkuName = document.getElementById("editModalSkuName").value.trim();
       const newCategory = document.getElementById("editModalCategory").value;
       const newUnit = document.getElementById("editModalUnit").value.trim() || "ชิ้น";
+      const newLocation = document.getElementById("editModalLocation").value.trim();
       const newQty = parseInt(document.getElementById("editModalQuantity").value) || 0;
 
       const attrs = {};
@@ -361,6 +377,7 @@
             sku_name: newSkuName,
             category: newCategory,
             unit: newUnit,
+            location: newLocation,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
@@ -369,6 +386,7 @@
             sku_name: newSkuName,
             category: newCategory,
             unit: newUnit,
+            location: newLocation,
             updatedAt: serverTimestamp()
           });
         }
@@ -376,6 +394,7 @@
         await updateDoc(doc(db, "products", productId), {
           sku_id: skuId,
           barcode: newBarcode,
+          location: newLocation,
           quantity: newQty,
           specific_attributes: attrs,
           updatedAt: serverTimestamp()
