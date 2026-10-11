@@ -255,8 +255,8 @@
   </div>
 
 <script type="module">
-    import { db } from "./js/firebase-config.js";
-    import { checkUserAuth } from "./js/auth.js";
+    import { db, auth } from "./js/firebase-config.js";
+    import { checkUserAuth, initNotifications } from "./js/auth.js";
     import { 
       collection, 
       getDocs, 
@@ -318,6 +318,24 @@
         });
         renderBatchTable();
       });
+
+      // โหลดข้อมูลแจ้งเตือนของผู้ใช้ปัจจุบัน
+      if (auth.currentUser) {
+        initUserNotificationsForPage();
+      }
+    }
+
+    async function initUserNotificationsForPage() {
+      if (!auth.currentUser) return;
+      try {
+        const qMy = query(collection(db, "requisitions"), where("userId", "==", auth.currentUser.uid));
+        const snap = await getDocs(qMy);
+        const myReqs = [];
+        snap.forEach(d => myReqs.push({ id: d.id, ...d.data() }));
+        initNotifications(myReqs);
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
     }
 
     async function addToBatch(barcode, qty) {
@@ -378,7 +396,6 @@
     async function triggerScanAlert(barcode) {
       pendingScannedBarcode = barcode;
       
-      // ดึงข้อมูลล่าสุดจาก DB หรือ pendingMap ทันที
       let item = pendingMap.get(barcode);
       let skuNameDisplay = item && item.sku_name ? item.sku_name : null;
       let locationDisplay = item && item.location ? item.location : null;
@@ -865,110 +882,6 @@
     });
     
     initData();
-    // ฟังก์ชันสำหรับเรนเดอร์การแจ้งเตือนและจัดการระบบ Mark as Read
-    function renderNotifications() {
-      const notifContainer = document.getElementById("notifListContainer");
-      const badge = document.getElementById("notifBadge");
-      const mobileBadge = document.getElementById("mobileNotifBadge");
-
-      // กรองเฉพาะรายการที่ได้รับการอนุมัติหรือปฏิเสธแล้ว
-      const processedReqs = allUserRequisitions.filter(r => r.status === "approved" || r.status === "rejected");
-
-      if (processedReqs.length === 0) {
-        notifContainer.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>`;
-        badge.classList.add("hidden");
-        mobileBadge.classList.add("hidden");
-        return;
-      }
-
-      // ดึง timestamp ล่าสุดที่มีการเปลี่ยนแปลง
-      const latestReq = processedReqs[0];
-      const latestTime = latestReq.approvedAt || latestReq.rejectedAt ? (latestReq.approvedAt || latestReq.rejectedAt).toMillis() : 0;
-      
-      // ตรวจสอบจาก localStorage ว่าผู้ใช้เคยกดอ่านข้อความล่าสุดนี้หรือยัง
-      const lastReadTime = parseInt(localStorage.getItem(`lastReadNotif_${auth.currentUser.uid}`) || "0");
-      const hasUnread = latestTime > lastReadTime;
-
-      if (hasUnread) {
-        badge.innerText = processedReqs.length;
-        badge.classList.remove("hidden");
-        mobileBadge.innerText = processedReqs.length;
-        mobileBadge.classList.remove("hidden");
-      } else {
-        badge.classList.add("hidden");
-        mobileBadge.classList.add("hidden");
-      }
-
-      notifContainer.innerHTML = "";
-
-      processedReqs.slice(0, 5).forEach(req => {
-        const isApproved = req.status === "approved";
-        const dateStr = req.approvedAt || req.rejectedAt ? new Date((req.approvedAt || req.rejectedAt).toDate()).toLocaleDateString('th-TH') : '-';
-        const itemNames = (req.items || []).map(i => i.sku_name).join(", ");
-
-        const div = document.createElement("a");
-        div.href = "history.html";
-        div.className = "block p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 transition text-xs space-y-1";
-
-        div.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="font-bold ${isApproved ? 'text-emerald-700' : 'text-rose-600'}">
-              ${isApproved ? '🎉 คำขอได้รับการอนุมัติแล้ว' : '❌ คำขอไม่ได้รับการอนุมัติ'}
-            </span>
-            <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
-          </div>
-          <p class="text-slate-700 font-medium truncate">${itemNames}</p>
-          ${!isApproved && req.rejectReason ? `<p class="text-[10px] text-rose-500 truncate">เหตุผล: ${req.rejectReason}</p>` : ''}
-        `;
-
-        notifContainer.appendChild(div);
-      });
-    }
-
-    // จัดการเหตุการณ์เมื่อคลิกที่ปุ่มกระดิ่ง เพื่อทำการ Mark as Read ทันที
-    const btnBell = document.getElementById("btnNotifBell");
-    const dropdown = document.getElementById("notifDropdown");
-    const btnMobileBell = document.getElementById("btnMobileNotifBell");
-    const badge = document.getElementById("notifBadge");
-    const mobileBadge = document.getElementById("mobileNotifBadge");
-
-    function markNotificationsAsRead() {
-      if (dropdown.classList.contains("hidden")) {
-        // กำลังจะเปิดเมนู ให้ซ่อน Badge และบันทึกเวลาที่อ่านลง localStorage
-        badge.classList.add("hidden");
-        mobileBadge.classList.add("hidden");
-        
-        const processedReqs = allUserRequisitions.filter(r => r.status === "approved" || r.status === "rejected");
-        if (processedReqs.length > 0) {
-          const latestReq = processedReqs[0];
-          const latestTime = latestReq.approvedAt || latestReq.rejectedAt ? (latestReq.approvedAt || latestReq.rejectedAt).toMillis() : Date.now();
-          if (auth.currentUser) {
-            localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, latestTime);
-          }
-        }
-      }
-      dropdown.classList.toggle("hidden");
-    }
-
-    if (btnBell && dropdown) {
-      btnBell.addEventListener("click", (e) => {
-        e.stopPropagation();
-        markNotificationsAsRead();
-      });
-
-      document.addEventListener("click", (e) => {
-        if (!dropdown.contains(e.target) && e.target !== btnBell) {
-          dropdown.classList.add("hidden");
-        }
-      });
-    }
-
-    if (btnMobileBell && dropdown) {
-      btnMobileBell.addEventListener("click", (e) => {
-        e.stopPropagation();
-        markNotificationsAsRead();
-      });
-    }
   </script>
 </body>
 </html>

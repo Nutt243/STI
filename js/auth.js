@@ -153,3 +153,123 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// ==========================================
+// ระบบแจ้งเตือนกลาง (Centralized Notifications)
+// ==========================================
+let allUserRequisitionsCache = [];
+
+export function initNotifications(requisitionsList) {
+  allUserRequisitionsCache = requisitionsList || [];
+  renderNotificationsGlobal();
+}
+
+function renderNotificationsGlobal() {
+  const notifContainer = document.getElementById("notifListContainer");
+  const badge = document.getElementById("notifBadge");
+  const mobileBadge = document.getElementById("mobileNotifBadge");
+
+  if (!notifContainer || !badge || !mobileBadge) return;
+
+  const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
+
+  if (processedReqs.length === 0) {
+    notifContainer.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>`;
+    badge.classList.add("hidden");
+    mobileBadge.classList.add("hidden");
+    return;
+  }
+
+  const lastReadTime = parseInt(localStorage.getItem(`lastReadNotif_${auth.currentUser?.uid}`) || "0");
+
+  const unreadReqs = processedReqs.filter(req => {
+    const reqTime = req.approvedAt || req.rejectedAt ? (req.approvedAt || req.rejectedAt).toMillis() : 0;
+    return reqTime > lastReadTime;
+  });
+
+  if (unreadReqs.length > 0) {
+    badge.innerText = unreadReqs.length;
+    badge.classList.remove("hidden");
+    mobileBadge.innerText = unreadReqs.length;
+    mobileBadge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+    mobileBadge.classList.add("hidden");
+  }
+
+  notifContainer.innerHTML = "";
+
+  processedReqs.slice(0, 5).forEach(req => {
+    const isApproved = req.status === "approved";
+    const dateStr = req.approvedAt || req.rejectedAt 
+      ? new Date((req.approvedAt || req.rejectedAt).toDate()).toLocaleDateString('th-TH') 
+      : '-';
+    const itemNames = (req.items || []).map(i => i.sku_name).join(", ");
+
+    const div = document.createElement("a");
+    div.href = "history.html";
+    div.className = "block p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 transition text-xs space-y-1";
+
+    div.innerHTML = `
+      <div class="flex justify-between items-center">
+        <span class="font-bold ${isApproved ? 'text-emerald-700' : 'text-rose-600'}">
+          ${isApproved ? '🎉 คำขอได้รับการอนุมัติแล้ว' : '❌ คำขอไม่ได้รับการอนุมัติ'}
+        </span>
+        <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
+      </div>
+      <p class="text-slate-700 font-medium truncate">${itemNames}</p>
+      ${!isApproved && req.rejectReason ? `<p class="text-[10px] text-rose-500 truncate">เหตุผล: ${req.rejectReason}</p>` : ''}
+    `;
+
+    notifContainer.appendChild(div);
+  });
+}
+
+// ผูกอีเวนต์คลิกปุ่มกระดิ่งกลางและการเปิด-ปิด Dropdown อัตโนมัติทุกหน้า
+document.addEventListener("DOMContentLoaded", () => {
+  const btnBell = document.getElementById("btnNotifBell");
+  const dropdown = document.getElementById("notifDropdown");
+  const btnMobileBell = document.getElementById("btnMobileNotifBell");
+  const badge = document.getElementById("notifBadge");
+  const mobileBadge = document.getElementById("mobileNotifBadge");
+
+  function markNotificationsAsRead() {
+    if (dropdown && dropdown.classList.contains("hidden")) {
+      if (badge) badge.classList.add("hidden");
+      if (mobileBadge) mobileBadge.classList.add("hidden");
+      
+      const processedReqs = allUserRequisitionsCache.filter(r => r.status === "approved" || r.status === "rejected");
+      if (processedReqs.length > 0) {
+        const latestReq = processedReqs[0];
+        const latestTime = latestReq.approvedAt || latestReq.rejectedAt 
+          ? (latestReq.approvedAt || latestReq.rejectedAt).toMillis() 
+          : Date.now();
+          
+        if (auth.currentUser) {
+          localStorage.setItem(`lastReadNotif_${auth.currentUser.uid}`, latestTime);
+        }
+      }
+    }
+    if (dropdown) dropdown.classList.toggle("hidden");
+  }
+
+  if (btnBell && dropdown) {
+    btnBell.addEventListener("click", (e) => {
+      e.stopPropagation();
+      markNotificationsAsRead();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!dropdown.contains(e.target) && e.target !== btnBell) {
+        dropdown.classList.add("hidden");
+      }
+    });
+  }
+
+  if (btnMobileBell && dropdown) {
+    btnMobileBell.addEventListener("click", (e) => {
+      e.stopPropagation();
+      markNotificationsAsRead();
+    });
+  }
+});

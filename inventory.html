@@ -139,7 +139,7 @@
     </div>
   </main>
 
-  <!-- Modal แก้ไขข้อมูลสินค้า (รวม SKU, หมวดหมู่, จำนวน, คุณลักษณะ) -->
+  <!-- Modal แก้ไขข้อมูลสินค้า -->
   <div id="editProductModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -198,9 +198,9 @@
   </div>
 
   <script type="module">
-    import { db } from "./js/firebase-config.js";
-    import { checkUserAuth } from "./js/auth.js";
-    import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { db, auth } from "./js/firebase-config.js";
+    import { checkUserAuth, initNotifications } from "./js/auth.js";
+    import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin', 'manager']);
 
@@ -221,9 +221,26 @@
         });
 
         renderTable(allProducts);
+
+        if (auth.currentUser) {
+          initUserNotificationsForPage();
+        }
       } catch (err) {
         console.error(err);
         tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-500 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function initUserNotificationsForPage() {
+      if (!auth.currentUser) return;
+      try {
+        const qMy = query(collection(db, "requisitions"), where("userId", "==", auth.currentUser.uid));
+        const snap = await getDocs(qMy);
+        const myReqs = [];
+        snap.forEach(d => myReqs.push({ id: d.id, ...d.data() }));
+        initNotifications(myReqs);
+      } catch (err) {
+        console.error("Error loading notifications:", err);
       }
     }
 
@@ -287,7 +304,6 @@
       document.getElementById("editModalUnit").value = skuInfo.unit || "ชิ้น";
       document.getElementById("editModalQuantity").value = item.quantity || 0;
 
-      // โหลด Attributes
       const attrContainer = document.getElementById("editAttrContainer");
       attrContainer.innerHTML = "";
       const attrs = item.specific_attributes || {};
@@ -332,7 +348,6 @@
       const newUnit = document.getElementById("editModalUnit").value.trim() || "ชิ้น";
       const newQty = parseInt(document.getElementById("editModalQuantity").value) || 0;
 
-      // รวบรวม Attributes
       const attrs = {};
       document.querySelectorAll(".attr-row-item").forEach(row => {
         const k = row.querySelector(".attr-k").value.trim();
@@ -341,7 +356,6 @@
       });
 
       try {
-        // จัดการ SKU Master (สร้างใหม่หรืออัปเดตเดิม)
         if (!skuId) {
           skuId = "SKU-" + Date.now();
           await setDoc(doc(db, "skus", skuId), {
@@ -360,7 +374,6 @@
           });
         }
 
-        // อัปเดตข้อมูลพัสดุใน Products
         await updateDoc(doc(db, "products", productId), {
           sku_id: skuId,
           barcode: newBarcode,
