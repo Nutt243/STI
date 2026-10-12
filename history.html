@@ -99,7 +99,7 @@
 
     <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 flex justify-between items-center">
       <span>⏳ อนุมัติคำขอ</span>
-      <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+      <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
     </a>
     
     <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
@@ -124,7 +124,7 @@
       </div>
     </div>
 
-    <!-- แท็บสลับสำหรับ Admin / Manager (ซ่อนไว้สำหรับ User ทั่วไป) -->
+    <!-- แท็บสลับสำหรับ Admin / Manager -->
     <div id="adminTabContainer" class="hidden flex bg-slate-200 p-1 rounded-xl max-w-xs">
       <button id="tabMyHistory" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-blue-600 shadow-sm transition">
         ประวัติของฉัน
@@ -164,7 +164,7 @@
 
     let allLoadedRequisitions = [];
     let usersMap = new Map();
-    let currentViewMode = "my"; // "my" หรือ "all"
+    let currentViewMode = "my";
     let currentUserRole = "user";
     let targetCancelReqId = null;
 
@@ -234,7 +234,8 @@
         let actionTimeStr = "";
         if (req.status === 'approved' && req.approvedAt) {
           const approvedDate = req.approvedAt.toDate ? req.approvedAt.toDate() : new Date(req.approvedAt.seconds * 1000);
-          actionTimeStr = `<p class="text-xs text-emerald-600 font-medium mt-0.5">✅ อนุมัติเมื่อ: ${approvedDate.toLocaleString('th-TH')}</p>`;
+          const approverDisplay = req.approvedBy ? ` | ผู้อนุมัติ: <span class="font-bold text-slate-700">${req.approvedBy}</span>` : "";
+          actionTimeStr = `<p class="text-xs text-emerald-600 font-medium mt-0.5">✅ อนุมัติเมื่อ: ${approvedDate.toLocaleString('th-TH')}${approverDisplay}</p>`;
         } else if (req.status === 'rejected' && req.rejectedAt) {
           const rejectedDate = req.rejectedAt.toDate ? req.rejectedAt.toDate() : new Date(req.rejectedAt.seconds * 1000);
           actionTimeStr = `<p class="text-xs text-rose-600 font-medium mt-0.5">❌ ไม่อนุมัติเมื่อ: ${rejectedDate.toLocaleString('th-TH')}</p>`;
@@ -339,7 +340,6 @@
       });
     }
 
-    // ฟังก์ชันเปิด Modal ยืนยันยกเลิกคำขอ
     window.confirmCancelRequest = (reqId) => {
       targetCancelReqId = reqId;
       const modal = document.getElementById("cancelConfirmModal");
@@ -347,13 +347,11 @@
       modal.classList.add("flex");
     };
 
-    // ปุ่มย้อนกลับใน Modal
     document.getElementById("btnKeepRequest").addEventListener("click", () => {
       targetCancelReqId = null;
       document.getElementById("cancelConfirmModal").classList.add("hidden");
     });
 
-    // ปุ่มยืนยันยกเลิกคำขอ (ดำเนินการลบเอกสารใน Firestore)
     document.getElementById("btnExecuteCancelRequest").addEventListener("click", async () => {
       if (!targetCancelReqId) return;
 

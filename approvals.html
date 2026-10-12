@@ -784,11 +784,8 @@
       focusBarcodeModalInput();
     }
 
-    // รองรับการกด Enter เพื่อปิดแจ้งเตือน (Modal จ่ายสินค้า / สแกนเช็ค) ในหน้า approvals
-// รองรับการกด Enter เพื่อปิดแจ้งเตือนทุกประเภทในหน้า approvals
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
-        // 1. ถ้าเป็นหน้าต่าง Error / แจ้งเตือนทั่วไป (เช่น ไม่พบรายการ, สแกนครบแล้ว)
         const errorModal = document.getElementById("errorModal");
         if (errorModal && !errorModal.classList.contains("hidden")) {
           e.preventDefault();
@@ -799,7 +796,6 @@
           return;
         }
 
-        // 2. ถ้าเป็นหน้าต่างยืนยันสแกนสำเร็จจากกล้อง
         const alertModal = document.getElementById("cameraScanAlertModal");
         if (alertModal && !alertModal.classList.contains("hidden")) {
           e.preventDefault();
@@ -1038,6 +1034,16 @@
       document.getElementById("confirmApproveModal").classList.add("hidden");
 
       try {
+        // ดึงชื่อของผู้ใช้งานปัจจุบันเพื่อบันทึกเป็นชื่อผู้อนุมัติ
+        const currentUser = auth.currentUser;
+        let approverName = currentUser.displayName || currentUser.email;
+        
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().name) {
+          approverName = userDocSnap.data().name;
+        }
+
         for (const item of activeReqItems) {
           if (item.approvedQty <= 0) continue;
 
@@ -1053,6 +1059,7 @@
 
         await updateDoc(doc(db, "requisitions", activeReqId), {
           status: "approved",
+          approvedBy: approverName, // บันทึกเฉพาะชื่อผู้อนุมัติ
           items: activeReqItems.map(i => ({
             product_id: i.product_id,
             sku_name: i.sku_name,
