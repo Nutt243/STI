@@ -139,10 +139,26 @@
     </div>
   </main>
 
+  <!-- Modal ยืนยันการยกเลิกคำขอ -->
+  <div id="cancelConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl text-2xl mb-1">
+        🗑️
+      </div>
+      <h3 class="font-black text-slate-800 text-lg">ยืนยันการยกเลิกคำขอ?</h3>
+      <p class="text-xs text-slate-500">คำขอเบิกสินค้าที่อยู่ระหว่างรออนุมัตินี้จะถูกลบออกจากระบบทันที</p>
+      
+      <div class="flex gap-2 pt-2">
+        <button id="btnKeepRequest" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ย้อนกลับ</button>
+        <button id="btnExecuteCancelRequest" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md text-xs transition">ยืนยันยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { db, auth } from "./js/firebase-config.js";
     import { checkUserAuth, initNotifications } from "./js/auth.js";
-    import { collection, getDocs, doc, getDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, deleteDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin', 'manager', 'user']);
 
@@ -150,6 +166,7 @@
     let usersMap = new Map();
     let currentViewMode = "my"; // "my" หรือ "all"
     let currentUserRole = "user";
+    let targetCancelReqId = null;
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -245,6 +262,8 @@
           statusBadge = `<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold">❌ ไม่อนุมัติ</span>`;
         }
 
+        const isPending = req.status === 'pending';
+
         const itemsRows = (req.items || []).map(i => {
           const attrStr = Object.entries(i.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "ทั่วไป";
           const barcodeStr = i.barcode ? `<span class="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${i.barcode}</span>` : "";
@@ -258,7 +277,6 @@
             if (isFull) {
               approvedQtyDisplay = `<span class="font-bold text-emerald-600">${i.approvedQty} ${unitStr}</span>`;
             } else {
-              // จ่ายไม่ครบ: ใช้ตัวเลขสีส้มเข้มและหนา
               approvedQtyDisplay = `<span class="font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">${i.approvedQty} ${unitStr}</span>`;
             }
           }
@@ -293,7 +311,10 @@
               ${actionTimeStr}
               <p class="text-xs font-bold text-slate-700 mt-1">ผู้ขอเบิก: ${displayNameStr}</p>
             </div>
-            <div>${statusBadge}</div>
+            <div class="flex items-center gap-2">
+              ${statusBadge}
+              ${isPending ? `<button onclick="confirmCancelRequest('${req.id}')" class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-full text-xs font-bold transition flex items-center gap-1">❌ ยกเลิกคำขอ</button>` : ''}
+            </div>
           </div>
 
           <div class="overflow-x-auto">
@@ -317,6 +338,35 @@
         container.appendChild(card);
       });
     }
+
+    // ฟังก์ชันเปิด Modal ยืนยันยกเลิกคำขอ
+    window.confirmCancelRequest = (reqId) => {
+      targetCancelReqId = reqId;
+      const modal = document.getElementById("cancelConfirmModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    };
+
+    // ปุ่มย้อนกลับใน Modal
+    document.getElementById("btnKeepRequest").addEventListener("click", () => {
+      targetCancelReqId = null;
+      document.getElementById("cancelConfirmModal").classList.add("hidden");
+    });
+
+    // ปุ่มยืนยันยกเลิกคำขอ (ดำเนินการลบเอกสารใน Firestore)
+    document.getElementById("btnExecuteCancelRequest").addEventListener("click", async () => {
+      if (!targetCancelReqId) return;
+
+      try {
+        await deleteDoc(doc(db, "requisitions", targetCancelReqId));
+        alert("🗑️ ยกเลิกคำขอเบิกสินค้าเรียบร้อยแล้ว!");
+        document.getElementById("cancelConfirmModal").classList.add("hidden");
+        targetCancelReqId = null;
+        loadHistoryData(auth.currentUser.uid);
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการยกเลิกคำขอ: " + err.message);
+      }
+    });
 
     const tabMyHistory = document.getElementById("tabMyHistory");
     const tabAllHistory = document.getElementById("tabAllHistory");
