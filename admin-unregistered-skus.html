@@ -318,7 +318,6 @@
         renderBatchTable();
       });
 
-      // โหลดข้อมูลแจ้งเตือนของผู้ใช้ปัจจุบัน
       if (auth.currentUser) {
         initUserNotificationsForPage();
       }
@@ -438,17 +437,40 @@
     });
 
     document.getElementById("btnCamCancel").addEventListener("click", () => {
-      document.getElementById("cameraScanAlertModal").classList.add("hidden");
-      pendingScannedBarcode = null;
+      closeCamAlertModal();
     });
 
     document.getElementById("btnCamConfirm").addEventListener("click", () => {
+      confirmCameraAlertAction();
+    });
+
+    function confirmCameraAlertAction() {
       if (!pendingScannedBarcode) return;
       const addQty = parseInt(document.getElementById("camAddQtyInput").value) || 1;
       addToBatch(pendingScannedBarcode, addQty);
+      closeCamAlertModal();
+    }
 
+    function closeCamAlertModal() {
       document.getElementById("cameraScanAlertModal").classList.add("hidden");
       pendingScannedBarcode = null;
+
+      const scanInputEl = document.getElementById("scanInput");
+      if (scanInputEl) {
+        scanInputEl.focus();
+        scanInputEl.select();
+      }
+    }
+
+    // รองรับการกด Enter เพื่อปิดแจ้งเตือน (Modal รับเข้า)
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const alertModal = document.getElementById("cameraScanAlertModal");
+        if (alertModal && !alertModal.classList.contains("hidden")) {
+          e.preventDefault();
+          confirmCameraAlertAction();
+        }
+      }
     });
 
     const scanInput = document.getElementById("scanInput");

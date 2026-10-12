@@ -360,6 +360,7 @@
       document.getElementById("errorModal").classList.add("hidden");
       lastScannedText = "";
       lastScannedTime = 0;
+      focusBarcodeModalInput();
     });
 
     async function loadApprovals() {
@@ -631,6 +632,14 @@
       window.print();
     }
 
+    function focusBarcodeModalInput() {
+      const modalBarcodeInput = document.getElementById("barcodeInput");
+      if (modalBarcodeInput) {
+        modalBarcodeInput.focus();
+        modalBarcodeInput.select();
+      }
+    }
+
     window.openScanModal = async (reqId) => {
       activeReqId = reqId;
 
@@ -666,7 +675,7 @@
 
       document.getElementById("scanModal").classList.remove("hidden");
       document.getElementById("scanModal").classList.add("flex");
-      if (modalBarcodeInput) modalBarcodeInput.focus();
+      focusBarcodeModalInput();
     };
 
     document.getElementById("btnModalToggleCamera").addEventListener("click", async () => {
@@ -739,13 +748,14 @@
     });
 
     document.getElementById("btnCamCancel").addEventListener("click", () => {
-      document.getElementById("cameraScanAlertModal").classList.add("hidden");
-      pendingCameraScannedItem = null;
-      lastScannedText = "";
-      lastScannedTime = 0;
+      closeApprovalCamAlert();
     });
 
     document.getElementById("btnCamConfirm").addEventListener("click", () => {
+      confirmApprovalCamAlert();
+    });
+
+    function confirmApprovalCamAlert() {
       if (!pendingCameraScannedItem) return;
 
       const addQty = parseInt(document.getElementById("camAddQtyInput").value) || 1;
@@ -763,10 +773,40 @@
       }
 
       renderScanTable();
+      closeApprovalCamAlert();
+    }
+
+    function closeApprovalCamAlert() {
       document.getElementById("cameraScanAlertModal").classList.add("hidden");
       pendingCameraScannedItem = null;
       lastScannedText = "";
       lastScannedTime = 0;
+      focusBarcodeModalInput();
+    }
+
+    // รองรับการกด Enter เพื่อปิดแจ้งเตือน (Modal จ่ายสินค้า / สแกนเช็ค) ในหน้า approvals
+// รองรับการกด Enter เพื่อปิดแจ้งเตือนทุกประเภทในหน้า approvals
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        // 1. ถ้าเป็นหน้าต่าง Error / แจ้งเตือนทั่วไป (เช่น ไม่พบรายการ, สแกนครบแล้ว)
+        const errorModal = document.getElementById("errorModal");
+        if (errorModal && !errorModal.classList.contains("hidden")) {
+          e.preventDefault();
+          errorModal.classList.add("hidden");
+          lastScannedText = "";
+          lastScannedTime = 0;
+          focusBarcodeModalInput();
+          return;
+        }
+
+        // 2. ถ้าเป็นหน้าต่างยืนยันสแกนสำเร็จจากกล้อง
+        const alertModal = document.getElementById("cameraScanAlertModal");
+        if (alertModal && !alertModal.classList.contains("hidden")) {
+          e.preventDefault();
+          confirmApprovalCamAlert();
+          return;
+        }
+      }
     });
 
     function renderScanTable() {
@@ -872,7 +912,7 @@
       }
 
       document.getElementById("barcodeInput").value = "";
-      document.getElementById("barcodeInput").focus();
+      focusBarcodeModalInput();
     }
 
     const modalBarcodeInput = document.getElementById("barcodeInput");
@@ -1024,7 +1064,7 @@
             adjustNote: i.adjustNote || "",
             unit: i.unit || 'ชิ้น'
           })),
-          approvedAt: serverTimestamp() // บันทึกวันที่และเวลาอนุมัติ/จ่ายบางส่วน
+          approvedAt: serverTimestamp()
         });
 
         alert("🚀 ยืนยันการอนุมัติและตัดสต็อกสินค้าเรียบร้อยแล้ว!");
@@ -1078,7 +1118,7 @@
         await updateDoc(doc(db, "requisitions", rejectTargetReqId), {
           status: "rejected",
           rejectReason: reason,
-          rejectedAt: serverTimestamp() // บันทึกวันที่และเวลาปฏิเสธ
+          rejectedAt: serverTimestamp()
         });
         alert("❌ ปฏิเสธคำขอเรียบร้อยแล้ว รายการถูกย้ายไปที่หน้าประวัติการเบิก (History)");
         closeRejectModal();
