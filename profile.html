@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockMaster - โปรไฟล์ส่วนตัว</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
+
+  <!-- Nav Bar -->
+  <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-full px-4 mx-auto sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <a href="index.html" class="flex items-center space-x-3">
+          <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+          <span class="font-bold text-lg tracking-tight">StockMaster</span>
+        </a>
+
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก</a>
+          <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+
+          <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1">
+            <span>ประวัติการเบิก</span>
+            <span id="navHistoryPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
+          </a>
+          
+          <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition items-center gap-1">
+            <span>⏳ อนุมัติคำขอ</span>
+            <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
+          </a>
+
+          <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
+          <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังสินค้า</a>
+          <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
+        </div>
+
+        <!-- Right User Controls & Notification Bell -->
+        <div class="hidden md:flex items-center space-x-3">
+          <button id="btnNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+            <span id="notifBadge" class="absolute top-1.5 right-1.5 bg-rose-500 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 hidden"></span>
+          </button>
+
+          <a href="profile.html" id="userDisplayName" class="text-xs text-white bg-slate-800 px-3 py-1.5 rounded-full border border-blue-500 font-mono transition flex items-center gap-1.5">
+            <span>👤 Loading...</span>
+          </a>
+          <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
+        </div>
+
+        <!-- Mobile Right Controls -->
+        <div class="flex md:hidden items-center space-x-2">
+          <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+            <span id="mobileNotifBadge" class="absolute top-1.5 right-1.5 bg-rose-500 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 hidden"></span>
+          </button>
+
+          <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Notification Dropdown -->
+    <div id="notifDropdown" class="hidden fixed top-16 left-4 right-4 md:absolute md:top-full md:left-auto md:right-4 md:mt-2 md:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 z-50 text-slate-800 space-y-2">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+        <h3 class="font-black text-xs text-slate-800 flex items-center gap-1.5">🔔 แจ้งเตือนการอนุมัติคำขอ</h3>
+        <span class="text-[10px] text-slate-400">อัปเดตล่าสุด</span>
+      </div>
+      <div id="notifListContainer" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+        <p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>
+      </div>
+      <div class="border-t border-slate-100 pt-2 text-center">
+        <a href="history.html" class="text-[11px] font-bold text-blue-600 hover:underline">ดูประวัติทั้งหมด &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
+      <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
+        <a href="profile.html" class="text-xs text-slate-200 font-mono flex items-center gap-1">
+          <span>👤</span> <span id="mobileUserDisplayName">Loading...</span>
+        </a>
+        <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
+      </div>
+      <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
+      <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+      
+      <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex justify-between items-center">
+        <span>ประวัติการเบิก</span>
+        <span id="mobileNavHistoryPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+      </a>
+
+      <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 flex justify-between items-center">
+        <span>⏳ อนุมัติคำขอ</span>
+        <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+      </a>
+      
+      <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+      <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังสินค้า</a>
+      <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
+      <a href="profile.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-blue-400 bg-slate-800">👤 โปรไฟล์ส่วนตัว</a>
+    </div>
+  </nav>
+
+  <!-- Content Body -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    
+    <!-- Top Header + ปุ่มกลับหน้าหลัก -->
+    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <span>👤</span> โปรไฟล์ส่วนตัว
+        </h1>
+        <p class="text-xs text-slate-500 mt-1">จัดการข้อมูลชื่อ-นามสกุล อีเมล และความปลอดภัยของบัญชีคุณ</p>
+      </div>
+      <a href="index.html" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs">
+        <span>🏠</span> กลับหน้าหลัก
+      </a>
+    </div>
+
+    <!-- 1. ข้อมูลทั่วไป & เปลี่ยนชื่อ -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <span>📌</span> ข้อมูลผู้ใช้
+        </h2>
+        <span id="profileRoleBadge" class="px-3 py-1 bg-slate-100 text-slate-700 font-bold text-xs rounded-full uppercase font-mono">Loading...</span>
+      </div>
+
+      <form id="formUpdateName" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อ - นามสกุล</label>
+          <input type="text" id="profileName" required placeholder="เช่น สมชาย ใจดี"
+            class="w-full max-w-md px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <button type="submit" id="btnSaveName"
+          class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow">
+          💾 บันทึกชื่อ-นามสกุล
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. เปลี่ยนอีเมล -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <h2 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+        <span>✉️</span> เปลี่ยนอีเมลเข้าใช้งาน
+      </h2>
+      
+      <div id="googleEmailNotice" class="hidden bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-800">
+        ℹ️ คุณเข้าสู่ระบบด้วยบัญชี Google ไม่สามารถเปลี่ยนอีเมลผ่านระบบนี้ได้
+      </div>
+
+      <form id="formUpdateEmail" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">อีเมลปัจจุบัน</label>
+          <input type="email" id="currentEmailDisplay" disabled
+            class="w-full max-w-md px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-mono text-slate-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">อีเมลใหม่</label>
+          <input type="email" id="newEmailInput" required placeholder="newname@example.com"
+            class="w-full max-w-md px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสผ่านปัจจุบัน (เพื่อยืนยันตัวตน)</label>
+          <input type="password" id="emailConfirmPassword" required placeholder="••••••••"
+            class="w-full max-w-md px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <button type="submit" id="btnSaveEmail"
+          class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow">
+          ✉️ อัปเดตอีเมล
+        </button>
+      </form>
+    </div>
+
+    <!-- 3. เปลี่ยนรหัสผ่าน -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <h2 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+        <span>🔑</span> เปลี่ยนรหัสผ่าน
+      </h2>
+
+      <div id="googlePasswordNotice" class="hidden bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-800">
+        ℹ️ คุณเข้าสู่ระบบด้วยบัญชี Google การตั้งค่ารหัสผ่านจะต้องทำผ่าน Google Account ของคุณ
+      </div>
+
+      <form id="formUpdatePassword" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสผ่านปัจจุบัน</label>
+          <input type="password" id="oldPassword" required placeholder="••••••••"
+            class="w-full max-w-md px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+          <input type="password" id="newPassword" minlength="6" required placeholder="••••••••"
+            class="w-full max-w-md px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" id="confirmNewPassword" minlength="6" required placeholder="••••••••"
+            class="w-full max-w-md px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <button type="submit" id="btnSavePassword"
+          class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow">
+          🔑 อัปเดตรหัสผ่านใหม่
+        </button>
+      </form>
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { db, auth } from "./js/firebase-config.js";
+    import { checkUserAuth, initNotifications } from "./js/auth.js";
+    import { 
+      EmailAuthProvider, 
+      reauthenticateWithCredential, 
+      verifyBeforeUpdateEmail, 
+      updatePassword,
+      updateProfile 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    checkUserAuth(['admin', 'manager', 'user']);
+
+    const profileNameInput = document.getElementById("profileName");
+    const profileRoleBadge = document.getElementById("profileRoleBadge");
+    const currentEmailDisplay = document.getElementById("currentEmailDisplay");
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentEmailDisplay.value = user.email || "";
+
+        // เช็กว่าเป็นผู้ใช้ Google หรือไม่
+        const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+        if (isGoogleUser) {
+          document.getElementById("formUpdateEmail").classList.add("hidden");
+          document.getElementById("formUpdatePassword").classList.add("hidden");
+          document.getElementById("googleEmailNotice").classList.remove("hidden");
+          document.getElementById("googlePasswordNotice").classList.remove("hidden");
+        }
+
+        // ดึงข้อมูลเพิ่มเติมจาก Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const uData = userSnap.data();
+          profileNameInput.value = uData.name || user.displayName || "";
+          profileRoleBadge.innerText = (uData.role || "user").toUpperCase();
+        }
+
+        initUserNotificationsForPage();
+      }
+    });
+
+    async function initUserNotificationsForPage() {
+      if (!auth.currentUser) return;
+      try {
+        const qMy = query(collection(db, "requisitions"), where("userId", "==", auth.currentUser.uid));
+        const snap = await getDocs(qMy);
+        const myReqs = [];
+        snap.forEach(d => myReqs.push({ id: d.id, ...d.data() }));
+        initNotifications(myReqs);
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    }
+
+    // 1. อัปเดตชื่อ
+    document.getElementById("formUpdateName").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newName = profileNameInput.value.trim();
+      const user = auth.currentUser;
+      if (!user || !newName) return;
+
+      const btn = document.getElementById("btnSaveName");
+      btn.disabled = true;
+      btn.innerText = "กำลังบันทึก...";
+
+      try {
+        await updateDoc(doc(db, "users", user.uid), { name: newName });
+        await updateProfile(user, { displayName: newName });
+        alert("✨ อัปเดตชื่อ-นามสกุลเรียบร้อยแล้ว!");
+        location.reload();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการอัปเดตชื่อ: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "💾 บันทึกชื่อ-นามสกุล";
+      }
+    });
+
+    // 2. อัปเดตอีเมล (ต้อง Re-authenticate)
+    document.getElementById("formUpdateEmail").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newEmail = document.getElementById("newEmailInput").value.trim();
+      const password = document.getElementById("emailConfirmPassword").value;
+      const user = auth.currentUser;
+
+      if (!user || !newEmail || !password) return;
+
+      const btn = document.getElementById("btnSaveEmail");
+      btn.disabled = true;
+      btn.innerText = "กำลังดำเนินการ...";
+
+      try {
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+
+        await verifyBeforeUpdateEmail(user, newEmail);
+        await updateDoc(doc(db, "users", user.uid), { email: newEmail });
+
+        alert("✉️ ระบบส่งลิงก์ยืนยันไปยังอีเมลใหม่ของคุณแล้ว กรุณายืนยันก่อนใช้งานครั้งต่อไป");
+        document.getElementById("formUpdateEmail").reset();
+        currentEmailDisplay.value = newEmail;
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการเปลี่ยนอีเมล: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "✉️ อัปเดตอีเมล";
+      }
+    });
+
+    // 3. อัปเดตรหัสผ่าน
+    document.getElementById("formUpdatePassword").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const oldPassword = document.getElementById("oldPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+      const user = auth.currentUser;
+
+      if (newPassword !== confirmNewPassword) {
+        alert("⚠️ รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        return;
+      }
+
+      const btn = document.getElementById("btnSavePassword");
+      btn.disabled = true;
+      btn.innerText = "กำลังอัปเดตรหัสผ่าน...";
+
+      try {
+        const credential = EmailAuthProvider.credential(user.email, oldPassword);
+        await reauthenticateWithCredential(user, credential);
+
+        await updatePassword(user, newPassword);
+        alert("🔑 เปลี่ยนรหัสผ่านเรียบร้อยแล้ว!");
+        document.getElementById("formUpdatePassword").reset();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "🔑 อัปเดตรหัสผ่านใหม่";
+      }
+    });
+  </script>
+</body>
+</html>
