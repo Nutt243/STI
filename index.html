@@ -20,7 +20,7 @@
       <!-- Desktop Menu -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">หน้าหลัก</a>
-        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกพัสดุ</a>
 
         <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1">
           <span>ประวัติการเบิก</span>
@@ -32,8 +32,8 @@
           <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
         </a>
 
-        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
-        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังสินค้า</a>
+        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับพัสดุเข้า & คัดแยก</a>
+        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังพัสดุ</a>
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
@@ -90,7 +90,7 @@
       <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
     </div>
     <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">หน้าหลัก</a>
-    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกพัสดุ</a>
     
     <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex justify-between items-center">
       <span>ประวัติการเบิก</span>
@@ -102,8 +102,8 @@
       <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
     </a>
     
-    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
-    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังสินค้า</a>
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับพัสดุเข้า & คัดแยก</a>
+    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังพัสดุ</a>
     <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
     <a href="profile.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-blue-400 hover:bg-slate-800">👤 โปรไฟล์ส่วนตัว</a>
   </div>
@@ -118,14 +118,14 @@
         <p class="text-slate-500 text-xs sm:text-sm mt-1">เลือกทำรายการขอเบิกพัสดุ หรือตรวจสอบสถานะคำขอของคุณได้ที่นี่</p>
       </div>
       <a href="requisition.html" class="w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow transition">
-        + ขอเบิกสินค้าใหม่
+        + ขอเบิกพัสดุใหม่
       </a>
     </div>
 
     <!-- 2. ประวัติการเบิกล่าสุด (3 รายการพอ) -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center">
-        <h2 class="text-base sm:text-lg font-bold text-slate-800">📜 ประวัติการขอเบิกล่าสุดของคุณ (3 รายการ)</h2>
+        <h2 class="text-base sm:text-lg font-bold text-slate-800">📜 ประวัติการขอเบิกล่าสุดของคุณ (3 รายการล่าสุด)</h2>
         <a href="history.html" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition">ดูทั้งหมด &rarr;</a>
       </div>
 
@@ -150,7 +150,7 @@
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
       <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
         <div>
-          <h2 class="text-base sm:text-lg font-bold text-slate-800">📊 สรุปยอดการเบิกพัสดุสะสมตาม SKU ของคุณ</h2>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">📊 สรุปยอดการเบิกพัสดุสะสมตามหมวดหมู่ของคุณ</h2>
           <p class="text-xs text-slate-500">นับเฉพาะคำขอเบิกที่ได้รับการอนุมัติแล้วเท่านั้น (กดขยายเพื่อดูรายการย่อยที่เคยเบิกไป)</p>
         </div>
       </div>
@@ -161,7 +161,7 @@
 
       <div id="toggleSkuContainer" class="hidden text-center pt-2">
         <button id="btnToggleAllSkus" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
-          ดูสรุป SKU ทั้งหมด
+          ดูสรุปรายการเบิกสะสมทั้งหมด
         </button>
       </div>
     </div>
@@ -362,9 +362,9 @@
       if (skuList.length > 3) {
         toggleContainer.classList.remove("hidden");
         if (showAllSkus) {
-          btnToggle.innerText = "ย่อเหลือ 3 SKU";
+          btnToggle.innerText = "ย่อเหลือ 3 รายการ";
         } else {
-          btnToggle.innerText = `ดูสรุป SKU ทั้งหมด (+${skuList.length - 3} รายการ)`;
+          btnToggle.innerText = `ดูสรุปรายการเบิกสะสมทั้งหมด (+${skuList.length - 3})`;
         }
       } else {
         toggleContainer.classList.add("hidden");

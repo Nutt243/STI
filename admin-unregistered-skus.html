@@ -21,7 +21,7 @@
       <!-- Desktop Menu -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก</a>
-        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกพัสดุ</a>
 
         <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1">
           <span>ประวัติการเบิก</span>
@@ -33,8 +33,8 @@
           <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
         </a>
 
-        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
-        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังสินค้า</a>
+        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">📦 รับพัสดุเข้า & คัดแยก</a>
+        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังพัสดุ</a>
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
@@ -91,7 +91,7 @@
       <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
     </div>
     <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
-    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกพัสดุ</a>
     
     <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex justify-between items-center">
       <span>ประวัติการเบิก</span>
@@ -103,8 +103,8 @@
       <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
     </a>
     
-    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
-    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังสินค้า</a>
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">📦 รับพัสดุเข้า & คัดแยก</a>
+    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังพัสดุ</a>
     <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
     <a href="profile.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-blue-400 hover:bg-slate-800">👤 โปรไฟล์ส่วนตัว</a>
   </div>
@@ -113,8 +113,8 @@
   <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
-      <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">⚡ สแกนรับสินค้าเข้าคลัง (Batch Mode)</h1>
-      <p class="text-xs text-slate-500 mt-1">ยิงบาร์โค้ดเพื่อบันทึกค้างไว้ในระบบ ทำต่อเมื่อไหร่ก็ได้ (ข้อมูลซิงก์เรียลไทม์)</p>
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">⚡ สแกนรับพัสดุเข้าคลัง (Batch Mode)</h1>
+      <p class="text-xs text-slate-500 mt-1">สามารถยิงบาร์โค้ดเพื่อบันทึกค้างไว้ในระบบ ทำต่อเมื่อไหร่ก็ได้</p>
     </div>
 
     <div class="bg-blue-600 p-4 sm:p-6 rounded-2xl shadow-lg text-white space-y-3">
@@ -137,7 +137,7 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
         <div>
           <h2 class="text-base sm:text-lg font-black text-slate-800">📋 รายการรอรับเข้าคลัง (Pending Batch)</h2>
-          <p class="text-xs text-slate-400">กำหนด SKU หลักและ Specific Attributes หรือส่งออกไปกรอกใน Google Sheets</p>
+          <p class="text-xs text-slate-400">กำหนดหมวดหมู่หลักและคุณลักษณะเฉพาะหรือส่งออกข้อมูล CSV</p>
         </div>
         <div class="flex flex-wrap gap-2 w-full sm:w-auto">
           <button id="btnExportCSV" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1">
@@ -158,9 +158,9 @@
           <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
             <tr>
               <th class="p-3">บาร์โค้ด</th>
-              <th class="p-3">SKU หลัก / หมวดหมู่</th>
+              <th class="p-3">หมวดหมู่</th>
               <th class="p-3 w-28">จำนวน</th>
-              <th class="p-3">Specific Attributes</th>
+              <th class="p-3">คุณลักษณะเฉพาะ</th>
               <th class="p-3 text-center">จัดการ</th>
             </tr>
           </thead>
@@ -181,7 +181,7 @@
       <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl text-2xl mb-1">
         📷✨
       </div>
-      <h3 class="font-black text-slate-800 text-base">สแกนรับสินค้าสำเร็จ!</h3>
+      <h3 class="font-black text-slate-800 text-base">สแกนรับพัสดุสำเร็จ!</h3>
       <div id="camAlertContent" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1">
       </div>
 
@@ -204,7 +204,7 @@
   <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-bold text-slate-800 text-base sm:text-lg">⚙️ ตั้งค่ารายละเอียดสินค้า</h3>
+        <h3 class="font-bold text-slate-800 text-base sm:text-lg">⚙️ ตั้งค่ารายละเอียดพัสดุ</h3>
         <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
       </div>
 
@@ -213,7 +213,7 @@
 
         <div class="space-y-3 p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl">
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">SKU หลัก (เช่น ปากกา, รองเท้า)</label>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">หมวดหมู่หลัก (เช่น ปากกา, รองเท้า)</label>
             <input type="text" id="modalSkuName" placeholder="เช่น ปากกา" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500">
           </div>
           <div class="grid grid-cols-3 gap-2">
@@ -288,7 +288,7 @@
       "ทั่วไป": ["ยี่ห้อ", "รุ่น", "สี"]
     };
 
-    // ฟังก์ชันบันทึก Log การรับสินค้าเข้าคลัง
+    // ฟังก์ชันบันทึก Log การรับพัสดุเข้าคลัง
     async function addStockLog(itemData, qtyAdded, currentStockBefore, newStockAfter, barcode, user) {
       try {
         let userName = user.displayName || user.email;
@@ -301,7 +301,7 @@
         await addDoc(collection(db, "stock_logs"), {
           timestamp: serverTimestamp(),
           actionType: "restock",
-          method: "รับสินค้าเข้า (Batch/Scan)",
+          method: "รับพัสดุเข้า (Batch/Scan)",
           barcode: barcode,
           skuName: itemData.sku ? itemData.sku.sku_name : (itemData.sku_name || "ไม่ระบุ SKU"),
           attributes: itemData.attributes || {},
@@ -442,12 +442,12 @@
         } catch(e) {}
       }
 
-      const finalSkuStr = skuNameDisplay ? skuNameDisplay : '<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนด SKU</span>';
+      const finalSkuStr = skuNameDisplay ? skuNameDisplay : '<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนดหมวดหมู่</span>';
       const finalLocStr = locationDisplay && locationDisplay !== "-" ? locationDisplay : "-";
 
       document.getElementById("camAlertContent").innerHTML = `
         <p><span class="font-bold text-slate-700">บาร์โค้ด:</span> <span class="font-mono text-blue-600">${barcode}</span></p>
-        <p><span class="font-bold text-slate-700">SKU หลัก:</span> ${finalSkuStr}</p>
+        <p><span class="font-bold text-slate-700">หมวดหมู่หลัก:</span> ${finalSkuStr}</p>
         <p><span class="font-bold text-slate-700">โลเคชั่น:</span> <span class="text-purple-700 font-bold">📍 ${finalLocStr}</span></p>
       `;
       document.getElementById("camAddQtyInput").value = 1;
@@ -583,7 +583,7 @@
                    <span class="font-bold text-slate-800">${displayName}</span>
                    <span class="text-[10px] text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md ml-1">${categoryName}</span>
                  </div>`
-              : `<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนด SKU</span>`}
+              : `<span class="text-amber-600 font-bold">⚠️ ยังไม่ได้กำหนดหมวดหมู่</span>`}
           </td>
           <td class="p-3">
             <input type="number" value="${item.qty}" min="1" onchange="updateQty('${barcode}', this.value)" 
@@ -674,7 +674,7 @@
       const barcode = document.getElementById("modalBarcode").value;
       const skuName = document.getElementById("modalSkuName").value.trim();
 
-      if (!skuName) return alert("โปรดระบุชื่อ SKU หลัก");
+      if (!skuName) return alert("โปรดระบุชื่อหมวดหมู่หลัก");
 
       const category = document.getElementById("modalCategory").value;
       const unit = document.getElementById("modalUnit").value.trim() || "ชิ้น";
@@ -770,7 +770,7 @@
           });
         }
 
-        // 📌 บันทึก Log การรับสินค้าเข้าคลัง
+        // 📌 บันทึก Log การรับพัสดุเข้าคลัง
         if (auth.currentUser) {
           await addStockLog(item, item.qty, currentStockBefore, newStockAfter, barcode, auth.currentUser);
         }
@@ -793,7 +793,7 @@
       const readyItems = Array.from(pendingMap.values()).filter(item => item && (item.sku || item.sku_id));
 
       if (readyItems.length === 0) {
-        return alert("⚠️ ไม่มีรายการที่พร้อมอนุมัติ (กรุณากำหนด SKU หลักให้เรียบร้อยก่อน)");
+        return alert("⚠️ ไม่มีรายการที่พร้อมอนุมัติ (กรุณากำหนดหมวดหมู่หลักให้เรียบร้อยก่อน)");
       }
 
       if (!confirm(`คุณต้องการอนุมัติรับเข้าคลังทั้งหมด ${readyItems.length} รายการใช่หรือไม่?`)) {

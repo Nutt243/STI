@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockMaster - จัดการสต็อกสินค้าภาพรวม</title>
+  <title>StockMaster - จัดการสต็อกพัสดุภาพรวม</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
@@ -20,7 +20,7 @@
       <!-- Desktop Menu -->
       <div class="hidden md:flex items-center space-x-1">
         <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก</a>
-        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกพัสดุ</a>
 
         <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1">
           <span>ประวัติการเบิก</span>
@@ -32,8 +32,8 @@
           <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
         </a>
 
-        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
-        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">📊 คลังสินค้า</a>
+        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับพัสดุเข้า & คัดแยก</a>
+        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800 transition">📊 คลังพัสดุ</a>
         <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
       </div>
 
@@ -90,7 +90,7 @@
       <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
     </div>
     <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
-    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกพัสดุ</a>
     
     <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex justify-between items-center">
       <span>ประวัติการเบิก</span>
@@ -102,8 +102,8 @@
       <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
     </a>
     
-    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
-    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">📊 คลังสินค้า</a>
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับพัสดุเข้า & คัดแยก</a>
+    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-white bg-slate-800">📊 คลังพัสดุ</a>
     <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
     <a href="profile.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-blue-400 hover:bg-slate-800">👤 โปรไฟล์ส่วนตัว</a>
   </div>
@@ -112,7 +112,7 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📦 คลังสินค้าและพัสดุ (ภาพรวมระบบ)</h1>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📦 คลังพัสดุและพัสดุ (ภาพรวมระบบ)</h1>
         <p class="text-xs text-slate-500 mt-1">รายการพัสดุและบาร์โค้ดทั้งหมดแยกตาม SKU สามารถตรวจสอบและปรับปรุงสต็อกได้ที่นี่[cite: 8]</p>
       </div>
       <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
@@ -146,7 +146,7 @@
     </div>
   </main>
 
-  <!-- Modal แก้ไขข้อมูลสินค้า -->
+  <!-- Modal แก้ไขข้อมูลพัสดุ -->
   <div id="editProductModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -219,6 +219,11 @@
 
     let allProducts = [];
     let skusMap = new Map();
+    let currentFilteredList = [];
+
+    // ตัวแปรสำหรับระบบ Pagination
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     async function loadInventory() {
       const tbody = document.getElementById("inventoryTableBody");
@@ -233,7 +238,7 @@
           allProducts.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        renderTable(allProducts);
+        filterAndRender();
 
         if (auth.currentUser) {
           initUserNotificationsForPage();
@@ -257,17 +262,49 @@
       }
     }
 
-    function renderTable(products) {
+    // กรองข้อมูลตามคำค้นหา
+    function filterAndRender() {
+      const keyword = document.getElementById("inventorySearch").value.toLowerCase().trim();
+      
+      if (!keyword) {
+        currentFilteredList = [...allProducts];
+      } else {
+        currentFilteredList = allProducts.filter(p => {
+          const skuInfo = skusMap.get(p.sku_id) || { sku_name: "", location: "" };
+          const barcode = (p.barcode || "").toLowerCase();
+          const skuName = skuInfo.sku_name.toLowerCase();
+          const location = (p.location || skuInfo.location || "").toLowerCase();
+          const attrStr = JSON.stringify(p.specific_attributes || {}).toLowerCase();
+          
+          return barcode.includes(keyword) || skuName.includes(keyword) || location.includes(keyword) || attrStr.includes(keyword);
+        });
+      }
+
+      // รีเซ็ตกลับไปหน้า 1 ทุกครั้งที่มีการค้นหาใหม่
+      currentPage = 1;
+      renderPaginatedTable();
+    }
+
+    function renderPaginatedTable() {
       const tbody = document.getElementById("inventoryTableBody");
       tbody.innerHTML = "";
 
-      if (products.length === 0) {
+      // ลบแถบ Pagination เดิมทิ้งก่อนสร้างใหม่ (ถ้ามี)
+      const existingPagination = document.getElementById("inventoryPaginationContainer");
+      if (existingPagination) existingPagination.remove();
+
+      if (currentFilteredList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">ไม่พบรายการพัสดุในระบบ</td></tr>`;
         return;
       }
 
+      // คำนวณตัดรายการเฉพาะหน้าที่กำลังแสดง (10 รายการ)
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedProducts = currentFilteredList.slice(startIndex, endIndex);
+
       let html = "";
-      products.forEach((item) => {
+      paginatedProducts.forEach((item) => {
         const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", unit: "ชิ้น", category: "ทั่วไป", location: "" };
         const attrSummary = Object.entries(item.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "-";
         const barcodeStr = item.barcode || item.id;
@@ -292,20 +329,40 @@
         `;
       });
       tbody.innerHTML = html;
+
+      // สร้างปุ่มเปลี่ยนหน้า (Pagination Controls) ด้านล่างตาราง
+      renderPaginationControls();
     }
 
-    document.getElementById("inventorySearch").addEventListener("input", (e) => {
-      const keyword = e.target.value.toLowerCase().trim();
-      const filtered = allProducts.filter(p => {
-        const skuInfo = skusMap.get(p.sku_id) || { sku_name: "", location: "" };
-        const barcode = (p.barcode || "").toLowerCase();
-        const skuName = skuInfo.sku_name.toLowerCase();
-        const location = (p.location || skuInfo.location || "").toLowerCase();
-        const attrStr = JSON.stringify(p.specific_attributes || {}).toLowerCase();
-        
-        return barcode.includes(keyword) || skuName.includes(keyword) || location.includes(keyword) || attrStr.includes(keyword);
-      });
-      renderTable(filtered);
+    function renderPaginationControls() {
+      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
+      if (totalPages <= 1) return;
+
+      const mainContainer = document.querySelector("main");
+      const paginationDiv = document.createElement("div");
+      paginationDiv.id = "inventoryPaginationContainer";
+      paginationDiv.className = "flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 text-xs shadow-sm";
+      
+      paginationDiv.innerHTML = `
+        <span class="text-slate-500 font-medium">แสดงหน้า <strong class="text-slate-800">${currentPage}</strong> จาก <strong class="text-slate-800">${totalPages}</strong> (ทั้งหมด ${currentFilteredList.length} รายการ)</span>
+        <div class="flex gap-1.5">
+          <button onclick="changePage(${currentPage - 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}>&larr; ก่อนหน้า</button>
+          <button onclick="changePage(${currentPage + 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &rarr;</button>
+        </div>
+      `;
+      mainContainer.appendChild(paginationDiv);
+    }
+
+    window.changePage = (newPage) => {
+      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
+      if (newPage < 1 || newPage > totalPages) return;
+      currentPage = newPage;
+      renderPaginatedTable();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById("inventorySearch").addEventListener("input", () => {
+      filterAndRender();
     });
 
     window.openEditModal = (id) => {
@@ -383,7 +440,6 @@
           userName = userDocSnap.data().name;
         }
 
-        // ดึงข้อมูลเดิมเพื่อเช็คจำนวนก่อนเปลี่ยน
         const oldProductSnap = await getDoc(doc(db, "products", productId));
         const oldData = oldProductSnap.exists() ? oldProductSnap.data() : {};
         const quantityBefore = oldData.quantity || 0;
@@ -418,22 +474,19 @@
           updatedAt: serverTimestamp()
         });
 
-        // 📌 บันทึก Log การแก้ไขจากหน้าคลังสินค้า
-        if (quantityBefore !== newQty || true) {
-          await addDoc(collection(db, "stock_logs"), {
-            timestamp: serverTimestamp(),
-            actionType: "admin_edit",
-            method: "หน้าคลังสินค้า",
-            barcode: newBarcode,
-            skuName: newSkuName,
-            attributes: attrs,
-            quantityBefore: quantityBefore,
-            quantityAfter: newQty,
-            changedQty: changedQty,
-            userId: currentUser.uid,
-            userName: userName
-          });
-        }
+        await addDoc(collection(db, "stock_logs"), {
+          timestamp: serverTimestamp(),
+          actionType: "admin_edit",
+          method: "หน้าคลังพัสดุ",
+          barcode: newBarcode,
+          skuName: newSkuName,
+          attributes: attrs,
+          quantityBefore: quantityBefore,
+          quantityAfter: newQty,
+          changedQty: changedQty,
+          userId: currentUser.uid,
+          userName: userName
+        });
 
         alert("💾 บันทึกการแก้ไขข้อมูลพัสดุเรียบร้อยแล้ว!");
         closeEditModal();
@@ -458,11 +511,10 @@
         const skuInfo = skusMap.get(targetItem?.sku_id) || {};
         const quantityBefore = targetItem?.quantity || 0;
 
-        // 📌 บันทึก Log การลบพัสดุออกจากคลัง
         await addDoc(collection(db, "stock_logs"), {
           timestamp: serverTimestamp(),
           actionType: "admin_delete",
-          method: "หน้าคลังสินค้า",
+          method: "หน้าคลังพัสดุ",
           barcode: targetItem?.barcode || id,
           skuName: skuInfo.sku_name || "ไม่ระบุ SKU",
           attributes: targetItem?.specific_attributes || {},
