@@ -322,7 +322,7 @@
   <script type="module">
     import { db, auth } from "./js/firebase-config.js";
     import { checkUserAuth, initNotifications } from "./js/auth.js";
-    import { collection, getDocs, doc, getDoc, updateDoc, query, orderBy, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, updateDoc, addDoc, query, orderBy, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin','manager']);
 
@@ -1035,7 +1035,6 @@
       document.getElementById("confirmApproveModal").classList.add("hidden");
 
       try {
-        // ดึงชื่อของผู้ใช้งานปัจจุบันเพื่อบันทึกเป็นชื่อผู้อนุมัติ
         const currentUser = auth.currentUser;
         let approverName = currentUser.displayName || currentUser.email;
         
@@ -1050,17 +1049,35 @@
 
           const prodRef = doc(db, "products", item.product_id);
           const prodSnap = await getDoc(prodRef);
-          const currentStock = prodSnap.data().quantity || 0;
+          const currentStockBefore = prodSnap.data().quantity || 0;
+          const newStockAfter = currentStockBefore - item.approvedQty;
 
+          // ตัดสต็อกสินค้าจริง
           await updateDoc(prodRef, {
-            quantity: currentStock - item.approvedQty,
+            quantity: newStockAfter,
             updatedAt: serverTimestamp()
+          });
+
+          // 📌 บันทึก Log การอนุมัติจ่ายสินค้า
+          await addDoc(collection(db, "stock_logs"), {
+            timestamp: serverTimestamp(),
+            actionType: "requisition_approved",
+            method: "สแกนจ่ายคำขอเบิก",
+            referenceId: activeReqId, // อ้างอิงเลขที่คำขอเบิก
+            barcode: item.barcode || "",
+            skuName: item.sku_name || "ไม่ระบุ SKU",
+            attributes: item.attributes || {},
+            quantityBefore: currentStockBefore,
+            quantityAfter: newStockAfter,
+            changedQty: -item.approvedQty, // จำนวนติดลบเพราะเป็นการจ่ายออก
+            userId: currentUser.uid,
+            userName: approverName
           });
         }
 
         await updateDoc(doc(db, "requisitions", activeReqId), {
           status: "approved",
-          approvedBy: approverName, // บันทึกเฉพาะชื่อผู้อนุมัติ
+          approvedBy: approverName,
           items: activeReqItems.map(i => ({
             product_id: i.product_id,
             sku_name: i.sku_name,

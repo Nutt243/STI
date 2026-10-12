@@ -254,13 +254,14 @@
     </div>
   </div>
 
-<script type="module">
+  <script type="module">
     import { db, auth } from "./js/firebase-config.js";
     import { checkUserAuth, initNotifications } from "./js/auth.js";
     import { 
       collection, 
       getDocs, 
       doc, 
+      getDoc,
       setDoc, 
       addDoc, 
       updateDoc, 
@@ -286,6 +287,34 @@
       "เครื่องใช้ไฟฟ้า": ["แบรนด์", "รุ่น", "กำลังไฟ(W)", "S/N"],
       "ทั่วไป": ["ยี่ห้อ", "รุ่น", "สี"]
     };
+
+    // ฟังก์ชันบันทึก Log การรับสินค้าเข้าคลัง
+    async function addStockLog(itemData, qtyAdded, currentStockBefore, newStockAfter, barcode, user) {
+      try {
+        let userName = user.displayName || user.email;
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().name) {
+          userName = userDocSnap.data().name;
+        }
+
+        await addDoc(collection(db, "stock_logs"), {
+          timestamp: serverTimestamp(),
+          actionType: "restock",
+          method: "รับสินค้าเข้า (Batch/Scan)",
+          barcode: barcode,
+          skuName: itemData.sku ? itemData.sku.sku_name : (itemData.sku_name || "ไม่ระบุ SKU"),
+          attributes: itemData.attributes || {},
+          quantityBefore: currentStockBefore,
+          quantityAfter: newStockAfter,
+          changedQty: qtyAdded, // จำนวนที่บวกเพิ่ม (+)
+          userId: user.uid,
+          userName: userName
+        });
+      } catch (err) {
+        console.error("Error writing stock log:", err);
+      }
+    }
 
     async function initData() {
       const skuSnap = await getDocs(collection(db, "skus"));
@@ -463,7 +492,6 @@
       }
     }
 
-    // รองรับการกด Enter เพื่อปิดแจ้งเตือน (Modal รับเข้า)
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         const alertModal = document.getElementById("cameraScanAlertModal");
@@ -714,25 +742,37 @@
         const q = query(collection(db, "products"), where("barcode", "==", barcode));
         const snap = await getDocs(q);
 
+        let currentStockBefore = 0;
+        let newStockAfter = 0;
+
         if (!snap.empty) {
           const existingDoc = snap.docs[0];
-          const currentQty = existingDoc.data().quantity || 0;
+          currentStockBefore = existingDoc.data().quantity || 0;
+          newStockAfter = currentStockBefore + item.qty;
 
           await updateDoc(doc(db, "products", existingDoc.id), {
-            quantity: currentQty + item.qty,
+            quantity: newStockAfter,
             location: finalLocation,
             specific_attributes: item.attributes,
             updatedAt: serverTimestamp()
           });
         } else {
+          currentStockBefore = 0;
+          newStockAfter = item.qty;
+
           await addDoc(collection(db, "products"), {
             sku_id: finalSkuId,
             barcode: barcode,
-            quantity: item.qty,
+            quantity: newStockAfter,
             location: finalLocation,
             specific_attributes: item.attributes,
             createdAt: serverTimestamp()
           });
+        }
+
+        // 📌 บันทึก Log การรับสินค้าเข้าคลัง
+        if (auth.currentUser) {
+          await addStockLog(item, item.qty, currentStockBefore, newStockAfter, barcode, auth.currentUser);
         }
 
         await deleteDoc(doc(db, "unregistered_skus", barcode));

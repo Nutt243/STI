@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockMaster - ประวัติการเปลี่ยนแปลงสต็อก (Audit Logs)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
+
+<nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+  <div class="max-w-full px-4 mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      
+      <a href="index.html" class="flex items-center space-x-3">
+        <div class="bg-blue-600 p-2 rounded-xl text-white font-black text-lg tracking-wider">SM</div>
+        <span class="font-bold text-lg tracking-tight">StockMaster</span>
+      </a>
+
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-1">
+        <a href="index.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">หน้าหลัก</a>
+        <a href="requisition.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">เบิกสินค้า</a>
+
+        <a href="history.html" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1">
+          <span>ประวัติการเบิก</span>
+          <span id="navHistoryPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
+        </a>
+        
+        <a href="approvals.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 transition items-center gap-1">
+          <span>⏳ อนุมัติคำขอ</span>
+          <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"></span>
+        </a>
+
+        <a href="admin-unregistered-skus.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📦 รับสินค้าเข้า & คัดแยก</a>
+        <a href="inventory.html" class="manager-only hidden px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">📊 คลังสินค้า</a>
+        <a href="admin-users.html" class="admin-only hidden px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition">👥 จัดการผู้ใช้</a>
+      </div>
+
+      <!-- Right User Controls & Notification Bell -->
+      <div class="hidden md:flex items-center space-x-3">
+        <button id="btnNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span id="notifBadge" class="absolute top-1.5 right-1.5 bg-rose-500 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 hidden"></span>
+        </button>
+
+        <a href="profile.html" id="userDisplayName" class="text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-full border border-slate-700 font-mono transition flex items-center gap-1.5">Loading...</a>
+        <button id="btnLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 transition">ออกจากระบบ</button>
+      </div>
+
+      <!-- Mobile Right Controls -->
+      <div class="flex md:hidden items-center space-x-2 relative">
+        <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span id="mobileNotifBadge" class="absolute top-1.5 right-1.5 bg-rose-500 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 hidden"></span>
+        </button>
+
+        <button id="btnMobileMenu" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Notification Dropdown -->
+  <div id="notifDropdown" class="hidden fixed top-16 left-4 right-4 md:absolute md:top-full md:left-auto md:right-4 md:mt-2 md:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 z-50 text-slate-800 space-y-2">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+      <h3 class="font-black text-xs text-slate-800 flex items-center gap-1.5">🔔 แจ้งเตือนการอนุมัติคำขอ</h3>
+      <span class="text-[10px] text-slate-400">อัปเดตล่าสุด</span>
+    </div>
+    <div id="notifListContainer" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+      <p class="text-center text-slate-400 py-6 text-xs">ไม่มีการแจ้งเตือนใหม่</p>
+    </div>
+    <div class="border-t border-slate-100 pt-2 text-center">
+      <a href="history.html" class="text-[11px] font-bold text-blue-600 hover:underline">ดูประวัติทั้งหมด &rarr;</a>
+    </div>
+  </div>
+
+  <!-- Mobile Dropdown Menu -->
+  <div id="mobileNavMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-4 space-y-2">
+    <div class="pb-2 border-b border-slate-800 flex justify-between items-center">
+      <span id="mobileUserDisplayName" class="text-xs text-slate-300 font-mono">Loading...</span>
+      <button id="btnMobileLogout" class="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1">ออกจากระบบ</button>
+    </div>
+    <a href="index.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">หน้าหลัก</a>
+    <a href="requisition.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">เบิกสินค้า</a>
+    
+    <a href="history.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex justify-between items-center">
+      <span>ประวัติการเบิก</span>
+      <span id="mobileNavHistoryPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+    </a>
+
+    <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 flex justify-between items-center">
+      <span>⏳ อนุมัติคำขอ</span>
+      <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+    </a>
+    
+    <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
+    <a href="inventory.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📊 คลังสินค้า</a>
+    <a href="admin-users.html" class="admin-only hidden block px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">👥 จัดการผู้ใช้</a>
+    <a href="profile.html" class="block px-3 py-2 rounded-lg text-sm font-medium text-blue-400 hover:bg-slate-800">👤 โปรไฟล์ส่วนตัว</a>
+  </div>
+</nav>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📜 ประวัติการเปลี่ยนแปลงสต็อก (Audit Logs)</h1>
+        <p class="text-xs text-slate-500 mt-1">ตรวจสอบประวัติการเพิ่ม-ลดสต็อก การอนุมัติเบิก และการแก้ไขข้อมูลย้อนหลัง</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        <a href="inventory.html" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5">
+          &larr; กลับหน้าคลังสินค้า
+        </a>
+        <input type="text" id="logSearch" placeholder="🔍 ค้นหาชื่อ SKU, บาร์โค้ด, ผู้ทำรายการ..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs sm:text-sm text-slate-600 min-w-[750px]">
+          <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+            <tr>
+              <th class="p-3.5">วัน / เวลา</th>
+              <th class="p-3.5">รายการพัสดุ / SKU</th>
+              <th class="p-3.5">ประเภทการทำรายการ</th>
+              <th class="p-3.5 text-center">จำนวนเปลี่ยน</th>
+              <th class="p-3.5 text-center">ก่อน &rarr; หลัง</th>
+              <th class="p-3.5">วิธี / ช่องทาง</th>
+              <th class="p-3.5">ผู้ทำรายการ</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody" class="divide-y divide-slate-100">
+            <tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">กำลังโหลดประวัติ Log...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { db, auth } from "./js/firebase-config.js";
+    import { checkUserAuth, initNotifications } from "./js/auth.js";
+    import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // กำหนดสิทธิ์ให้เฉพาะ Admin หรือ Manager เข้าดูหน้า Log นี้ได้
+    checkUserAuth(['admin', 'manager']);
+
+    let allLogs = [];
+
+    async function loadLogs() {
+      const tbody = document.getElementById("logsTableBody");
+      try {
+        const q = query(collection(db, "stock_logs"), orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+
+        allLogs = [];
+        snapshot.forEach(docSnap => {
+          allLogs.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        renderLogsTable(allLogs);
+
+        if (auth.currentUser) {
+          initUserNotificationsForPage();
+        }
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-bold">เกิดข้อผิดพลาดในการโหลด Log: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function initUserNotificationsForPage() {
+      if (!auth.currentUser) return;
+      try {
+        const qMy = query(collection(db, "requisitions"), where("userId", "==", auth.currentUser.uid));
+        const snap = await getDocs(qMy);
+        const myReqs = [];
+        snap.forEach(d => myReqs.push({ id: d.id, ...d.data() }));
+        initNotifications(myReqs);
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    }
+
+    function renderLogsTable(logs) {
+      const tbody = document.getElementById("logsTableBody");
+      tbody.innerHTML = "";
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">ยังไม่มีประวัติการเปลี่ยนแปลงสต็อกในระบบ</td></tr>`;
+        return;
+      }
+
+      let html = "";
+      logs.forEach(log => {
+        const dateStr = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate().toLocaleString('th-TH') : new Date(log.timestamp.seconds * 1000).toLocaleString('th-TH')) : '-';
+        
+        let badgeClass = "bg-slate-100 text-slate-700";
+        let actionLabel = log.actionType || "ไม่ระบุ";
+
+        if (log.actionType === "restock") {
+          badgeClass = "bg-emerald-100 text-emerald-800";
+          actionLabel = "📥 รับสินค้าเข้า";
+        } else if (log.actionType === "requisition_approved") {
+          badgeClass = "bg-blue-100 text-blue-800";
+          actionLabel = "📤 อนุมัติจ่าย (เบิก)";
+        } else if (log.actionType === "admin_edit") {
+          badgeClass = "bg-amber-100 text-amber-800";
+          actionLabel = "✏️ แก้ไขคลัง";
+        } else if (log.actionType === "admin_delete") {
+          badgeClass = "bg-rose-100 text-rose-800";
+          actionLabel = "🗑️ ลบพัสดุ";
+        }
+
+        const qtyChanged = log.changedQty || 0;
+        const qtyDisplay = qtyChanged > 0 
+          ? `<span class="font-bold text-emerald-600">+${qtyChanged}</span>` 
+          : (qtyChanged < 0 ? `<span class="font-bold text-rose-600">${qtyChanged}</span>` : `<span class="text-slate-500">0</span>`);
+
+        const barcodeStr = log.barcode ? `<span class="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${log.barcode}</span>` : "";
+        const attrStr = Object.entries(log.attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "";
+
+        html += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3.5 text-xs text-slate-500 whitespace-nowrap">${dateStr}</td>
+            <td class="p-3.5">
+              <div class="font-bold text-slate-800">${log.skuName || '-'}</div>
+              <div class="flex items-center gap-1 mt-0.5">${barcodeStr} <span class="text-[10px] text-slate-400">${attrStr}</span></div>
+            </td>
+            <td class="p-3.5 whitespace-nowrap">
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${badgeClass}">${actionLabel}</span>
+            </td>
+            <td class="p-3.5 text-center text-xs whitespace-nowrap">${qtyDisplay}</td>
+            <td class="p-3.5 text-center text-xs text-slate-600 whitespace-nowrap font-mono">
+              ${log.quantityBefore ?? '-'} &rarr; ${log.quantityAfter ?? '-'}
+            </td>
+            <td class="p-3.5 text-xs text-slate-600 whitespace-nowrap">${log.method || '-'}</td>
+            <td class="p-3.5 text-xs font-bold text-slate-700 whitespace-nowrap">${log.userName || 'ระบบ'}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    document.getElementById("logSearch").addEventListener("input", (e) => {
+      const keyword = e.target.value.toLowerCase().trim();
+      const filtered = allLogs.filter(log => {
+        const sku = (log.skuName || "").toLowerCase();
+        const barcode = (log.barcode || "").toLowerCase();
+        const user = (log.userName || "").toLowerCase();
+        const method = (log.method || "").toLowerCase();
+        return sku.includes(keyword) || barcode.includes(keyword) || user.includes(keyword) || method.includes(keyword);
+      });
+      renderLogsTable(filtered);
+    });
+
+    loadLogs();
+  </script>
+</body>
+</html>

@@ -99,7 +99,7 @@
 
     <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 flex justify-between items-center">
       <span>⏳ อนุมัติคำขอ</span>
-      <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+      <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
     </a>
     
     <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับสินค้าเข้า & คัดแยก</a>
@@ -113,9 +113,15 @@
     <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
         <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📦 คลังสินค้าและพัสดุ (ภาพรวมระบบ)</h1>
-        <p class="text-xs text-slate-500 mt-1">รายการพัสดุและบาร์โค้ดทั้งหมดแยกตาม SKU สามารถตรวจสอบและปรับปรุงสต็อกได้ที่นี่</p>
+        <p class="text-xs text-slate-500 mt-1">รายการพัสดุและบาร์โค้ดทั้งหมดแยกตาม SKU สามารถตรวจสอบและปรับปรุงสต็อกได้ที่นี่[cite: 8]</p>
       </div>
-      <input type="text" id="inventorySearch" placeholder="🔍 ค้นหาบาร์โค้ด, ชื่อ SKU, โลเคชั่น..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+      <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        <!-- ลิงก์ไปหน้า audit-logs -->
+        <a href="audit-logs.html" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-sm">
+          📜 ประวัติ Log สต็อก
+        </a>
+        <input type="text" id="inventorySearch" placeholder="🔍 ค้นหาบาร์โค้ด, ชื่อ SKU, โลเคชั่น..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+      </div>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -162,7 +168,6 @@
             <input type="text" id="editModalSkuName" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-800">
           </div>
           
-          <!-- แถวหมวดหมู่ / หน่วยนับ / โลเคชั่น -->
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="block font-bold text-slate-700 mb-1">หมวดหมู่</label>
@@ -208,7 +213,7 @@
   <script type="module">
     import { db, auth } from "./js/firebase-config.js";
     import { checkUserAuth, initNotifications } from "./js/auth.js";
-    import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     checkUserAuth(['admin', 'manager']);
 
@@ -266,8 +271,6 @@
         const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", unit: "ชิ้น", category: "ทั่วไป", location: "" };
         const attrSummary = Object.entries(item.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "-";
         const barcodeStr = item.barcode || item.id;
-        
-        // โลเคชั่นสามารถมาจากทั้งระดับสินค้า (product) หรือ SKU หลัก
         const itemLocation = item.location || skuInfo.location || "-";
 
         html += `
@@ -372,6 +375,20 @@
       });
 
       try {
+        const currentUser = auth.currentUser;
+        let userName = currentUser.displayName || currentUser.email;
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().name) {
+          userName = userDocSnap.data().name;
+        }
+
+        // ดึงข้อมูลเดิมเพื่อเช็คจำนวนก่อนเปลี่ยน
+        const oldProductSnap = await getDoc(doc(db, "products", productId));
+        const oldData = oldProductSnap.exists() ? oldProductSnap.data() : {};
+        const quantityBefore = oldData.quantity || 0;
+        const changedQty = newQty - quantityBefore;
+
         if (!skuId) {
           skuId = "SKU-" + Date.now();
           await setDoc(doc(db, "skus", skuId), {
@@ -401,6 +418,23 @@
           updatedAt: serverTimestamp()
         });
 
+        // 📌 บันทึก Log การแก้ไขจากหน้าคลังสินค้า
+        if (quantityBefore !== newQty || true) {
+          await addDoc(collection(db, "stock_logs"), {
+            timestamp: serverTimestamp(),
+            actionType: "admin_edit",
+            method: "หน้าคลังสินค้า",
+            barcode: newBarcode,
+            skuName: newSkuName,
+            attributes: attrs,
+            quantityBefore: quantityBefore,
+            quantityAfter: newQty,
+            changedQty: changedQty,
+            userId: currentUser.uid,
+            userName: userName
+          });
+        }
+
         alert("💾 บันทึกการแก้ไขข้อมูลพัสดุเรียบร้อยแล้ว!");
         closeEditModal();
         loadInventory();
@@ -412,6 +446,33 @@
     window.deleteItem = async (id) => {
       if (!confirm("⚠️ คุณต้องการลบพัสดุรายการนี้ออกจากระบบสต็อกจริง ๆ ใช่หรือไม่?")) return;
       try {
+        const currentUser = auth.currentUser;
+        let userName = currentUser.displayName || currentUser.email;
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().name) {
+          userName = userDocSnap.data().name;
+        }
+
+        const targetItem = allProducts.find(p => p.id === id);
+        const skuInfo = skusMap.get(targetItem?.sku_id) || {};
+        const quantityBefore = targetItem?.quantity || 0;
+
+        // 📌 บันทึก Log การลบพัสดุออกจากคลัง
+        await addDoc(collection(db, "stock_logs"), {
+          timestamp: serverTimestamp(),
+          actionType: "admin_delete",
+          method: "หน้าคลังสินค้า",
+          barcode: targetItem?.barcode || id,
+          skuName: skuInfo.sku_name || "ไม่ระบุ SKU",
+          attributes: targetItem?.specific_attributes || {},
+          quantityBefore: quantityBefore,
+          quantityAfter: 0,
+          changedQty: -quantityBefore,
+          userId: currentUser.uid,
+          userName: userName
+        });
+
         await deleteDoc(doc(db, "products", id));
         alert("🗑️ ลบรายการพัสดุเรียบร้อยแล้ว");
         loadInventory();
