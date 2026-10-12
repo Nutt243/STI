@@ -142,6 +142,8 @@
           </tbody>
         </table>
       </div>
+      <!-- Pagination Container -->
+      <div id="paginationContainer"></div>
     </div>
   </main>
 
@@ -154,6 +156,9 @@
     checkUserAuth(['admin', 'manager']);
 
     let allLogs = [];
+    let currentFilteredList = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     async function loadLogs() {
       const tbody = document.getElementById("logsTableBody");
@@ -166,7 +171,7 @@
           allLogs.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        renderLogsTable(allLogs);
+        filterAndRender();
 
         if (auth.currentUser) {
           initUserNotificationsForPage();
@@ -190,17 +195,42 @@
       }
     }
 
-    function renderLogsTable(logs) {
-      const tbody = document.getElementById("logsTableBody");
-      tbody.innerHTML = "";
+    function filterAndRender() {
+      const keyword = document.getElementById("logSearch").value.toLowerCase().trim();
+      
+      if (!keyword) {
+        currentFilteredList = [...allLogs];
+      } else {
+        currentFilteredList = allLogs.filter(log => {
+          const sku = (log.skuName || "").toLowerCase();
+          const barcode = (log.barcode || "").toLowerCase();
+          const user = (log.userName || "").toLowerCase();
+          const method = (log.method || "").toLowerCase();
+          return sku.includes(keyword) || barcode.includes(keyword) || user.includes(keyword) || method.includes(keyword);
+        });
+      }
 
-      if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">ยังไม่มีประวัติการเปลี่ยนแปลงสต็อกในระบบ</td></tr>`;
+      currentPage = 1;
+      renderPaginatedTable();
+    }
+
+    function renderPaginatedTable() {
+      const tbody = document.getElementById("logsTableBody");
+      const paginationContainer = document.getElementById("paginationContainer");
+      tbody.innerHTML = "";
+      paginationContainer.innerHTML = "";
+
+      if (currentFilteredList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">ไม่พบประวัติการเปลี่ยนแปลงสต็อกที่ค้นหา</td></tr>`;
         return;
       }
 
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedLogs = currentFilteredList.slice(startIndex, endIndex);
+
       let html = "";
-      logs.forEach(log => {
+      paginatedLogs.forEach(log => {
         const dateStr = log.timestamp ? (log.timestamp.toDate ? log.timestamp.toDate().toLocaleString('th-TH') : new Date(log.timestamp.seconds * 1000).toLocaleString('th-TH')) : '-';
         
         let badgeClass = "bg-slate-100 text-slate-700";
@@ -249,18 +279,38 @@
       });
 
       tbody.innerHTML = html;
+      renderPaginationControls();
     }
 
-    document.getElementById("logSearch").addEventListener("input", (e) => {
-      const keyword = e.target.value.toLowerCase().trim();
-      const filtered = allLogs.filter(log => {
-        const sku = (log.skuName || "").toLowerCase();
-        const barcode = (log.barcode || "").toLowerCase();
-        const user = (log.userName || "").toLowerCase();
-        const method = (log.method || "").toLowerCase();
-        return sku.includes(keyword) || barcode.includes(keyword) || user.includes(keyword) || method.includes(keyword);
-      });
-      renderLogsTable(filtered);
+    function renderPaginationControls() {
+      const paginationContainer = document.getElementById("paginationContainer");
+      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
+
+      if (totalPages <= 1) return;
+
+      const paginationDiv = document.createElement("div");
+      paginationDiv.className = "flex justify-between items-center bg-slate-50 p-3.5 border-t border-slate-100 text-xs";
+      
+      paginationDiv.innerHTML = `
+        <span class="text-slate-500 font-medium">แสดงหน้า <strong class="text-slate-800">${currentPage}</strong> จาก <strong class="text-slate-800">${totalPages}</strong> (ทั้งหมด ${currentFilteredList.length} รายการ)</span>
+        <div class="flex gap-1.5">
+          <button onclick="changePage(${currentPage - 1})" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold rounded-lg transition ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}>&larr; ก่อนหน้า</button>
+          <button onclick="changePage(${currentPage + 1})" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold rounded-lg transition ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &rarr;</button>
+        </div>
+      `;
+      paginationContainer.appendChild(paginationDiv);
+    }
+
+    window.changePage = (newPage) => {
+      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
+      if (newPage < 1 || newPage > totalPages) return;
+      currentPage = newPage;
+      renderPaginatedTable();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById("logSearch").addEventListener("input", () => {
+      filterAndRender();
     });
 
     loadLogs();
