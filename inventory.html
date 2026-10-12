@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockMaster - จัดการสต็อกพัสดุภาพรวม</title>
+  <title>StockMaster - คลังพัสดุ</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800" style="display: none;">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 pb-20 lg:pb-0" style="display: none;">
 
 <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
   <div class="max-w-full px-4 mx-auto sm:px-6 lg:px-8">
@@ -51,7 +51,7 @@
       </div>
 
       <!-- Mobile Right Controls -->
-      <div class="flex md:hidden items-center space-x-2 relative">
+      <div class="flex md:hidden items-center space-x-2">
         <button id="btnMobileNotifBell" class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 relative transition focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -110,101 +110,79 @@
 </nav>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">📦 คลังพัสดุและพัสดุ (ภาพรวมระบบ)</h1>
-        <p class="text-xs text-slate-500 mt-1">รายการพัสดุและบาร์โค้ดทั้งหมดแยกตาม SKU สามารถตรวจสอบและปรับปรุงสต็อกได้ที่นี่[cite: 8]</p>
+        <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight">📊 คลังพัสดุทั้งหมดในระบบ</h1>
+        <p class="text-xs text-slate-500">จัดการ ตรวจสอบ และแก้ไขรายละเอียดพัสดุในคลัง</p>
       </div>
-      <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-        <!-- ลิงก์ไปหน้า audit-logs -->
-        <a href="audit-logs.html" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-sm">
-          📜 ประวัติ Log สต็อก
-        </a>
-        <input type="text" id="inventorySearch" placeholder="🔍 ค้นหาบาร์โค้ด, ชื่อ SKU, โลเคชั่น..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <input type="text" id="searchInput" placeholder="🔍 ค้นหาบาร์โค้ด, หมวดหมู่, โลเคชั่น..." class="w-full sm:w-64 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+        <a href="audit-logs.html" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition whitespace-nowrap">📜 ดูประวัติการแก้ไข</a>
       </div>
     </div>
 
+    <!-- Inventory Table Container -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs sm:text-sm text-slate-600 min-w-[700px]">
-          <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+        <table class="w-full text-left text-xs min-w-[700px]">
+          <thead class="bg-slate-50 font-bold text-slate-600 border-b border-slate-200">
             <tr>
               <th class="p-3.5">บาร์โค้ด / รหัส</th>
               <th class="p-3.5">SKU / ชื่อพัสดุ</th>
               <th class="p-3.5">โลเคชั่น</th>
-              <th class="p-3.5">คุณลักษณะเฉพาะ (Attributes)</th>
-              <th class="p-3.5 text-center">คงเหลือ</th>
-              <th class="p-3.5 text-center">หน่วยนับ</th>
-              <th class="p-3.5 text-center">จัดการ</th>
+              <th class="p-3.5">คุณลักษณะเฉพาะ (ATTRIBUTES)</th>
+              <th class="p-3.5">คงเหลือ</th>
+              <th class="p-3.5">หน่วยนับ</th>
+              <th class="p-3.5 text-center w-28">จัดการ</th>
             </tr>
           </thead>
           <tbody id="inventoryTableBody" class="divide-y divide-slate-100">
-            <tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">กำลังโหลดรายการพัสดุ...</td></tr>
+            <tr>
+              <td colspan="7" class="text-center py-8 text-slate-400 text-xs">กำลังโหลดข้อมูล...</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
+
+    <div id="paginationContainer"></div>
   </main>
 
-  <!-- Modal แก้ไขข้อมูลพัสดุ -->
-  <div id="editProductModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col my-auto">
+  <!-- Edit Product Modal -->
+  <div id="editModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 my-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-black text-slate-800 text-base sm:text-lg">✏️ แก้ไขข้อมูลพัสดุและ SKU</h3>
-        <button id="btnCloseEditModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
+        <h3 class="font-bold text-slate-800 text-base">✏️ แก้ไขข้อมูลพัสดุ</h3>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl leading-none">&times;</button>
       </div>
 
-      <form id="editProductForm" class="space-y-4 overflow-y-auto flex-1 pr-1">
+      <form id="editForm" class="space-y-3 text-xs">
         <input type="hidden" id="editProductId">
-        <input type="hidden" id="editSkuId">
+        
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">บาร์โค้ด</label>
+          <input type="text" id="editBarcode" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+        </div>
 
-        <div class="space-y-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">บาร์โค้ด:</label>
-            <input type="text" id="editModalBarcode" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-blue-600">
+            <label class="block font-bold text-slate-600 mb-1">จำนวนคงเหลือ</label>
+            <input type="number" id="editQuantity" min="0" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-blue-600">
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">ชื่อ SKU หลัก:</label>
-            <input type="text" id="editModalSkuName" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-800">
-          </div>
-          
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">หมวดหมู่</label>
-              <select id="editModalCategory" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold">
-                <option value="ทั่วไป">ทั่วไป</option>
-                <option value="เครื่องเขียน">เครื่องเขียน</option>
-                <option value="อุปกรณ์คอมพิวเตอร์">อุปกรณ์คอมพิวเตอร์</option>
-                <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
-              </select>
-            </div>
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">หน่วยนับ</label>
-              <input type="text" id="editModalUnit" value="ชิ้น" class="w-full p-2 bg-white border border-slate-300 rounded-lg">
-            </div>
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">โลเคชั่น</label>
-              <input type="text" id="editModalLocation" placeholder="เช่น ชั้น 2, โซน A" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-purple-700">
-            </div>
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">จำนวนคงเหลือ</label>
-            <input type="number" id="editModalQuantity" min="0" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-blue-600 text-center text-sm">
+            <label class="block font-bold text-slate-600 mb-1">โลเคชั่น / ตำแหน่งเก็บ</label>
+            <input type="text" id="editLocation" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           </div>
         </div>
 
-        <div class="space-y-2">
-          <div class="flex justify-between items-center">
-            <label class="block text-xs font-bold text-slate-700 uppercase">คุณลักษณะเฉพาะ (Specific Attributes)</label>
-          </div>
-          <div id="editAttrContainer" class="space-y-2"></div>
-          <button type="button" id="btnAddEditAttrRow" class="text-xs font-bold text-blue-600 hover:underline">+ เพิ่มคุณลักษณะพิเศษ</button>
+        <div id="editAttributesContainer" class="space-y-2 pt-2 border-t border-slate-100">
+          <label class="block font-bold text-slate-600">คุณลักษณะเฉพาะ (Attributes)</label>
+          <div id="attributesFields" class="space-y-2"></div>
         </div>
 
-        <div class="flex gap-3 pt-2 border-t border-slate-100">
-          <button type="button" id="btnCancelEdit" class="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition">ยกเลิก</button>
-          <button type="submit" class="w-1/2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md text-xs transition">💾 บันทึกการแก้ไข</button>
+        <div class="flex gap-2 pt-3 border-t border-slate-100">
+          <button type="button" id="btnCancelEdit" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition">ยกเลิก</button>
+          <button type="submit" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition">บันทึกการแก้ไข</button>
         </div>
       </form>
     </div>
@@ -212,328 +190,276 @@
 
   <script type="module">
     import { db, auth } from "./js/firebase-config.js";
-    import { checkUserAuth, initNotifications } from "./js/auth.js";
-    import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { checkUserAuth } from "./js/auth.js";
+    import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    checkUserAuth(['admin', 'manager']);
+    checkUserAuth(['manager', 'admin']);
 
-    let allProducts = [];
+    let allProductsList = [];
     let skusMap = new Map();
-    let currentFilteredList = [];
-
-    // ตัวแปรสำหรับระบบ Pagination
     let currentPage = 1;
     const itemsPerPage = 10;
+    let currentFilteredList = [];
 
-    async function loadInventory() {
-      const tbody = document.getElementById("inventoryTableBody");
+    async function loadInventoryData() {
+      const cachedSkus = sessionStorage.getItem("inv_cache_skus");
+      const cachedProducts = sessionStorage.getItem("inv_cache_products");
+
+      if (cachedSkus && cachedProducts) {
+        try {
+          const skuArray = JSON.parse(cachedSkus);
+          const prodArray = JSON.parse(cachedProducts);
+
+          skusMap.clear();
+          skuArray.forEach(s => skusMap.set(s.id, s));
+          allProductsList = prodArray;
+
+          filterAndRenderInventory();
+          return;
+        } catch (e) {
+          console.warn("Cache parse error, fetching fresh data...", e);
+        }
+      }
+
       try {
         const skuSnap = await getDocs(collection(db, "skus"));
         skusMap.clear();
-        skuSnap.forEach(d => skusMap.set(d.id, { id: d.id, ...d.data() }));
-
-        const snapshot = await getDocs(collection(db, "products"));
-        allProducts = [];
-        snapshot.forEach(docSnap => {
-          allProducts.push({ id: docSnap.id, ...docSnap.data() });
+        const skuArray = [];
+        skuSnap.forEach(d => {
+          const data = { id: d.id, ...d.data() };
+          skusMap.set(d.id, data);
+          skuArray.push(data);
         });
 
-        filterAndRender();
+        const prodSnap = await getDocs(collection(db, "products"));
+        allProductsList = [];
+        prodSnap.forEach(d => {
+          allProductsList.push({ id: d.id, ...d.data() });
+        });
 
-        if (auth.currentUser) {
-          initUserNotificationsForPage();
-        }
+        sessionStorage.setItem("inv_cache_skus", JSON.stringify(skuArray));
+        sessionStorage.setItem("inv_cache_products", JSON.stringify(allProductsList));
+
+        filterAndRenderInventory();
       } catch (err) {
-        console.error(err);
-        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</td></tr>`;
+        console.error("Error loading inventory:", err);
+        document.getElementById("inventoryTableBody").innerHTML = `<tr><td colspan="7" class="text-center py-8 text-rose-500 text-xs">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
       }
     }
 
-    async function initUserNotificationsForPage() {
-      if (!auth.currentUser) return;
-      try {
-        const qMy = query(collection(db, "requisitions"), where("userId", "==", auth.currentUser.uid));
-        const snap = await getDocs(qMy);
-        const myReqs = [];
-        snap.forEach(d => myReqs.push({ id: d.id, ...d.data() }));
-        initNotifications(myReqs);
-      } catch (err) {
-        console.error("Error loading notifications:", err);
-      }
+    function clearInventoryCache() {
+      sessionStorage.removeItem("inv_cache_skus");
+      sessionStorage.removeItem("inv_cache_products");
+      sessionStorage.removeItem("sm_cache_skus");
+      sessionStorage.removeItem("sm_cache_products");
     }
 
-    // กรองข้อมูลตามคำค้นหา
-    function filterAndRender() {
-      const keyword = document.getElementById("inventorySearch").value.toLowerCase().trim();
+    function filterAndRenderInventory() {
+      const filterText = document.getElementById("searchInput").value.trim().toLowerCase();
       
-      if (!keyword) {
-        currentFilteredList = [...allProducts];
+      if (!filterText) {
+        currentFilteredList = [...allProductsList];
       } else {
-        currentFilteredList = allProducts.filter(p => {
-          const skuInfo = skusMap.get(p.sku_id) || { sku_name: "", location: "" };
+        currentFilteredList = allProductsList.filter(p => {
+          const sku = skusMap.get(p.sku_id) || { sku_name: "", category: "" };
+          const matchesSku = sku.sku_name.toLowerCase().includes(filterText) || (sku.category || "").toLowerCase().includes(filterText);
           const barcode = (p.barcode || "").toLowerCase();
-          const skuName = skuInfo.sku_name.toLowerCase();
-          const location = (p.location || skuInfo.location || "").toLowerCase();
-          const attrStr = JSON.stringify(p.specific_attributes || {}).toLowerCase();
+          const location = (p.location || "").toLowerCase();
+          const attrStr = Object.entries(p.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(" ").toLowerCase();
           
-          return barcode.includes(keyword) || skuName.includes(keyword) || location.includes(keyword) || attrStr.includes(keyword);
+          return matchesSku || barcode.includes(filterText) || location.includes(filterText) || attrStr.includes(filterText);
         });
       }
 
-      // รีเซ็ตกลับไปหน้า 1 ทุกครั้งที่มีการค้นหาใหม่
       currentPage = 1;
-      renderPaginatedTable();
+      renderTable();
     }
 
-    function renderPaginatedTable() {
+    function renderTable() {
       const tbody = document.getElementById("inventoryTableBody");
       tbody.innerHTML = "";
 
-      // ลบแถบ Pagination เดิมทิ้งก่อนสร้างใหม่ (ถ้ามี)
-      const existingPagination = document.getElementById("inventoryPaginationContainer");
-      if (existingPagination) existingPagination.remove();
-
       if (currentFilteredList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-bold">ไม่พบรายการพัสดุในระบบ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">ไม่พบข้อมูลพัสดุในระบบ</td></tr>`;
+        renderPaginationControls();
         return;
       }
 
-      // คำนวณตัดรายการเฉพาะหน้าที่กำลังแสดง (10 รายการ)
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
-      const paginatedProducts = currentFilteredList.slice(startIndex, endIndex);
+      const paginatedList = currentFilteredList.slice(startIndex, endIndex);
 
-      let html = "";
-      paginatedProducts.forEach((item) => {
-        const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", unit: "ชิ้น", category: "ทั่วไป", location: "" };
-        const attrSummary = Object.entries(item.specific_attributes || {}).map(([k,v]) => `${k}:${v}`).join(", ") || "-";
-        const barcodeStr = item.barcode || item.id;
-        const itemLocation = item.location || skuInfo.location || "-";
+      paginatedList.forEach(p => {
+        const sku = skusMap.get(p.sku_id) || { sku_name: "ไม่ระบุ SKU", category: "-", unit: "ชิ้น" };
+        const attrStr = Object.entries(p.specific_attributes || {})
+          .map(([k,v]) => `${k}:${v}`)
+          .join(", ") || '<span class="text-slate-400">ไม่มี</span>';
 
-        html += `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-3.5 font-mono font-bold text-slate-800">${barcodeStr}</td>
-            <td class="p-3.5">
-              <div class="font-bold text-slate-800">${skuInfo.sku_name}</div>
-              <div class="text-[10px] text-blue-600 font-semibold">${skuInfo.category || 'ทั่วไป'}</div>
-            </td>
-            <td class="p-3.5 font-bold text-purple-700">📍 ${itemLocation}</td>
-            <td class="p-3.5 text-slate-600 text-xs">${attrSummary}</td>
-            <td class="p-3.5 text-center font-bold text-blue-600">${item.quantity || 0}</td>
-            <td class="p-3.5 text-center text-slate-500">${skuInfo.unit || 'ชิ้น'}</td>
-            <td class="p-3.5 text-center whitespace-nowrap space-x-1">
-              <button onclick="openEditModal('${item.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">✏️ แก้ไข</button>
-              <button onclick="deleteItem('${item.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition">🗑️ ลบ</button>
-            </td>
-          </tr>
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100 text-xs";
+        tr.innerHTML = `
+          <td class="p-3.5 font-mono font-bold text-slate-800">${p.barcode || p.id.substring(0,8)}</td>
+          <td class="p-3.5">
+            <div class="font-bold text-slate-800">${sku.sku_name}</div>
+            <div class="text-[10px] text-blue-600">${sku.category}</div>
+          </td>
+          <td class="p-3.5 font-semibold text-rose-600">📍 ${p.location || '-'}</td>
+          <td class="p-3.5 text-slate-600">${attrStr}</td>
+          <td class="p-3.5 font-bold text-blue-600 text-base">${p.quantity || 0}</td>
+          <td class="p-3.5 text-slate-600">${sku.unit || 'ชิ้น'}</td>
+          <td class="p-3.5 text-center space-x-1 whitespace-nowrap">
+            <button onclick="openEditModal('${p.id}')" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-lg transition inline-flex items-center gap-1">✏️ แก้ไข</button>
+            <button onclick="deleteProduct('${p.id}')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg transition inline-flex items-center gap-1">🗑️ ลบ</button>
+          </td>
         `;
+        tbody.appendChild(tr);
       });
-      tbody.innerHTML = html;
 
-      // สร้างปุ่มเปลี่ยนหน้า (Pagination Controls) ด้านล่างตาราง
       renderPaginationControls();
     }
 
     function renderPaginationControls() {
-      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
-      if (totalPages <= 1) return;
-
-      const mainContainer = document.querySelector("main");
-      const paginationDiv = document.createElement("div");
-      paginationDiv.id = "inventoryPaginationContainer";
-      paginationDiv.className = "flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 text-xs shadow-sm";
+      const container = document.getElementById("paginationContainer");
+      if (!container) return;
       
-      paginationDiv.innerHTML = `
-        <span class="text-slate-500 font-medium">แสดงหน้า <strong class="text-slate-800">${currentPage}</strong> จาก <strong class="text-slate-800">${totalPages}</strong> (ทั้งหมด ${currentFilteredList.length} รายการ)</span>
-        <div class="flex gap-1.5">
-          <button onclick="changePage(${currentPage - 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}>&larr; ก่อนหน้า</button>
-          <button onclick="changePage(${currentPage + 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &rarr;</button>
+      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
+      if (totalPages <= 1) {
+        container.innerHTML = "";
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 mt-4 text-xs">
+          <span class="text-slate-500 font-medium">แสดงหน้า <strong class="text-slate-800">${currentPage}</strong> จาก <strong class="text-slate-800">${totalPages}</strong> (ทั้งหมด ${currentFilteredList.length} รายการ)</span>
+          <div class="flex gap-1.5">
+            <button onclick="changePage(${currentPage - 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}>&larr; ก่อนหน้า</button>
+            <button onclick="changePage(${currentPage + 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &rarr;</button>
+          </div>
         </div>
       `;
-      mainContainer.appendChild(paginationDiv);
     }
 
     window.changePage = (newPage) => {
       const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage);
       if (newPage < 1 || newPage > totalPages) return;
       currentPage = newPage;
-      renderPaginatedTable();
+      renderTable();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    document.getElementById("inventorySearch").addEventListener("input", () => {
-      filterAndRender();
+    document.getElementById("searchInput").addEventListener("input", () => {
+      filterAndRenderInventory();
     });
 
-    window.openEditModal = (id) => {
-      const item = allProducts.find(p => p.id === id);
-      if (!item) return;
-      const skuInfo = skusMap.get(item.sku_id) || { sku_name: "ไม่ระบุ SKU", category: "ทั่วไป", unit: "ชิ้น", location: "" };
+    window.openEditModal = (productId) => {
+      const product = allProductsList.find(p => p.id === productId);
+      if (!product) return;
 
-      document.getElementById("editProductId").value = item.id;
-      document.getElementById("editSkuId").value = item.sku_id || "";
-      document.getElementById("editModalBarcode").value = item.barcode || "";
-      document.getElementById("editModalSkuName").value = skuInfo.sku_name;
-      document.getElementById("editModalCategory").value = skuInfo.category || "ทั่วไป";
-      document.getElementById("editModalUnit").value = skuInfo.unit || "ชิ้น";
-      document.getElementById("editModalLocation").value = item.location || skuInfo.location || "";
-      document.getElementById("editModalQuantity").value = item.quantity || 0;
+      document.getElementById("editProductId").value = product.id;
+      document.getElementById("editBarcode").value = product.barcode || "";
+      document.getElementById("editQuantity").value = product.quantity || 0;
+      document.getElementById("editLocation").value = product.location || "";
 
-      const attrContainer = document.getElementById("editAttrContainer");
-      attrContainer.innerHTML = "";
-      const attrs = item.specific_attributes || {};
-      for (const [k, v] of Object.entries(attrs)) {
-        addAttrRow(k, v);
+      const attributesContainer = document.getElementById("attributesFields");
+      attributesContainer.innerHTML = "";
+
+      const specificAttrs = product.specific_attributes || {};
+      if (Object.keys(specificAttrs).length > 0) {
+        Object.entries(specificAttrs).forEach(([key, val]) => {
+          const div = document.createElement("div");
+          div.className = "flex items-center gap-2";
+          div.innerHTML = `
+            <span class="w-1/3 text-slate-500 font-semibold truncate">${key}:</span>
+            <input type="text" name="attr_${key}" value="${val}" class="w-2/3 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+          `;
+          attributesContainer.appendChild(div);
+        });
+      } else {
+        attributesContainer.innerHTML = `<p class="text-slate-400 text-[11px]">ไม่มีคุณลักษณะเฉพาะสำหรับสินค้านี้</p>`;
       }
 
-      document.getElementById("editProductModal").classList.remove("hidden");
-      document.getElementById("editProductModal").classList.add("flex");
+      const modal = document.getElementById("editModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
     };
-
-    function addAttrRow(k = "", v = "") {
-      const container = document.getElementById("editAttrContainer");
-      const div = document.createElement("div");
-      div.className = "flex gap-2 items-center attr-row-item";
-      div.innerHTML = `
-        <input type="text" placeholder="คุณลักษณะ (เช่น ยี่ห้อ, สี)" value="${k}" class="attr-k w-1/2 p-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 bg-slate-50">
-        <input type="text" placeholder="ค่า (เช่น Epson, ดำ)" value="${v}" class="attr-v w-1/2 p-2 border border-slate-300 rounded-lg text-xs font-semibold">
-        <button type="button" class="btn-remove-attr text-rose-500 font-bold px-1.5 hover:bg-rose-50 rounded">&times;</button>
-      `;
-      div.querySelector(".btn-remove-attr").addEventListener("click", () => div.remove());
-      container.appendChild(div);
-    }
-
-    document.getElementById("btnAddEditAttrRow").addEventListener("click", () => addAttrRow());
 
     const closeEditModal = () => {
-      document.getElementById("editProductModal").classList.add("hidden");
+      const modal = document.getElementById("editModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
     };
 
-    document.getElementById("btnCloseEditModal").addEventListener("click", closeEditModal);
+    document.getElementById("btnCloseModal").addEventListener("click", closeEditModal);
     document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
 
-    document.getElementById("editProductForm").addEventListener("submit", async (e) => {
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const productId = document.getElementById("editProductId").value;
-      let skuId = document.getElementById("editSkuId").value;
-      
-      const newBarcode = document.getElementById("editModalBarcode").value.trim();
-      const newSkuName = document.getElementById("editModalSkuName").value.trim();
-      const newCategory = document.getElementById("editModalCategory").value;
-      const newUnit = document.getElementById("editModalUnit").value.trim() || "ชิ้น";
-      const newLocation = document.getElementById("editModalLocation").value.trim();
-      const newQty = parseInt(document.getElementById("editModalQuantity").value) || 0;
+      const newBarcode = document.getElementById("editBarcode").value.trim();
+      const newQuantity = parseInt(document.getElementById("editQuantity").value) || 0;
+      const newLocation = document.getElementById("editLocation").value.trim();
 
-      const attrs = {};
-      document.querySelectorAll(".attr-row-item").forEach(row => {
-        const k = row.querySelector(".attr-k").value.trim();
-        const v = row.querySelector(".attr-v").value.trim();
-        if (k && v) attrs[k] = v;
+      const product = allProductsList.find(p => p.id === productId);
+      if (!product) return;
+
+      const updatedAttributes = { ...(product.specific_attributes || {}) };
+      Object.keys(updatedAttributes).forEach(key => {
+        const inputElem = document.querySelector(`[name="attr_${key}"]`);
+        if (inputElem) {
+          updatedAttributes[key] = inputElem.value.trim();
+        }
       });
 
       try {
-        const currentUser = auth.currentUser;
-        let userName = currentUser.displayName || currentUser.email;
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().name) {
-          userName = userDocSnap.data().name;
-        }
-
-        const oldProductSnap = await getDoc(doc(db, "products", productId));
-        const oldData = oldProductSnap.exists() ? oldProductSnap.data() : {};
-        const quantityBefore = oldData.quantity || 0;
-        const changedQty = newQty - quantityBefore;
-
-        if (!skuId) {
-          skuId = "SKU-" + Date.now();
-          await setDoc(doc(db, "skus", skuId), {
-            sku_name: newSkuName,
-            category: newCategory,
-            unit: newUnit,
-            location: newLocation,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          });
-        } else {
-          await updateDoc(doc(db, "skus", skuId), {
-            sku_name: newSkuName,
-            category: newCategory,
-            unit: newUnit,
-            location: newLocation,
-            updatedAt: serverTimestamp()
-          });
-        }
-
-        await updateDoc(doc(db, "products", productId), {
-          sku_id: skuId,
+        const productRef = doc(db, "products", productId);
+        await updateDoc(productRef, {
           barcode: newBarcode,
+          quantity: newQuantity,
           location: newLocation,
-          quantity: newQty,
-          specific_attributes: attrs,
+          specific_attributes: updatedAttributes,
           updatedAt: serverTimestamp()
         });
 
         await addDoc(collection(db, "stock_logs"), {
-          timestamp: serverTimestamp(),
-          actionType: "admin_edit",
-          method: "หน้าคลังพัสดุ",
-          barcode: newBarcode,
-          skuName: newSkuName,
-          attributes: attrs,
-          quantityBefore: quantityBefore,
-          quantityAfter: newQty,
-          changedQty: changedQty,
-          userId: currentUser.uid,
-          userName: userName
+          action: "update",
+          productId: productId,
+          performedBy: auth.currentUser ? (auth.currentUser.displayName || auth.currentUser.email) : "Admin",
+          details: `แก้ไขพัสดุ บาร์โค้ด: ${newBarcode || '-'}, จำนวน: ${newQuantity}`,
+          timestamp: serverTimestamp()
         });
 
-        alert("💾 บันทึกการแก้ไขข้อมูลพัสดุเรียบร้อยแล้ว!");
+        clearInventoryCache();
         closeEditModal();
-        loadInventory();
+        alert("✅ บันทึกการแก้ไขเรียบร้อยแล้ว");
+        loadInventoryData();
+
       } catch (err) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
       }
     });
 
-    window.deleteItem = async (id) => {
-      if (!confirm("⚠️ คุณต้องการลบพัสดุรายการนี้ออกจากระบบสต็อกจริง ๆ ใช่หรือไม่?")) return;
+    window.deleteProduct = async (productId) => {
+      if (!confirm("⚠️ คุณต้องการลบรายการพัสดุนี้ออกจากระบบใช่หรือไม่?")) return;
       try {
-        const currentUser = auth.currentUser;
-        let userName = currentUser.displayName || currentUser.email;
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().name) {
-          userName = userDocSnap.data().name;
-        }
-
-        const targetItem = allProducts.find(p => p.id === id);
-        const skuInfo = skusMap.get(targetItem?.sku_id) || {};
-        const quantityBefore = targetItem?.quantity || 0;
+        await deleteDoc(doc(db, "products", productId));
 
         await addDoc(collection(db, "stock_logs"), {
-          timestamp: serverTimestamp(),
-          actionType: "admin_delete",
-          method: "หน้าคลังพัสดุ",
-          barcode: targetItem?.barcode || id,
-          skuName: skuInfo.sku_name || "ไม่ระบุ SKU",
-          attributes: targetItem?.specific_attributes || {},
-          quantityBefore: quantityBefore,
-          quantityAfter: 0,
-          changedQty: -quantityBefore,
-          userId: currentUser.uid,
-          userName: userName
+          action: "delete",
+          productId: productId,
+          performedBy: auth.currentUser ? (auth.currentUser.displayName || auth.currentUser.email) : "Admin",
+          details: `ลบพัสดุ ID: ${productId}`,
+          timestamp: serverTimestamp()
         });
 
-        await deleteDoc(doc(db, "products", id));
-        alert("🗑️ ลบรายการพัสดุเรียบร้อยแล้ว");
-        loadInventory();
+        clearInventoryCache();
+        alert("🗑️ ลบพัสดุเรียบร้อยแล้ว");
+        loadInventoryData();
       } catch (err) {
-        alert("เกิดข้อผิดพลาด: " + err.message);
+        alert("เกิดข้อผิดพลาดในการลบ: " + err.message);
       }
     };
 
-    loadInventory();
+    loadInventoryData();
   </script>
 </body>
 </html>

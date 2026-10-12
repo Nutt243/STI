@@ -99,7 +99,7 @@
 
     <a href="approvals.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-slate-800 flex justify-between items-center">
       <span>⏳ อนุมัติคำขอ</span>
-      <span id="mobileNavPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+      <span id="navPendingCount" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden"></span>
     </a>
     
     <a href="admin-unregistered-skus.html" class="manager-only hidden block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800">📦 รับพัสดุเข้า & คัดแยก</a>
@@ -231,7 +231,6 @@
     let allProductsList = [];
     let skusMap = new Map();
 
-    // ตัวแปรสำหรับระบบ Pagination
     let currentPage = 1;
     const itemsPerPage = 10;
     let currentFilteredList = [];
@@ -243,17 +242,46 @@
       });
     });
 
+    // 💡 ฟังก์ชันโหลดข้อมูลพร้อม Session Storage Caching (ประหยัด Read เมื่อกลับมาหน้าเดิม)
     async function loadInventory() {
+      const cachedSkus = sessionStorage.getItem("sm_cache_skus");
+      const cachedProducts = sessionStorage.getItem("sm_cache_products");
+
+      if (cachedSkus && cachedProducts) {
+        try {
+          const skuArray = JSON.parse(cachedSkus);
+          const prodArray = JSON.parse(cachedProducts);
+
+          skusMap.clear();
+          skuArray.forEach(s => skusMap.set(s.id, s));
+          allProductsList = prodArray;
+
+          filterAndRender();
+          return; // ใช้ข้อมูลจากแคช เสีย 0 Reads!
+        } catch (e) {
+          console.warn("Cache parse error, fetching fresh data...", e);
+        }
+      }
+
+      // ถ้ายังไม่มีแคช ให้โหลดจาก Firestore ปกติ
       const skuSnap = await getDocs(collection(db, "skus"));
       skusMap.clear();
-      skuSnap.forEach(d => skusMap.set(d.id, { id: d.id, ...d.data() }));
+      const skuArray = [];
+      skuSnap.forEach(d => {
+        const data = { id: d.id, ...d.data() };
+        skusMap.set(d.id, data);
+        skuArray.push(data);
+      });
 
       const prodSnap = await getDocs(collection(db, "products"));
       allProductsList = [];
-
       prodSnap.forEach(d => {
         allProductsList.push({ id: d.id, ...d.data() });
       });
+
+      // บันทึกลง Session Storage ชั่วคราว
+      sessionStorage.setItem("sm_cache_skus", JSON.stringify(skuArray));
+      sessionStorage.setItem("sm_cache_products", JSON.stringify(allProductsList));
 
       filterAndRender();
     }
@@ -587,6 +615,10 @@
           status: "pending",
           createdAt: serverTimestamp()
         });
+
+        // 💡 เคลียร์แคชเมื่อมีการส่งคำขอเบิก เพื่อให้สต็อกอัปเดตใหม่ในรอบถัดไป
+        sessionStorage.removeItem("sm_cache_skus");
+        sessionStorage.removeItem("sm_cache_products");
 
         document.getElementById("confirmConfirmModal").classList.add("hidden");
         closeCartModal();
