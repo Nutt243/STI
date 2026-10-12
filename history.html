@@ -164,10 +164,15 @@
     checkUserAuth(['admin', 'manager', 'user']);
 
     let allLoadedRequisitions = [];
+    let filteredRequisitions = [];
     let usersMap = new Map();
     let currentViewMode = "my";
     let currentUserRole = "user";
     let targetCancelReqId = null;
+
+    // ตัวแปรสำหรับระบบ Pagination
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -209,7 +214,7 @@
           allLoadedRequisitions.push({ id: d.id, ...d.data() });
         });
 
-        renderHistoryList(allLoadedRequisitions);
+        applyFilterAndRender();
         
         const myReqs = allLoadedRequisitions.filter(r => r.userId === uid);
         initNotifications(myReqs);
@@ -220,16 +225,36 @@
       }
     }
 
-    function renderHistoryList(list) {
+    function applyFilterAndRender() {
+      const statusFilter = document.getElementById("statusFilter").value;
+      
+      if (statusFilter === "all") {
+        filteredRequisitions = [...allLoadedRequisitions];
+      } else {
+        filteredRequisitions = allLoadedRequisitions.filter(r => r.status === statusFilter);
+      }
+
+      currentPage = 1;
+      renderPaginatedHistoryList();
+    }
+
+    function renderPaginatedHistoryList() {
       const container = document.getElementById("historyListContainer");
       container.innerHTML = "";
 
-      if (list.length === 0) {
+      const existingPagination = document.getElementById("historyPaginationContainer");
+      if (existingPagination) existingPagination.remove();
+
+      if (filteredRequisitions.length === 0) {
         container.innerHTML = `<div class="bg-white p-12 rounded-2xl text-center text-slate-400 font-bold">ยังไม่มีประวัติการขอเบิกพัสดุ</div>`;
         return;
       }
 
-      list.forEach(req => {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedList = filteredRequisitions.slice(startIndex, endIndex);
+
+      paginatedList.forEach(req => {
         const dateStr = req.createdAt ? new Date(req.createdAt.toDate()).toLocaleString('th-TH') : "-";
         
         let actionTimeStr = "";
@@ -339,7 +364,36 @@
 
         container.appendChild(card);
       });
+
+      renderPaginationControls();
     }
+
+    function renderPaginationControls() {
+      const totalPages = Math.ceil(filteredRequisitions.length / itemsPerPage);
+      if (totalPages <= 1) return;
+
+      const mainContainer = document.querySelector("main");
+      const paginationDiv = document.createElement("div");
+      paginationDiv.id = "historyPaginationContainer";
+      paginationDiv.className = "flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 text-xs shadow-sm mt-4";
+      
+      paginationDiv.innerHTML = `
+        <span class="text-slate-500 font-medium">แสดงหน้า <strong class="text-slate-800">${currentPage}</strong> จาก <strong class="text-slate-800">${totalPages}</strong> (ทั้งหมด ${filteredRequisitions.length} รายการ)</span>
+        <div class="flex gap-1.5">
+          <button onclick="changePage(${currentPage - 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === 1 ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}>&larr; ก่อนหน้า</button>
+          <button onclick="changePage(${currentPage + 1})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &rarr;</button>
+        </div>
+      `;
+      mainContainer.appendChild(paginationDiv);
+    }
+
+    window.changePage = (newPage) => {
+      const totalPages = Math.ceil(filteredRequisitions.length / itemsPerPage);
+      if (newPage < 1 || newPage > totalPages) return;
+      currentPage = newPage;
+      renderPaginatedHistoryList();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     window.confirmCancelRequest = (reqId) => {
       targetCancelReqId = reqId;
@@ -384,14 +438,8 @@
       loadHistoryData(auth.currentUser.uid);
     });
 
-    document.getElementById("statusFilter").addEventListener("change", (e) => {
-      const status = e.target.value;
-      if (status === "all") {
-        renderHistoryList(allLoadedRequisitions);
-      } else {
-        const filtered = allLoadedRequisitions.filter(r => r.status === status);
-        renderHistoryList(filtered);
-      }
+    document.getElementById("statusFilter").addEventListener("change", () => {
+      applyFilterAndRender();
     });
   </script>
 </body>
